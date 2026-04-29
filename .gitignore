@@ -1,0 +1,43 @@
+# =====================
+# GENERAL
+# =====================
+.DS_Store
+.env
+*.log
+
+# =====================
+# BACKEND (Spring Boot)
+# =====================
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+
+# =====================
+# NODE (React / React Native)
+# =====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React Native / Expo
+mobile/.expo/
+mobile/dist/
+
+# React Dashboard
+dashboard/dist/
+dashboard/node_modules/
+
+# =====================
+# IDEs
+# =====================
+.vscode/
+.idea/
+
+# =====================
+# BUILD FILES
+# =====================
+*.class
+*.jar
+*.war
