@@ -1,4 +1,11 @@
 package com.somap.backend.repository;
 
-public interface NotificationRepository {
+import com.somap.backend.entity.Notification;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
+
+    List<Notification> findByUtilisateurId(Long utilisateurId);
 }
