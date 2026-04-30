@@ -1,5 +1,6 @@
 package com.somap.backend.dto;
 
+import com.somap.backend.enums.DemandeStatus;
 import lombok.Data;
 
 import java.util.Date;
@@ -10,7 +11,7 @@ public class DemandeDTO {
 
     private Long id;
     private String description;
-    private String statut;
+    private DemandeStatus statut;
     private Date dateCreation;
     private List<ImageDTO> images;
 

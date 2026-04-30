@@ -1,5 +1,6 @@
 package com.somap.backend.dto;
 
+import com.somap.backend.enums.ProjetStatus;
 import lombok.Data;
 import java.util.Date;
 
@@ -9,7 +10,7 @@ public class ProjetDTO {
     private Long id;
     private String titre;
     private String description;
-    private String statut;
+    private ProjetStatus statut;
     private int progression;
     private Date dateDebut;
     private Date dateFin;
