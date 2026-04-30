@@ -1,6 +1,8 @@
 package com.somap.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -18,7 +20,7 @@ public class Notification {
 
     private String message;
 
-    private Date dateEnvoi;
+    private LocalDateTime dateEnvoi;
 
     private boolean lu;
 

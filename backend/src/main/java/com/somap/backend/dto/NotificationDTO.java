@@ -1,6 +1,8 @@
 package com.somap.backend.dto;
 
 import lombok.Data;
+
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Data
@@ -12,7 +14,7 @@ public class NotificationDTO {
 
     private String message;
 
-    private Date dateEnvoi;
+    private LocalDateTime dateEnvoi;
 
     private boolean lu;
 }

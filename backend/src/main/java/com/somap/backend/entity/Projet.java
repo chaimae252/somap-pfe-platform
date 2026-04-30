@@ -2,6 +2,8 @@ package com.somap.backend.entity;
 import com.somap.backend.enums.ProjetStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -24,9 +26,9 @@ public class Projet {
 
     private int progression;
 
-    private Date dateDebut;
+    private LocalDateTime dateDebut;
 
-    private Date dateFin;
+    private LocalDateTime dateFin;
 
     @ManyToOne
     @JoinColumn(name = "client_id")

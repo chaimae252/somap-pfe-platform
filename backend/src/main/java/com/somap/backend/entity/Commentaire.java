@@ -1,6 +1,8 @@
 package com.somap.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -19,7 +21,7 @@ public class Commentaire {
     @OneToMany(mappedBy = "commentaire", cascade = CascadeType.ALL)
     private List<Image> images;
 
-    private Date dateCommentaire;
+    private LocalDateTime dateCommentaire;
 
     @ManyToOne
     @JoinColumn(name = "client_id")

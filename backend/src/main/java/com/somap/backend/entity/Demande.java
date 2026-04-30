@@ -2,6 +2,8 @@ package com.somap.backend.entity;
 import com.somap.backend.enums.DemandeStatus;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -23,7 +25,7 @@ public class Demande {
     @Enumerated(EnumType.STRING)
     private DemandeStatus statut;
 
-    private Date dateCreation;
+    private LocalDateTime dateCreation;
 
     @ManyToOne
     @JoinColumn(name = "client_id")
