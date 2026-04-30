@@ -3,10 +3,8 @@ package com.somap.backend.dto;
 import lombok.Data;
 
 @Data
-public class UtilisateurDTO {
+public class ImageDTO {
 
     private Long id;
-    private String nom;
-    private String email;
-
+    private String imageUrl;
 }

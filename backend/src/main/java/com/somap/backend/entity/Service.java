@@ -18,7 +18,8 @@ public class Service {
 
     private String description;
 
-    private String image;
+    @OneToMany(mappedBy = "service", cascade = CascadeType.ALL)
+    private List<Image> images;
 
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL)
     private List<Demande> demandes;

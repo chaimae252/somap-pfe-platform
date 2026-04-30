@@ -17,7 +17,8 @@ public class Demande {
 
     private String description;
 
-    private String image;
+    @OneToMany(mappedBy = "demande", cascade = CascadeType.ALL)
+    private List<Image> images;
 
     @Enumerated(EnumType.STRING)
     private DemandeStatus statut;

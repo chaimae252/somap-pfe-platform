@@ -16,7 +16,8 @@ public class Commentaire {
 
     private String contenu;
 
-    private String image;
+    @OneToMany(mappedBy = "commentaire", cascade = CascadeType.ALL)
+    private List<Image> images;
 
     private Date dateCommentaire;
 
