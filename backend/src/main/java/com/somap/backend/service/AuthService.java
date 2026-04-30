@@ -1,12 +1,12 @@
 package com.somap.backend.service;
 
+import com.somap.backend.dto.ClientRegisterDTO;
 import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
-import com.somap.backend.dto.RegisterRequestDTO;
 
 public interface AuthService {
 
-    LoginResponseDTO login(LoginRequestDTO loginRequestDTO);
+    void registerClient(ClientRegisterDTO dto);
 
-    void register(RegisterRequestDTO registerRequestDTO);
+    LoginResponseDTO login(LoginRequestDTO dto);
 }

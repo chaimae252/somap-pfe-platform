@@ -1,8 +1,8 @@
 package com.somap.backend.controller;
 
+import com.somap.backend.dto.ClientRegisterDTO;
 import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
-import com.somap.backend.dto.RegisterRequestDTO;
 import com.somap.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,10 +18,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(
-            @RequestBody RegisterRequestDTO registerRequestDTO
+            @RequestBody ClientRegisterDTO clientRegisterRequestDTO
     ) {
 
-        authService.register(registerRequestDTO);
+        authService.registerClient(clientRegisterRequestDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body("Utilisateur créé avec succès");
