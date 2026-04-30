@@ -17,4 +17,5 @@ public class NotificationDTO {
     private LocalDateTime dateEnvoi;
 
     private boolean lu;
+    private Long utilisateurId ;
 }

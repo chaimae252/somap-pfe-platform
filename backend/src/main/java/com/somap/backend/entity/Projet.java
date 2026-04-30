@@ -24,8 +24,6 @@ public class Projet {
     @Enumerated(EnumType.STRING)
     private ProjetStatus statut;
 
-    private int progression;
-
     private LocalDateTime dateDebut;
 
     private LocalDateTime dateFin;

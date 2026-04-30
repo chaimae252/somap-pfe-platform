@@ -91,7 +91,6 @@ public class DataSeeder {
             p1.setDescription("Traitement de surface des pièces métalliques");
             p1.setDateDebut(LocalDateTime.now());
             p1.setStatut(ProjetStatus.EN_COURS);
-            p1.setProgression(30);
             p1.setClient(client);
             p1.setDemande(d1);
 

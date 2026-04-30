@@ -6,5 +6,12 @@ import lombok.Data;
 public class ImageDTO {
 
     private Long id;
+
     private String imageUrl;
+
+    private Long commentaireId;
+
+    private Long demandeId;
+
+    private Long serviceId;
 }

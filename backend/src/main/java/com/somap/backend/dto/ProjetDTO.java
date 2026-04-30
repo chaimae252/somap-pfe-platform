@@ -13,10 +13,9 @@ public class ProjetDTO {
     private String titre;
     private String description;
     private ProjetStatus statut;
-    private int progression;
     private LocalDateTime dateDebut;
     private LocalDateTime dateFin;
 
     private Long clientId;
-
+    private Long demandeId;
 }
