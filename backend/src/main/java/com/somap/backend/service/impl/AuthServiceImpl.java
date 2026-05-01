@@ -4,10 +4,16 @@ import com.somap.backend.dto.ClientRegisterDTO;
 import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
 import com.somap.backend.entity.Client;
+import com.somap.backend.entity.Utilisateur;
 import com.somap.backend.enums.Role;
 import com.somap.backend.repository.ClientRepository;
+import com.somap.backend.repository.UtilisateurRepository;
+import com.somap.backend.security.JwtService;
 import com.somap.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +24,12 @@ import java.util.Optional;
 public class AuthServiceImpl implements AuthService {
 
     private final ClientRepository clientRepository;
+    private final UtilisateurRepository utilisateurRepository;
+
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -27,38 +39,32 @@ public class AuthServiceImpl implements AuthService {
 
         client.setNom(dto.getNom());
         client.setEmail(dto.getEmail());
-        client.setMotDePasse(dto.getMotDePasse());
+
+        // 🔥 IMPORTANT FIX
+        client.setMotDePasse(passwordEncoder.encode(dto.getMotDePasse()));
+
         client.setTelephone(dto.getTelephone());
         client.setAdresse(dto.getAdresse());
-
         client.setRole(Role.CLIENT);
 
         clientRepository.save(client);
-
-        System.out.println("CLIENT REGISTERED ✔ " + client.getEmail());
     }
 
     @Override
     public LoginResponseDTO login(LoginRequestDTO dto) {
 
-        Optional<Client> clientOpt = clientRepository.findByEmail(dto.getEmail());
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        dto.getEmail(),
+                        dto.getMotDePasse()
+                )
+        );
 
-        if (clientOpt.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
+        Utilisateur user = utilisateurRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Client client = clientOpt.get();
+        String token = jwtService.generateToken(user.getEmail());
 
-        if (!client.getMotDePasse().equals(dto.getMotDePasse())) {
-            throw new RuntimeException("Wrong password");
-        }
-
-        LoginResponseDTO response = new LoginResponseDTO();
-        response.setId(client.getId());
-        response.setNom(client.getNom());
-        response.setEmail(client.getEmail());
-        response.setRole(client.getRole().name());
-
-        return response;
+        return new LoginResponseDTO(token);
     }
 }

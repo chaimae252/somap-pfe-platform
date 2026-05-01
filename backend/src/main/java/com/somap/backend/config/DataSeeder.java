@@ -8,14 +8,18 @@ import com.somap.backend.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
 
 @Configuration
 public class DataSeeder {
 
+
+
     @Bean
     CommandLineRunner initDatabase(
+            PasswordEncoder passwordEncoder,
             UtilisateurRepository utilisateurRepo,
             AdminRepository adminRepo,
             ClientRepository clientRepo,
@@ -30,7 +34,8 @@ public class DataSeeder {
         return args -> {
 
             // 🛑 prevent duplicate seeding
-            if (serviceRepo.count() > 0) {
+            if (utilisateurRepo.count() > 0) {
+                System.out.println("Seeder already executed ✔");
                 return;
             }
 
@@ -41,14 +46,14 @@ public class DataSeeder {
             Admin admin = new Admin();
             admin.setNom("Admin SOMAP");
             admin.setEmail("admin@somap.com");
-            admin.setMotDePasse("1234");
+            admin.setMotDePasse(passwordEncoder.encode("1234"));
             admin.setRole(Role.ADMIN);
             adminRepo.save(admin);
 
             Client client = new Client();
             client.setNom("Client Test");
             client.setEmail("client@somap.com");
-            client.setMotDePasse("1234");
+            client.setMotDePasse(passwordEncoder.encode("1234"));
             client.setTelephone("0611111111");
             client.setAdresse("Rabat");
             client.setRole(Role.CLIENT);
