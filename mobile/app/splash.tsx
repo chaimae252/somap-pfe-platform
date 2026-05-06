@@ -101,7 +101,7 @@ export default function SplashScreenn() {
             ]),
         ]).start(() => {
             setTimeout(() => {
-                router.replace("/(onboarding)");
+                router.replace("/onboarding");
             }, 400);
         });
     }, []);

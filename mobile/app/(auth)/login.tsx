@@ -12,8 +12,12 @@ import {
   Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
+
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -54,7 +58,10 @@ export default function LoginScreen() {
         <View style={styles.container}>
 
           {/* BACK BUTTON */}
-          <TouchableOpacity style={styles.backButton}>
+          <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.replace("/onboarding")} // or router.back()
+          >
             <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
           </TouchableOpacity>
 
@@ -125,7 +132,7 @@ export default function LoginScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push("/VerifyScreen")}>
                 <Text style={styles.forgot}>
                   Mot de passe oublié ?
                 </Text>
@@ -151,7 +158,10 @@ export default function LoginScreen() {
               Vous n’avez pas de compte ?
             </Text>
 
-            <TouchableOpacity style={styles.outlineButton}>
+            <TouchableOpacity
+                style={styles.outlineButton}
+                onPress={() => router.push("/register")}
+            >
               <Text style={styles.outlineButtonText}>
                 Créer un compte
               </Text>
@@ -186,7 +196,7 @@ const styles = StyleSheet.create({
     left: 15,
     zIndex: 10,
     padding: 8,
-    marginTop: 50,
+    marginTop: 5,
   },
 
   header: {
@@ -197,7 +207,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 250,
     height: 110,
-    marginTop: 30,
+    marginTop: 5,
   },
 
   card: {

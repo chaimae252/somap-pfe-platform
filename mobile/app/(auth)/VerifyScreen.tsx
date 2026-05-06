@@ -9,8 +9,11 @@ import {
   SafeAreaView,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 const VerifyScreen = () => {
+  const router = useRouter();
+
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [activeTab, setActiveTab] = useState<"email" | "phone">("email");
   const [timeLeft, setTimeLeft] = useState(300);
@@ -39,7 +42,10 @@ const VerifyScreen = () => {
       <View style={styles.container}>
 
         {/* BACK */}
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.replace("/login")}
+        >
           <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
         </TouchableOpacity>
 
@@ -140,7 +146,10 @@ const VerifyScreen = () => {
           </View>
 
           {/* BUTTON */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity
+              style={styles.button}
+              onPress={() => router.replace("/ResetPasswordScreen")}
+          >
             <Text style={styles.buttonText}>Confirm</Text>
           </TouchableOpacity>
 
@@ -170,7 +179,7 @@ const styles = StyleSheet.create({
     left: 15,
     zIndex: 10,
     padding: 8,
-    marginTop: 50,
+    marginTop: 5,
   },
 
   header: {
@@ -181,7 +190,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 250,
     height: 110,
-    marginTop: 30,
+    marginTop: 5,
   },
 
  card: {

@@ -12,8 +12,12 @@ import {
   Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function ResetPasswordScreen() {
+
+  const router = useRouter();
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -57,7 +61,10 @@ export default function ResetPasswordScreen() {
         <View style={styles.container}>
 
           {/* BACK */}
-          <TouchableOpacity style={styles.backButton}>
+          <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.replace("/VerifyScreen")}
+          >
             <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
           </TouchableOpacity>
 
@@ -192,7 +199,7 @@ const styles = StyleSheet.create({
     left: 15,
     zIndex: 10,
     padding: 8,
-    marginTop: 50,
+    marginTop: 5,
   },
 
   header: {
@@ -203,7 +210,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 250,
     height: 150,
-    marginTop: 15,
+    marginTop: 5,
   },
 
   card: {
