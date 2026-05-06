@@ -1,9 +1,501 @@
-import { View, Text } from "react-native";
+import React, { useEffect, useRef } from "react";
 
-export default function SplashScreen() {
+import {
+    View,
+    Text,
+    StyleSheet,
+    Animated,
+    Dimensions,
+    StatusBar,
+    Image,
+    ImageBackground,
+} from "react-native";
+
+import { LinearGradient } from "expo-linear-gradient";
+
+import Colors from "../constants/colors";
+
+import {router, SplashScreen} from "expo-router";
+
+const { width, height } = Dimensions.get("window");
+
+export default function SplashScreenn() {
+
+    const logoScale = useRef(new Animated.Value(0.7)).current;
+    const logoOpacity = useRef(new Animated.Value(0)).current;
+
+    const titleTY = useRef(new Animated.Value(24)).current;
+    const titleOp = useRef(new Animated.Value(0)).current;
+
+    const subOp = useRef(new Animated.Value(0)).current;
+
+    const badgeOp = useRef(new Animated.Value(0)).current;
+
+    const barWidth = useRef(new Animated.Value(0)).current;
+
+    const bottomOp = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.sequence([
+            Animated.parallel([
+                Animated.spring(logoScale, {
+                    toValue: 1,
+                    tension: 80,
+                    friction: 8,
+                    useNativeDriver: true,
+                }),
+
+                Animated.timing(logoOpacity, {
+                    toValue: 1,
+                    duration: 600,
+                    useNativeDriver: true,
+                }),
+            ]),
+
+            Animated.delay(100),
+
+            Animated.parallel([
+                Animated.timing(titleTY, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+
+                Animated.timing(titleOp, {
+                    toValue: 1,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+            ]),
+
+            Animated.delay(150),
+
+            Animated.parallel([
+                Animated.timing(subOp, {
+                    toValue: 1,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+
+                Animated.timing(badgeOp, {
+                    toValue: 1,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+            ]),
+
+            Animated.delay(200),
+
+            Animated.parallel([
+                Animated.timing(bottomOp, {
+                    toValue: 1,
+                    duration: 400,
+                    useNativeDriver: true,
+                }),
+
+                Animated.timing(barWidth, {
+                    toValue: 180 * 1.5,
+                    duration: 1800,
+                    useNativeDriver: false,
+                }),
+            ]),
+        ]).start(() => {
+            setTimeout(() => {
+                router.replace("/(onboarding)");
+            }, 400);
+        });
+    }, []);
+
     return (
-        <View>
-            <Text>Splash Screen</Text>
+        <View style={styles.container}>
+            <StatusBar
+                translucent
+                backgroundColor="transparent"
+                barStyle="dark-content"
+            />
+
+            {/* Background */}
+            <ImageBackground
+                source={require("../assets/images/splash-bg.png")}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+
+            >
+                <View
+                    style={{
+                        ...StyleSheet.absoluteFillObject,
+                        backgroundColor: "rgba(255,255,255,0.88)",
+                    }}
+                />
+            </ImageBackground>
+
+            {/* Decorative elements */}
+            <View style={[styles.decorRing, styles.ringTL1]} />
+            <View style={[styles.decorRing, styles.ringTL2]} />
+
+            <View style={[styles.decorRing, styles.ringBR1]} />
+            <View style={[styles.decorRing, styles.ringBR2]} />
+
+            <View style={styles.diamond} />
+
+            {/* Brand stripe */}
+            <LinearGradient
+                colors={[
+                    "transparent",
+                    Colors.navy,
+                    Colors.cyan,
+                    Colors.green,
+                    "transparent",
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.brandStripe}
+            />
+
+            {/* Main content */}
+            <View style={styles.content}>
+
+
+                {/* Animated logo */}
+                <Animated.View
+                    style={[
+                        styles.logoWrap,
+                        {
+                            opacity: logoOpacity,
+                            transform: [{ scale: logoScale }],
+                        },
+                    ]}
+                >
+                    {/* SMALL ICON FIRST */}
+                    <Image
+                        source={require("../assets/images/icon_main.png")}
+                        style={styles.iconMain}
+                    />
+
+                    {/* MAIN LOGO */}
+                    <Image
+                        source={require("../assets/logo.png")}
+                        style={styles.logo}
+                    />
+                </Animated.View>
+
+                {/* Text block */}
+                <Animated.View
+                    style={[
+                        styles.titleBlock,
+                        {
+                            opacity: titleOp,
+                            transform: [{ translateY: titleTY }],
+                        },
+                    ]}
+                >
+                    <View style={styles.titleRow}>
+                        <Text
+                            style={[
+                                styles.titleText,
+                                { color: Colors.green, fontSize: 44 },
+                            ]}
+                        >
+                            S
+                        </Text>
+
+                        <Text style={[styles.titleText, { color: Colors.navy }]}>
+                            OMAP
+                        </Text>
+
+                        <Text style={[styles.titleText, { color: Colors.cyan }]}>
+                            {" "}
+                            &{" "}
+                        </Text>
+
+                        <Text style={[styles.titleText, { color: Colors.green }]}>
+                            SERVICE
+                        </Text>
+                    </View>
+
+                    <Animated.Text
+                        style={[styles.subtitle, { opacity: subOp }]}
+                    >
+                        Solutions industrielles intelligentes
+                    </Animated.Text>
+
+                    <LinearGradient
+                        colors={[Colors.green, Colors.cyan]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.divider}
+                    />
+
+                    <Animated.Text
+                        style={[styles.tagline, { opacity: subOp }]}
+                    >
+                        Société marocaine des produits chimiques et services
+                    </Animated.Text>
+
+                    <Animated.View
+                        style={[styles.badgeRow, { opacity: badgeOp }]}
+                    >
+                        <View style={[styles.badge, styles.badgeNavy]}>
+                            <Text style={[styles.badgeText, { color: Colors.navy }]}>
+                                Chimie
+                            </Text>
+                        </View>
+
+                        <View style={[styles.badge, styles.badgeCyan]}>
+                            <Text
+                                style={[styles.badgeText, { color: Colors.cyanDark }]}
+                            >
+                                Eau
+                            </Text>
+                        </View>
+
+                        <View style={[styles.badge, styles.badgeGreen]}>
+                            <Text
+                                style={[styles.badgeText, { color: Colors.greenDark }]}
+                            >
+                                Industrie
+                            </Text>
+                        </View>
+                    </Animated.View>
+                </Animated.View>
+            </View>
+
+            {/* Bottom */}
+            <Animated.View
+                style={[styles.bottomSection, { opacity: bottomOp }]}
+            >
+                <Text style={styles.loadingLabel}>
+                    Chargement en cours...
+                </Text>
+
+                <View style={styles.barTrack}>
+                    <Animated.View
+                        style={{
+                            width: barWidth,
+                            overflow: "hidden",
+                            height: 3,
+                            borderRadius: 99,
+                        }}
+                    >
+                        <LinearGradient
+                            colors={[Colors.navy, Colors.cyan, Colors.green]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{ flex: 1 }}
+                        />
+                    </Animated.View>
+                </View>
+
+                <Text style={styles.footer}>
+                    Kenitra · Maroc | v1.0.0
+                </Text>
+            </Animated.View>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: 40,
+        paddingBottom: 28,
+        paddingHorizontal: 24,
+        backgroundColor: "#ffffff",
+    },
+
+    decorRing: {
+        position: "absolute",
+        borderRadius: 999,
+        borderWidth: 1.5,
+    },
+
+    ringTL1: {
+        width: 220,
+        height: 220,
+        top: -60,
+        left: -60,
+        borderColor: "rgba(143,189,105,0.15)",
+    },
+
+    ringTL2: {
+        width: 130,
+        height: 130,
+        top: -20,
+        left: -20,
+        borderColor: "rgba(19,172,213,0.10)",
+        borderWidth: 1,
+    },
+
+    ringBR1: {
+        width: 260,
+        height: 260,
+        bottom: -60,
+        right: -60,
+        borderColor: "rgba(49,80,127,0.10)",
+    },
+
+    ringBR2: {
+        width: 150,
+        height: 150,
+        bottom: -10,
+        right: -10,
+        borderColor: "rgba(143,189,105,0.10)",
+        borderWidth: 1,
+    },
+
+    diamond: {
+        position: "absolute",
+        width: 70,
+        height: 70,
+        right: -20,
+        top: height * 0.42,
+        borderWidth: 1,
+        borderColor: "rgba(49,80,127,0.10)",
+        transform: [{ rotate: "45deg" }],
+    },
+
+    brandStripe: {
+        position: "absolute",
+        top: height * 0.55,
+        left: 0,
+        right: 0,
+        height: 3,
+        opacity: 0.65,
+    },
+
+    content: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+    },
+
+    logoWrap: {
+        alignItems: "center",
+        marginBottom: 8, // was 28 → reduce gap
+    },
+
+    logo: {
+        width: 160,
+        height: 160,
+        resizeMode: "contain", // 👈 this makes it float on top
+        top: -90,               // 👈 controls how high it sits
+    },
+
+    titleBlock: {
+        alignItems: "center",
+    },
+
+    titleRow: {
+        flexDirection: "row",
+        alignItems: "flex-end",
+        flexWrap: "wrap",
+        justifyContent: "center",
+    },
+
+    titleText: {
+        fontSize: 36,
+        fontWeight: "700",
+        lineHeight: 40,
+        letterSpacing: 1,
+    },
+
+    subtitle: {
+        fontSize: 11,
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        color: Colors.cyan,
+        textAlign: "center",
+        marginTop: 4,
+    },
+
+    divider: {
+        width: 50,
+        height: 2,
+        borderRadius: 2,
+        marginVertical: 12,
+    },
+
+    tagline: {
+        fontSize: 11,
+        color: Colors.textMuted,
+        textAlign: "center",
+        fontStyle: "italic",
+        letterSpacing: 0.4,
+        paddingHorizontal: 16,
+    },
+
+    badgeRow: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 18,
+    },
+
+    badge: {
+        paddingVertical: 4,
+        paddingHorizontal: 12,
+        borderRadius: 99,
+        borderWidth: 1,
+    },
+
+    badgeNavy: {
+        backgroundColor: "rgba(49,80,127,0.06)",
+        borderColor: "rgba(49,80,127,0.25)",
+    },
+
+    badgeCyan: {
+        backgroundColor: "rgba(19,172,213,0.06)",
+        borderColor: "rgba(19,172,213,0.25)",
+    },
+
+    badgeGreen: {
+        backgroundColor: "rgba(143,189,105,0.08)",
+        borderColor: "rgba(143,189,105,0.3)",
+    },
+
+    badgeText: {
+        fontSize: 9,
+        fontWeight: "500",
+        letterSpacing: 1.5,
+        textTransform: "uppercase",
+    },
+
+    bottomSection: {
+        alignItems: "center",
+        gap: 12,
+    },
+
+    loadingLabel: {
+        fontSize: 10,
+        letterSpacing: 2,
+        color: Colors.navy,
+        fontWeight: "600",
+        textTransform: "uppercase",
+        textShadowColor: "rgba(19,172,213,0.25)",
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 6,
+    },
+
+    barTrack: {
+        width: 200,
+        height: 4,
+        backgroundColor: "rgba(19,172,213,0.12)",
+        borderRadius: 99,
+        overflow: "hidden",
+    },
+
+    footer: {
+        fontSize: 9,
+        letterSpacing: 1.2,
+        color: "rgba(49,80,127,0.55)", // navy with transparency = elegant
+        textTransform: "uppercase",
+    },
+    iconMain: {
+        width: 180,
+        height: 180,
+        resizeMode: "contain",
+        marginBottom: -108,
+    },
+});

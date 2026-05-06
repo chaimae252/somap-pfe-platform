@@ -1,0 +1,46 @@
+<svg width="600" height="160" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a3cc72"/>
+      <stop offset="100%" stop-color="#8FBD69"/>
+    </linearGradient>
+    <linearGradient id="dropLg" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#73C0DF"/>
+      <stop offset="100%" stop-color="#13ACD5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Big decorative S -->
+  <text x="0" y="138" font-family="Arial Black, sans-serif" font-size="145" font-weight="900"
+        fill="url(#sGreen)">S</text>
+
+  <!-- Company name top -->
+  <text x="120" y="62" font-family="Arial, sans-serif" font-size="26" font-weight="700"
+        fill="#3a4a5a">Société marocaine des produits</text>
+  <text x="120" y="96" font-family="Arial, sans-serif" font-size="26" font-weight="700"
+        fill="#3a4a5a">chimiques et services</text>
+
+  <!-- Water drop -->
+  <g transform="translate(530, 18)">
+    <path d="M28 0 Q52 32 52 50 A24 24 0 0 1 4 50 Q4 32 28 0Z" fill="url(#dropLg)"/>
+    <ellipse cx="18" cy="36" rx="6" ry="10" fill="rgba(255,255,255,0.4)" transform="rotate(-20 18 36)"/>
+  </g>
+
+  <!-- Horizontal rule lines -->
+  <line x1="108" y1="106" x2="592" y2="106" stroke="#31507F" stroke-width="3"/>
+  <line x1="108" y1="111" x2="592" y2="111" stroke="#8FBD69" stroke-width="1.5"/>
+
+  <!-- Brand name bottom -->
+  <!-- S in green -->
+  <text x="104" y="152" font-family="Arial Black, sans-serif" font-size="46" font-weight="900"
+        fill="url(#sGreen)">S</text>
+  <!-- OMAP in blue -->
+  <text x="138" y="152" font-family="Arial Black, sans-serif" font-size="46" font-weight="900"
+        fill="#31507F">OMAP</text>
+  <!-- & in cyan -->
+  <text x="332" y="152" font-family="Arial Black, sans-serif" font-size="46" font-weight="900"
+        fill="#13ACD5">&amp;</text>
+  <!-- SERVICE in green -->
+  <text x="370" y="152" font-family="Arial Black, sans-serif" font-size="46" font-weight="900"
+        fill="url(#sGreen)">SERVICE</text>
+</svg>
