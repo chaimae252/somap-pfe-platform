@@ -13,47 +13,39 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
-export default function RegisterScreen() {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [agree, setAgree] = useState(false);
+export default function ResetPasswordScreen() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [touched, setTouched] = useState({
-    name: false,
-    email: false,
-    phone: false,
-    password: false,
+    current: false,
+    new: false,
+    confirm: false,
   });
 
   const [pressed, setPressed] = useState(false);
 
-  /* VALIDATION */
-  const isNameValid = fullName.trim().length > 0;
-  const isEmailValid = email.includes("@");
-  const isPhoneValid = phone.trim().length >= 8;
-  const isPasswordValid = password.length >= 6;
+  /* ================= VALIDATION ================= */
 
-  const isFormValid =
-    isNameValid && isEmailValid && isPhoneValid && isPasswordValid;
+  const isCurrentValid = currentPassword.trim().length > 0;
+  const isNewValid = newPassword.length >= 6;
+  const isMatch = newPassword === confirmPassword;
+  const isConfirmValid = isMatch && confirmPassword.length > 0;
 
-  const markTouched = (field: keyof typeof touched) => {
+  const isFormValid = isCurrentValid && isNewValid && isConfirmValid;
+
+ const markTouched = (field: keyof typeof touched) => {
   setTouched((prev) => ({ ...prev, [field]: true }));
 };
 
-  const handleRegister = () => {
+  const handleSubmit = () => {
     if (!isFormValid) {
       Alert.alert("Erreur", "Veuillez vérifier les champs.");
       return;
     }
 
-    if (!agree) {
-      Alert.alert("Erreur", "Vous devez accepter les conditions.");
-      return;
-    }
-
-    Alert.alert("Succès", "Compte créé !");
+    Alert.alert("Succès", "Mot de passe mis à jour !");
   };
 
   return (
@@ -83,96 +75,78 @@ export default function RegisterScreen() {
 
             <View style={styles.cardHeader}>
               <Image
-                source={require("@/assets/images/regi.png")}
+                source={require("@/assets/images/resetPas.png")}
                 style={styles.topImage}
                 resizeMode="contain"
               />
 
-              <Text style={styles.title}>Créer un compte</Text>
+              <Text style={styles.title}>
+                Réinitialiser le mot de passe
+              </Text>
+
+              <Text style={styles.subtitle}>
+                Choisissez un mot de passe fort et sécurisé
+              </Text>
             </View>
 
-            {/* FULL NAME */}
+            {/* CURRENT */}
             <TextInput
-              placeholder="Nom complet"
+              placeholder="Mot de passe actuel"
               placeholderTextColor="#8e9aaf"
               style={[
                 styles.input,
-                !isNameValid && touched.name && styles.inputError,
-              ]}
-              value={fullName}
-              onChangeText={setFullName}
-              onBlur={() => markTouched("name")}
-            />
-            <Text style={styles.error}>
-              {!isNameValid && touched.name ? "Nom requis" : " "}
-            </Text>
-
-            {/* EMAIL */}
-            <TextInput
-              placeholder="Adresse email"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isEmailValid && touched.email && styles.inputError,
-              ]}
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => markTouched("email")}
-            />
-            <Text style={styles.error}>
-              {!isEmailValid && touched.email ? "Email invalide" : " "}
-            </Text>
-
-            {/* PHONE */}
-            <TextInput
-              placeholder="Numéro de téléphone"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isPhoneValid && touched.phone && styles.inputError,
-              ]}
-              value={phone}
-              onChangeText={setPhone}
-              onBlur={() => markTouched("phone")}
-            />
-            <Text style={styles.error}>
-              {!isPhoneValid && touched.phone ? "Numéro invalide" : " "}
-            </Text>
-
-            {/* PASSWORD */}
-            <TextInput
-              placeholder="Mot de passe (min 6 caractères)"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isPasswordValid &&
-                  touched.password &&
-                  styles.inputError,
+                !isCurrentValid && touched.current && styles.inputError,
               ]}
               secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onBlur={() => markTouched("password")}
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+              onBlur={() => markTouched("current")}
             />
             <Text style={styles.error}>
-              {!isPasswordValid && touched.password
-                ? "Mot de passe trop court"
+              {!isCurrentValid && touched.current
+                ? "Champ requis"
                 : " "}
             </Text>
 
-            {/* TERMS */}
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => setAgree(!agree)}
-            >
-              <Text style={styles.checkbox}>
-                {agree ? "☑" : "☐"}
-              </Text>
+            {/* NEW */}
+            <TextInput
+              placeholder="Nouveau mot de passe (min 6)"
+              placeholderTextColor="#8e9aaf"
+              style={[
+                styles.input,
+                !isNewValid && touched.new && styles.inputError,
+              ]}
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+              onBlur={() => markTouched("new")}
+            />
+            <Text style={styles.error}>
+              {!isNewValid && touched.new
+                ? "Min 6 caractères"
+                : " "}
+            </Text>
 
-              <Text style={styles.terms}>
-                J’accepte les conditions d’utilisation
-              </Text>
-            </TouchableOpacity>
+            {/* CONFIRM */}
+            <TextInput
+              placeholder="Confirmer le mot de passe"
+              placeholderTextColor="#8e9aaf"
+              style={[
+                styles.input,
+                !isConfirmValid &&
+                  touched.confirm &&
+                  styles.inputError,
+              ]}
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              onBlur={() => markTouched("confirm")}
+            />
+            <Text style={styles.error}>
+              {!isConfirmValid && touched.confirm
+                ? "Les mots de passe ne correspondent pas"
+                : " "}
+            </Text>
 
             {/* BUTTON */}
             <TouchableOpacity
@@ -180,12 +154,12 @@ export default function RegisterScreen() {
                 styles.button,
                 pressed && styles.buttonPressed,
               ]}
-              onPress={handleRegister}
+              onPress={handleSubmit}
               onPressIn={() => setPressed(true)}
               onPressOut={() => setPressed(false)}
             >
               <Text style={styles.buttonText}>
-                Créer le compte
+                Valider
               </Text>
             </TouchableOpacity>
 
@@ -228,17 +202,17 @@ const styles = StyleSheet.create({
 
   logo: {
     width: 250,
-    height: 110,
-    marginTop: 30,
+    height: 150,
+    marginTop: 15,
   },
 
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 32,
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 24,
-  },
+  backgroundColor: "#fff",
+  borderRadius: 32,
+  marginHorizontal: 20,
+  marginTop: 20,
+  padding: 24,
+},
 
   cardHeader: {
     alignItems: "center",
@@ -246,13 +220,22 @@ const styles = StyleSheet.create({
   },
 
   topImage: {
-    width: 140,
-    height: 140,
+    width: 120,
+    height: 120,
   },
 
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
+    textAlign: "center",
+    marginTop: 20,
+  },
+
+  subtitle: {
+    fontSize: 13,
+    color: "#6a7c94",
+    textAlign: "center",
+    marginTop: 10,
   },
 
   input: {
@@ -263,6 +246,7 @@ const styles = StyleSheet.create({
   borderColor: "#8cd1b2",
   marginTop: 10,
   },
+
   inputError: {
     borderColor: "#e04f5f",
     backgroundColor: "#fff8f8",
@@ -274,28 +258,12 @@ const styles = StyleSheet.create({
     minHeight: 16,
   },
 
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20,
-  },
-
-  checkbox: {
-    marginRight: 8,
-    color: "#1564c0",
-  },
-
-  terms: {
-    fontSize: 13,
-    color: "#6a7c94",
-  },
-
   button: {
     backgroundColor: "#1564c0",
     padding: 14,
     borderRadius: 40,
     alignItems: "center",
+    marginTop: 10,
   },
 
   buttonPressed: {
