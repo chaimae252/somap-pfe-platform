@@ -1,3 +1,14 @@
+import { login } from "@/services/authService";
+import {
+  saveToken,
+  saveUser,
+} from "@/utils/storage";
+import { useAuthStore } from "@/store/authStore";
+import {
+  validateEmail,
+  validateLoginPassword,
+} from "@/utils/validators";
+
 import React, { useState } from "react";
 import {
   View,
@@ -16,6 +27,7 @@ import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
 
+  const { setAuth } = useAuthStore();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -31,8 +43,8 @@ export default function LoginScreen() {
 
   /* ================= VALIDATION ================= */
 
-  const isEmailValid = email.includes("@");
-  const isPasswordValid = password.length >= 6;
+  const isEmailValid = validateEmail(email);
+  const isPasswordValid = validateLoginPassword(password);
 
   const isFormValid = isEmailValid && isPasswordValid;
 
@@ -40,13 +52,48 @@ export default function LoginScreen() {
   setTouched((prev) => ({ ...prev, [field]: true }));
 };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+
     if (!isFormValid) {
-      Alert.alert("Erreur", "Veuillez vérifier vos informations.");
+      Alert.alert(
+          "Erreur",
+          "Veuillez vérifier vos informations."
+      );
       return;
     }
 
-    Alert.alert("Succès", "Connexion réussie !");
+    try {
+
+      const data = await login({
+        email,
+        motDePasse: password,
+      });
+
+      // Save token
+      await saveToken(data.token);
+
+      // Save user
+      await saveUser(data);
+
+      // Update global store
+      setAuth(data.token, data);
+
+      Alert.alert(
+          "Succès",
+          "Connexion réussie !"
+      );
+
+      router.replace("/home");
+
+    } catch (error: any) {
+
+      console.log(error?.response?.data);
+
+      Alert.alert(
+          "Erreur",
+          "Email ou mot de passe incorrect"
+      );
+    }
   };
 
   return (
