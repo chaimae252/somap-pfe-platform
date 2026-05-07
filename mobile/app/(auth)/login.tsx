@@ -1,13 +1,13 @@
 import { login } from "@/services/authService";
-import {
-  saveToken,
-  saveUser,
-} from "@/utils/storage";
 import { useAuthStore } from "@/store/authStore";
 import {
   validateEmail,
   validateLoginPassword,
 } from "@/utils/validators";
+import {
+  saveToken,
+  saveUser,
+} from "@/utils/storage";
 
 import React, { useState } from "react";
 import {
@@ -54,10 +54,13 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
 
-    if (!isFormValid) {
+    const emailValid = validateEmail(email);
+    const passwordValid = validateLoginPassword(password);
+
+    if (!emailValid || !passwordValid) {
       Alert.alert(
           "Erreur",
-          "Veuillez vérifier vos informations."
+          "Veuillez vérifier vos informations"
       );
       return;
     }
@@ -69,25 +72,17 @@ export default function LoginScreen() {
         motDePasse: password,
       });
 
-      // Save token
       await saveToken(data.token);
-
-      // Save user
       await saveUser(data);
-
-      // Update global store
-      setAuth(data.token, data);
 
       Alert.alert(
           "Succès",
-          "Connexion réussie !"
+          "Connexion réussie"
       );
 
       router.replace("/home");
 
-    } catch (error: any) {
-
-      console.log(error?.response?.data);
+    } catch (error) {
 
       Alert.alert(
           "Erreur",

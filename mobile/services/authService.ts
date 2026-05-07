@@ -15,3 +15,19 @@ export const login = async (
 
     return response.data;
 };
+
+export const register = async (data: {
+    nom: string;
+    email: string;
+    motDePasse: string;
+    telephone: string;
+    adresse?: string;
+}) => {
+
+    const response = await api.post(
+        "/auth/register",
+        data
+    );
+
+    return response.data;
+};

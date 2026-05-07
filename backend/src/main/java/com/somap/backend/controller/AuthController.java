@@ -1,5 +1,6 @@
 package com.somap.backend.controller;
 
+import com.somap.backend.dto.AuthResponseDTO;
 import com.somap.backend.dto.ClientRegisterDTO;
 import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
@@ -17,14 +18,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(
-            @RequestBody ClientRegisterDTO clientRegisterRequestDTO
+    public ResponseEntity<AuthResponseDTO> register(
+            @RequestBody ClientRegisterDTO dto
     ) {
-
-        authService.registerClient(clientRegisterRequestDTO);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Utilisateur créé avec succès");
+        return ResponseEntity.ok(
+                authService.registerClient(dto)
+        );
     }
 
     @PostMapping("/login")

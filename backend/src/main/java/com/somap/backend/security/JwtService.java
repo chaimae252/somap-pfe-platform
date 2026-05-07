@@ -1,5 +1,6 @@
 package com.somap.backend.security;
 
+import com.somap.backend.entity.Utilisateur;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,12 +20,15 @@ public class JwtService {
     }
 
     // Generate token
-    public String generateToken(String email) {
+    public String generateToken(Utilisateur user) {
+
+        if (user.getRole() == null) {
+            throw new RuntimeException("User role is null");
+        }
+
         return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 1 day
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .setSubject(user.getEmail())
+                .claim("role", user.getRole().name())
                 .compact();
     }
 

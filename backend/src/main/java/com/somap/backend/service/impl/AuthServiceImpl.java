@@ -1,5 +1,6 @@
 package com.somap.backend.service.impl;
 
+import com.somap.backend.dto.AuthResponseDTO;
 import com.somap.backend.dto.ClientRegisterDTO;
 import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
@@ -17,8 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -33,21 +32,28 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void registerClient(ClientRegisterDTO dto) {
+    public AuthResponseDTO registerClient(ClientRegisterDTO dto) {
 
         Client client = new Client();
-
         client.setNom(dto.getNom());
         client.setEmail(dto.getEmail());
-
-        // 🔥 IMPORTANT FIX
         client.setMotDePasse(passwordEncoder.encode(dto.getMotDePasse()));
-
         client.setTelephone(dto.getTelephone());
         client.setAdresse(dto.getAdresse());
         client.setRole(Role.CLIENT);
 
         clientRepository.save(client);
+
+        String token = jwtService.generateToken(client);
+
+        AuthResponseDTO response = new AuthResponseDTO();
+        response.setToken(token);
+        response.setId(client.getId());
+        response.setNom(client.getNom());
+        response.setEmail(client.getEmail());
+        response.setRole("CLIENT");
+
+        return response;
     }
 
     @Override
@@ -63,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
         Utilisateur user = utilisateurRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateToken(user);
 
         return new LoginResponseDTO(token);
     }

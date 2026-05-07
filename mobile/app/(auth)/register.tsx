@@ -1,3 +1,13 @@
+import {
+  validateEmail, validateName, validatePhone,
+  validateRegisterPassword,
+} from "@/utils/validators";
+
+import {
+  saveToken,
+  saveUser,
+} from "@/utils/storage";
+
 import React, { useState } from "react";
 import {
   View,
@@ -11,8 +21,11 @@ import {
   Platform,
   Alert,
 } from "react-native";
+
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { register } from "@/services/authService";
+
 export default function RegisterScreen() {
 
   const router = useRouter();
@@ -32,173 +45,213 @@ export default function RegisterScreen() {
 
   const [pressed, setPressed] = useState(false);
 
-  /* VALIDATION */
-  const isNameValid = fullName.trim().length > 0;
-  const isEmailValid = email.includes("@");
-  const isPhoneValid = phone.trim().length >= 8;
-  const isPasswordValid = password.length >= 6;
+  /* ================= VALIDATION ================= */
 
-  const isFormValid =
-    isNameValid && isEmailValid && isPhoneValid && isPasswordValid;
+  const isNameValid = validateName(fullName);
+  const isEmailValid = validateEmail(email);
+  const isPhoneValid = validatePhone(phone);
+  const isPasswordValid = validateRegisterPassword(password);
 
   const markTouched = (field: keyof typeof touched) => {
-  setTouched((prev) => ({ ...prev, [field]: true }));
-};
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
 
-  const handleRegister = () => {
-    if (!isFormValid) {
-      Alert.alert("Erreur", "Veuillez vérifier les champs.");
+  /* ================= REGISTER ================= */
+
+  const handleRegister = async () => {
+    const emailValid = validateEmail(email);
+    const passwordValid = validateRegisterPassword(password);
+    const nameValid = validateName(fullName);
+    const phoneValid = validatePhone(phone);
+
+    if (!emailValid || !passwordValid || !nameValid || !phoneValid) {
+      Alert.alert("Erreur", "Vérifie tes champs");
       return;
     }
 
     if (!agree) {
-      Alert.alert("Erreur", "Vous devez accepter les conditions.");
+      Alert.alert("Erreur", "Accepte les conditions");
       return;
     }
 
-    Alert.alert("Succès", "Compte créé !");
+    try {
+      const data = await register({
+        nom: fullName,
+        email,
+        motDePasse: password,
+        telephone: phone,
+        adresse: "",
+      });
+
+      console.log("REGISTER RESPONSE 👉", data);
+
+      // ⚡ AUTO LOGIN SAFE VERSION
+      if (data?.token) {
+        await saveToken(data.token);
+      }
+
+      if (data?.user) {
+        await saveUser(data.user);
+      } else {
+        await saveUser(data);
+      }
+
+      Alert.alert("Succès", "Compte créé 🎉");
+
+      router.replace("/home");
+
+    } catch (error: any) {
+      console.log("REGISTER ERROR 👉", error?.response?.data || error);
+
+      Alert.alert(
+          "Erreur",
+          error?.response?.data?.message || "Impossible de créer le compte"
+      );
+    }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-      >
-        <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardView}
+        >
+          <View style={styles.container}>
 
-          {/* BACK */}
-          <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.replace("/login")}
-          >
-            <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
-          </TouchableOpacity>
+            {/* BACK */}
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.replace("/login")}
+            >
+              <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
+            </TouchableOpacity>
 
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logomob.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* CARD */}
-          <View style={styles.card}>
-
-            <View style={styles.cardHeader}>
+            {/* HEADER */}
+            <View style={styles.header}>
               <Image
-                source={require("@/assets/images/regi.png")}
-                style={styles.topImage}
-                resizeMode="contain"
+                  source={require("@/assets/images/logomob.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
               />
-
-              <Text style={styles.title}>Créer un compte</Text>
             </View>
 
-            {/* FULL NAME */}
-            <TextInput
-              placeholder="Nom complet"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isNameValid && touched.name && styles.inputError,
-              ]}
-              value={fullName}
-              onChangeText={setFullName}
-              onBlur={() => markTouched("name")}
-            />
-            <Text style={styles.error}>
-              {!isNameValid && touched.name ? "Nom requis" : " "}
-            </Text>
+            {/* CARD */}
+            <View style={styles.card}>
 
-            {/* EMAIL */}
-            <TextInput
-              placeholder="Adresse email"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isEmailValid && touched.email && styles.inputError,
-              ]}
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => markTouched("email")}
-            />
-            <Text style={styles.error}>
-              {!isEmailValid && touched.email ? "Email invalide" : " "}
-            </Text>
+              <View style={styles.cardHeader}>
+                <Image
+                    source={require("@/assets/images/regi.png")}
+                    style={styles.topImage}
+                    resizeMode="contain"
+                />
 
-            {/* PHONE */}
-            <TextInput
-              placeholder="Numéro de téléphone"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isPhoneValid && touched.phone && styles.inputError,
-              ]}
-              value={phone}
-              onChangeText={setPhone}
-              onBlur={() => markTouched("phone")}
-            />
-            <Text style={styles.error}>
-              {!isPhoneValid && touched.phone ? "Numéro invalide" : " "}
-            </Text>
+                <Text style={styles.title}>Créer un compte</Text>
+              </View>
 
-            {/* PASSWORD */}
-            <TextInput
-              placeholder="Mot de passe (min 6 caractères)"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isPasswordValid &&
-                  touched.password &&
-                  styles.inputError,
-              ]}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onBlur={() => markTouched("password")}
-            />
-            <Text style={styles.error}>
-              {!isPasswordValid && touched.password
-                ? "Mot de passe trop court"
-                : " "}
-            </Text>
+              {/* FULL NAME */}
+              <TextInput
+                  placeholder="Nom complet"
+                  placeholderTextColor="#8e9aaf"
+                  style={[
+                    styles.input,
+                    !isNameValid && touched.name && styles.inputError,
+                  ]}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  onBlur={() => markTouched("name")}
+              />
 
-            {/* TERMS */}
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => setAgree(!agree)}
-            >
-              <Text style={styles.checkbox}>
-                {agree ? "☑" : "☐"}
+              <Text style={styles.error}>
+                {!isNameValid && touched.name ? "Nom requis" : " "}
               </Text>
 
-              <Text style={styles.terms}>
-                J’accepte les conditions d’utilisation
-              </Text>
-            </TouchableOpacity>
+              {/* EMAIL */}
+              <TextInput
+                  placeholder="Adresse email"
+                  placeholderTextColor="#8e9aaf"
+                  style={[
+                    styles.input,
+                    !isEmailValid && touched.email && styles.inputError,
+                  ]}
+                  value={email}
+                  onChangeText={setEmail}
+                  onBlur={() => markTouched("email")}
+              />
 
-            {/* BUTTON */}
-            <TouchableOpacity
-              style={[
-                styles.button,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={handleRegister}
-              onPressIn={() => setPressed(true)}
-              onPressOut={() => setPressed(false)}
-            >
-              <Text style={styles.buttonText}>
-                Créer le compte
+              <Text style={styles.error}>
+                {!isEmailValid && touched.email ? "Email invalide" : " "}
               </Text>
-            </TouchableOpacity>
 
+              {/* PHONE */}
+              <TextInput
+                  placeholder="Numéro de téléphone"
+                  placeholderTextColor="#8e9aaf"
+                  style={[
+                    styles.input,
+                    !isPhoneValid && touched.phone && styles.inputError,
+                  ]}
+                  value={phone}
+                  onChangeText={setPhone}
+                  onBlur={() => markTouched("phone")}
+              />
+
+              <Text style={styles.error}>
+                {!isPhoneValid && touched.phone ? "Numéro invalide" : " "}
+              </Text>
+
+              {/* PASSWORD */}
+              <TextInput
+                  placeholder="Mot de passe (min 6 caractères)"
+                  placeholderTextColor="#8e9aaf"
+                  style={[
+                    styles.input,
+                    !isPasswordValid && touched.password && styles.inputError,
+                  ]}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  onBlur={() => markTouched("password")}
+              />
+
+              <Text style={styles.error}>
+                {!isPasswordValid && touched.password
+                    ? "Mot de passe trop court"
+                    : " "}
+              </Text>
+
+              {/* TERMS */}
+              <TouchableOpacity
+                  style={styles.row}
+                  onPress={() => setAgree(!agree)}
+              >
+                <Text style={styles.checkbox}>
+                  {agree ? "☑" : "☐"}
+                </Text>
+
+                <Text style={styles.terms}>
+                  J’accepte les conditions d’utilisation
+                </Text>
+              </TouchableOpacity>
+
+              {/* BUTTON */}
+              <TouchableOpacity
+                  style={[
+                    styles.button,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={handleRegister}
+                  onPressIn={() => setPressed(true)}
+                  onPressOut={() => setPressed(false)}
+              >
+                <Text style={styles.buttonText}>
+                  Créer le compte
+                </Text>
+              </TouchableOpacity>
+
+            </View>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
   );
 }
 
