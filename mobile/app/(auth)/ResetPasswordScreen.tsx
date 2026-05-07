@@ -97,23 +97,7 @@ export default function ResetPasswordScreen() {
             </View>
 
             {/* CURRENT */}
-            <TextInput
-              placeholder="Mot de passe actuel"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isCurrentValid && touched.current && styles.inputError,
-              ]}
-              secureTextEntry
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              onBlur={() => markTouched("current")}
-            />
-            <Text style={styles.error}>
-              {!isCurrentValid && touched.current
-                ? "Champ requis"
-                : " "}
-            </Text>
+             
 
             {/* NEW */}
             <TextInput
