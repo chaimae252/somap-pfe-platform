@@ -1,7 +1,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// ipconfig Chaimae: http://10.0.2.2:8080/api // // Manal http://192.168.197.1:8080/api
+// ipconfig Chaimae: http://10.0.2.2:8080/api // // Manal http://192.168.1.105:8080/api
 const api = axios.create({
     baseURL: "http://10.0.2.2:8080/api",
     headers: {
