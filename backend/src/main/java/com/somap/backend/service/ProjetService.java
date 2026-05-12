@@ -15,4 +15,6 @@ public interface ProjetService {
     ProjetDTO updateProjet(Long id, ProjetDTO projetDTO);
 
     void deleteProjet(Long id);
+
+    ProjetDTO getCurrentProject(Long clientId);
 }

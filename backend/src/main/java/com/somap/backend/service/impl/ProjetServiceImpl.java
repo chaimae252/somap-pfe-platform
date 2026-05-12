@@ -5,6 +5,7 @@ import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Projet;
 import com.somap.backend.exception.ResourceNotFoundException;
+import com.somap.backend.mapper.ProjetMapper;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.repository.ProjetRepository;
@@ -23,6 +24,7 @@ public class ProjetServiceImpl implements ProjetService {
     private final ProjetRepository projetRepository;
     private final ClientRepository clientRepository;
     private final DemandeRepository demandeRepository;
+
 
     @Override
     public ProjetDTO createProjet(ProjetDTO projetDTO) {
@@ -131,5 +133,17 @@ public class ProjetServiceImpl implements ProjetService {
         }
 
         return dto;
+    }
+
+    @Override
+    public ProjetDTO getCurrentProject(Long clientId) {
+
+        Projet projet = projetRepository
+                .findFirstByClientIdOrderByDateDebutDesc(clientId)
+                .orElseThrow(() ->
+                        new RuntimeException("Aucun projet trouvé")
+                );
+
+        return mapToDTO(projet);
     }
 }

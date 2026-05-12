@@ -49,8 +49,10 @@ export default function LoginScreen() {
   const isFormValid = isEmailValid && isPasswordValid;
 
   const markTouched = (field: keyof typeof touched) => {
-  setTouched((prev) => ({ ...prev, [field]: true }));
-};
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  /* ================= LOGIN ================= */
 
   const handleLogin = async () => {
 
@@ -67,13 +69,28 @@ export default function LoginScreen() {
 
     try {
 
-      const data = await login({
+      const response = await login({
         email,
         motDePasse: password,
       });
 
-      await saveToken(data.token);
-      await saveUser(data);
+      const { token, id, nom, role } = response;
+
+      // 🔥 SAVE TOKEN
+      await saveToken(token);
+
+      // 🔥 SAVE USER (clean object only)
+      const user = {
+        id,
+        email,
+        nom,
+        role,
+      };
+
+      await saveUser(user);
+
+      // 🔥 UPDATE ZUSTAND
+      setAuth(token, user);
 
       Alert.alert(
           "Succès",
@@ -84,6 +101,8 @@ export default function LoginScreen() {
 
     } catch (error) {
 
+      console.log("LOGIN ERROR:", error);
+
       Alert.alert(
           "Erreur",
           "Email ou mot de passe incorrect"
@@ -92,145 +111,139 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardView}
-      >
-        <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.keyboardView}
+        >
+          <View style={styles.container}>
 
-          {/* BACK BUTTON */}
-          <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.replace("/onboarding")} // or router.back()
-          >
-            <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
-          </TouchableOpacity>
+            {/* BACK BUTTON */}
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.replace("/onboarding")}
+            >
+              <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
+            </TouchableOpacity>
 
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logomob.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* CARD */}
-          <View style={styles.card}>
-
-            {/* IMAGE + TITLE */}
-            <View style={styles.cardHeader}>
+            {/* HEADER */}
+            <View style={styles.header}>
               <Image
-                source={require("@/assets/images/accessm.png")}
-                style={styles.topImage}
-                resizeMode="contain"
+                  source={require("@/assets/images/logomob.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
               />
-              <Text style={styles.title}>Connexion</Text>
             </View>
 
-            {/* EMAIL */}
-            <TextInput
-              placeholder="Adresse email"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isEmailValid && touched.email && styles.inputError,
-              ]}
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => markTouched("email")}
-            />
-            <Text style={styles.error}>
-              {!isEmailValid && touched.email ? "Email invalide" : " "}
-            </Text>
+            {/* CARD */}
+            <View style={styles.card}>
 
-            {/* PASSWORD */}
-            <TextInput
-              placeholder="Mot de passe (min 6 caractères)"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isPasswordValid &&
-                  touched.password &&
-                  styles.inputError,
-              ]}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onBlur={() => markTouched("password")}
-            />
-            <Text style={styles.error}>
-              {!isPasswordValid && touched.password
-                ? "Mot de passe trop court"
-                : " "}
-            </Text>
+              {/* IMAGE + TITLE */}
+              <View style={styles.cardHeader}>
+                <Image
+                    source={require("@/assets/images/accessm.png")}
+                    style={styles.topImage}
+                    resizeMode="contain"
+                />
+                <Text style={styles.title}>Connexion</Text>
+              </View>
 
-            {/* OPTIONS */}
-            <View style={styles.row}>
-              <TouchableOpacity onPress={() => setRemember(!remember)}>
-                <Text style={styles.remember}>
-                  {remember ? "☑" : "☐"} Se souvenir de moi
+              {/* EMAIL */}
+              <TextInput
+                  placeholder="Adresse email"
+                  placeholderTextColor="#8e9aaf"
+                  style={[
+                    styles.input,
+                    !isEmailValid && touched.email && styles.inputError,
+                  ]}
+                  value={email}
+                  onChangeText={setEmail}
+                  onBlur={() => markTouched("email")}
+              />
+              <Text style={styles.error}>
+                {!isEmailValid && touched.email ? "Email invalide" : " "}
+              </Text>
+
+              {/* PASSWORD */}
+              <TextInput
+                  placeholder="Mot de passe (min 6 caractères)"
+                  placeholderTextColor="#8e9aaf"
+                  style={[
+                    styles.input,
+                    !isPasswordValid &&
+                    touched.password &&
+                    styles.inputError,
+                  ]}
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  onBlur={() => markTouched("password")}
+              />
+              <Text style={styles.error}>
+                {!isPasswordValid && touched.password
+                    ? "Mot de passe trop court"
+                    : " "}
+              </Text>
+
+              {/* OPTIONS */}
+              <View style={styles.row}>
+                <TouchableOpacity onPress={() => setRemember(!remember)}>
+                  <Text style={styles.remember}>
+                    {remember ? "☑" : "☐"} Se souvenir de moi
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={() => router.push("/VerifyScreen")}>
+                  <Text style={styles.forgot}>
+                    Mot de passe oublié ?
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* BUTTON */}
+              <TouchableOpacity
+                  style={[
+                    styles.button,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={handleLogin}
+                  onPressIn={() => setPressed(true)}
+                  onPressOut={() => setPressed(false)}
+              >
+                <Text style={styles.buttonText}>
+                  Se connecter
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => router.push("/VerifyScreen")}>
-                <Text style={styles.forgot}>
-                  Mot de passe oublié ?
+              <Text style={styles.bottomText}>
+                Vous n’avez pas de compte ?
+              </Text>
+
+              <TouchableOpacity
+                  style={styles.outlineButton}
+                  onPress={() => router.push("/register")}
+              >
+                <Text style={styles.outlineButtonText}>
+                  Créer un compte
                 </Text>
               </TouchableOpacity>
+
             </View>
-
-            {/* BUTTON */}
-            <TouchableOpacity
-              style={[
-                styles.button,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={handleLogin}
-              onPressIn={() => setPressed(true)}
-              onPressOut={() => setPressed(false)}
-            >
-              <Text style={styles.buttonText}>
-                Se connecter
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={styles.bottomText}>
-              Vous n’avez pas de compte ?
-            </Text>
-
-            <TouchableOpacity
-                style={styles.outlineButton}
-                onPress={() => router.push("/register")}
-            >
-              <Text style={styles.outlineButtonText}>
-                Créer un compte
-              </Text>
-            </TouchableOpacity>
-
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
   );
 }
 
-/* ================= STYLES ================= */
+/* ================= STYLES (UNCHANGED) ================= */
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#f2f5fc",
   },
-
-  keyboardView: {
-    flex: 1,
-  },
-
-  container: {
-    flex: 1,
-  },
+  keyboardView: { flex: 1 },
+  container: { flex: 1 },
 
   backButton: {
     position: "absolute",
@@ -277,13 +290,13 @@ const styles = StyleSheet.create({
   },
 
   input: {
-  backgroundColor: "#f8fafd",
-  borderRadius: 18,
-  padding: 12,
-  borderWidth: 1,
-  borderColor: "#8cd1b2",
-  marginTop: 10,
-},
+    backgroundColor: "#f8fafd",
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#8cd1b2",
+    marginTop: 10,
+  },
 
   inputError: {
     borderColor: "#e04f5f",

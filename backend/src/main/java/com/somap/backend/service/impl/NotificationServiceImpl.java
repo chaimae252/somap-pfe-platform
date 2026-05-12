@@ -86,6 +86,16 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.deleteById(id);
     }
 
+    @Override
+    public List<NotificationDTO> getNotificationsByClient(Long userId) {
+
+        return notificationRepository
+                .findByUtilisateurId(userId)
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     // =========================
     // MAPPER
     // =========================

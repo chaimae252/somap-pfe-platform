@@ -33,6 +33,13 @@ public class NotificationController {
         );
     }
 
+    @GetMapping("/client/{id}")
+    public List<NotificationDTO> getNotificationsByClient(
+            @PathVariable Long id
+    ) {
+        return notificationService.getNotificationsByClient(id);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<NotificationDTO> getNotificationById(
             @PathVariable Long id

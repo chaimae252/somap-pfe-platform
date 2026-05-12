@@ -63,4 +63,11 @@ public class ProjetController {
 
         return ResponseEntity.ok("Projet supprimé avec succès");
     }
+
+    @GetMapping("/current/{clientId}")
+    public ProjetDTO getCurrentProject(
+            @PathVariable Long clientId
+    ) {
+        return projetService.getCurrentProject(clientId);
+    }
 }

@@ -14,5 +14,7 @@ public interface NotificationService {
 
     void markAsRead(Long id);
 
+    List<NotificationDTO> getNotificationsByClient(Long userId);
+
     void deleteNotification(Long id);
 }
