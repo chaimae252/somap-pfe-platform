@@ -10,4 +10,13 @@ public interface AuthService {
     AuthResponseDTO registerClient(ClientRegisterDTO dto);
 
     LoginResponseDTO login(LoginRequestDTO dto);
+
+    // NEW
+    void forgotPassword(String email);
+
+    // NEW
+    boolean verifyCode(String email, String code);
+
+    // NEW
+    void resetPassword(String email, String newPassword);
 }

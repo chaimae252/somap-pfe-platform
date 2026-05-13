@@ -17,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import com.somap.backend.service.EmailService;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
 
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     @Transactional
@@ -73,4 +76,61 @@ public class AuthServiceImpl implements AuthService {
 
         return new LoginResponseDTO(token);
     }
+
+    @Override
+public void forgotPassword(String email) {
+
+    Utilisateur user = utilisateurRepository
+            .findByEmail(email)
+            .orElseThrow(() ->
+                    new RuntimeException("Utilisateur non trouvé"));
+
+    // Generate 4-digit code
+    String code = String.valueOf(
+            (int)(Math.random() * 9000) + 1000
+    );
+
+    user.setResetCode(code);
+
+    user.setResetCodeExpiration(
+            LocalDateTime.now().plusMinutes(5)
+    );
+
+    utilisateurRepository.save(user);
+
+    emailService.sendResetCode(email, code);
+} 
+@Override
+public boolean verifyCode(String email, String code) {
+
+    Utilisateur user = utilisateurRepository
+            .findByEmail(email)
+            .orElseThrow(() ->
+                    new RuntimeException("Utilisateur non trouvé"));
+
+    return user.getResetCode().equals(code)
+            && user.getResetCodeExpiration()
+            .isAfter(LocalDateTime.now());
+}
+@Override
+public void resetPassword(
+        String email,
+        String newPassword
+) {
+
+    Utilisateur user = utilisateurRepository
+            .findByEmail(email)
+            .orElseThrow(() ->
+                    new RuntimeException("Utilisateur non trouvé"));
+
+    user.setMotDePasse(
+            passwordEncoder.encode(newPassword)
+    );
+
+    // remove old code
+    user.setResetCode(null);
+    user.setResetCodeExpiration(null);
+
+    utilisateurRepository.save(user);
+}
 }

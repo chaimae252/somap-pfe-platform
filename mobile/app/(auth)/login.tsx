@@ -10,6 +10,7 @@ import {
 } from "@/utils/storage";
 
 import React, { useState } from "react";
+
 import {
   View,
   Text,
@@ -21,18 +22,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
+
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
-
   const { setAuth } = useAuthStore();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+
+  const [focusedInput, setFocusedInput] = useState("");
 
   const [touched, setTouched] = useState({
     email: false,
@@ -41,32 +47,23 @@ export default function LoginScreen() {
 
   const [pressed, setPressed] = useState(false);
 
-  /* ================= VALIDATION ================= */
-
   const isEmailValid = validateEmail(email);
   const isPasswordValid = validateLoginPassword(password);
 
-  const isFormValid = isEmailValid && isPasswordValid;
-
   const markTouched = (field: keyof typeof touched) => {
-  setTouched((prev) => ({ ...prev, [field]: true }));
-};
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
 
   const handleLogin = async () => {
-
     const emailValid = validateEmail(email);
     const passwordValid = validateLoginPassword(password);
 
     if (!emailValid || !passwordValid) {
-      Alert.alert(
-          "Erreur",
-          "Veuillez vérifier vos informations"
-      );
+      Alert.alert("Erreur", "Veuillez vérifier vos informations");
       return;
     }
 
     try {
-
       const data = await login({
         email,
         motDePasse: password,
@@ -75,19 +72,11 @@ export default function LoginScreen() {
       await saveToken(data.token);
       await saveUser(data);
 
-      Alert.alert(
-          "Succès",
-          "Connexion réussie"
-      );
+      Alert.alert("Succès", "Connexion réussie");
 
       router.replace("/home");
-
     } catch (error) {
-
-      Alert.alert(
-          "Erreur",
-          "Email ou mot de passe incorrect"
-      );
+      Alert.alert("Erreur", "Email ou mot de passe incorrect");
     }
   };
 
@@ -96,121 +85,143 @@ export default function LoginScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
+        keyboardVerticalOffset={20}
       >
-        <View style={styles.container}>
-
-          {/* BACK BUTTON */}
-          <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.replace("/onboarding")} // or router.back()
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
           >
-            <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
-          </TouchableOpacity>
+            <View style={styles.container}>
 
-          {/* HEADER */}
-          <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logomob.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* CARD */}
-          <View style={styles.card}>
-
-            {/* IMAGE + TITLE */}
-            <View style={styles.cardHeader}>
-              <Image
-                source={require("@/assets/images/accessm.png")}
-                style={styles.topImage}
-                resizeMode="contain"
-              />
-              <Text style={styles.title}>Connexion</Text>
-            </View>
-
-            {/* EMAIL */}
-            <TextInput
-              placeholder="Adresse email"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isEmailValid && touched.email && styles.inputError,
-              ]}
-              value={email}
-              onChangeText={setEmail}
-              onBlur={() => markTouched("email")}
-            />
-            <Text style={styles.error}>
-              {!isEmailValid && touched.email ? "Email invalide" : " "}
-            </Text>
-
-            {/* PASSWORD */}
-            <TextInput
-              placeholder="Mot de passe (min 6 caractères)"
-              placeholderTextColor="#8e9aaf"
-              style={[
-                styles.input,
-                !isPasswordValid &&
-                  touched.password &&
-                  styles.inputError,
-              ]}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onBlur={() => markTouched("password")}
-            />
-            <Text style={styles.error}>
-              {!isPasswordValid && touched.password
-                ? "Mot de passe trop court"
-                : " "}
-            </Text>
-
-            {/* OPTIONS */}
-            <View style={styles.row}>
-              <TouchableOpacity onPress={() => setRemember(!remember)}>
-                <Text style={styles.remember}>
-                  {remember ? "☑" : "☐"} Se souvenir de moi
-                </Text>
+              {/* BACK */}
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.replace("/onboarding")}
+              >
+                <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => router.push("/VerifyScreen")}>
-                <Text style={styles.forgot}>
-                  Mot de passe oublié ?
+              {/* HEADER */}
+              <View style={styles.header}>
+                <Image
+                  source={require("@/assets/images/logomob.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+
+              {/* CARD */}
+              <View style={styles.card}>
+
+                <View style={styles.cardHeader}>
+
+  {/* ICON BOX (NEW) */}
+  <View style={styles.iconBox}>
+    <MaterialIcons name="lock-outline" size={45} color="#fff" />
+  </View>
+
+  <Text style={styles.title}>Connexion</Text>
+
+</View>
+
+                {/* EMAIL */}
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "email" && styles.inputFocused,
+                    !isEmailValid && touched.email && styles.inputError,
+                  ]}
+                >
+                  <MaterialIcons name="email" size={22} color="#8e9aaf" style={styles.icon} />
+
+                  <TextInput
+                    placeholder="Adresse email"
+                    placeholderTextColor="#8e9aaf"
+                    value={email}
+                    onChangeText={setEmail}
+                    onFocus={() => setFocusedInput("email")}
+                    onBlur={() => {
+                      setFocusedInput("");
+                      markTouched("email");
+                    }}
+                    style={styles.textInput}
+                  />
+                </View>
+
+                <Text style={styles.error}>
+                  {!isEmailValid && touched.email ? "Email invalide" : " "}
                 </Text>
-              </TouchableOpacity>
+
+                {/* PASSWORD */}
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "password" && styles.inputFocused,
+                    !isPasswordValid && touched.password && styles.inputError,
+                  ]}
+                >
+                  <MaterialIcons name="lock" size={22} color="#8e9aaf" style={styles.icon} />
+
+                  <TextInput
+                    placeholder="Mot de passe (min 6 caractères)"
+                    placeholderTextColor="#8e9aaf"
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                    onFocus={() => setFocusedInput("password")}
+                    onBlur={() => {
+                      setFocusedInput("");
+                      markTouched("password");
+                    }}
+                    style={styles.textInput}
+                  />
+                </View>
+
+                <Text style={styles.error}>
+                  {!isPasswordValid && touched.password ? "Mot de passe trop court" : " "}
+                </Text>
+
+                {/* OPTIONS */}
+                <View style={styles.row}>
+                  <TouchableOpacity onPress={() => setRemember(!remember)}>
+                    <Text style={styles.remember}>
+                      {remember ? "☑" : "☐"} Se souvenir de moi
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => router.push("/VerifyScreen")}>
+                    <Text style={styles.forgot}>Mot de passe oublié ?</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* BUTTON */}
+                <TouchableOpacity
+                  style={[styles.button, pressed && styles.buttonPressed]}
+                  onPress={handleLogin}
+                  onPressIn={() => setPressed(true)}
+                  onPressOut={() => setPressed(false)}
+                >
+                  <Text style={styles.buttonText}>Se connecter</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.bottomText}>
+                  Vous n’avez pas de compte ?
+                </Text>
+
+                <TouchableOpacity
+                  style={styles.outlineButton}
+                  onPress={() => router.push("/register")}
+                >
+                  <Text style={styles.outlineButtonText}>
+                    Créer un compte
+                  </Text>
+                </TouchableOpacity>
+
+              </View>
             </View>
-
-            {/* BUTTON */}
-            <TouchableOpacity
-              style={[
-                styles.button,
-                pressed && styles.buttonPressed,
-              ]}
-              onPress={handleLogin}
-              onPressIn={() => setPressed(true)}
-              onPressOut={() => setPressed(false)}
-            >
-              <Text style={styles.buttonText}>
-                Se connecter
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={styles.bottomText}>
-              Vous n’avez pas de compte ?
-            </Text>
-
-            <TouchableOpacity
-                style={styles.outlineButton}
-                onPress={() => router.push("/register")}
-            >
-              <Text style={styles.outlineButtonText}>
-                Créer un compte
-              </Text>
-            </TouchableOpacity>
-
-          </View>
-        </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -221,7 +232,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f2f5fc",
+    backgroundColor: "#eef3fb",
   },
 
   keyboardView: {
@@ -230,123 +241,162 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
+    paddingBottom: 40,
   },
 
   backButton: {
     position: "absolute",
     top: 20,
-    left: 15,
+    left: 18,
     zIndex: 10,
-    padding: 8,
-    marginTop: 5,
+    backgroundColor: "#fff",
+    borderRadius: 50,
+    padding: 10,
   },
 
   header: {
     alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 35,
   },
 
   logo: {
-    width: 250,
-    height: 110,
-    marginTop: 5,
+    width: 230,
+    height: 100,
   },
 
   card: {
-    flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 32,
+    borderRadius: 35,
     marginHorizontal: 20,
-    marginTop: 20,
-    padding: 24,
+    marginTop: 25,
+    padding: 26,
   },
 
   cardHeader: {
     alignItems: "center",
-    marginBottom: 18,
+    marginBottom: 22,
   },
+  iconBox: {
+  width: 85,
+  height: 85,
+  backgroundColor: "#1564c0",
+  borderRadius: 20,
+  justifyContent: "center",
+  alignItems: "center",
+  marginBottom: 15,
+
+  shadowColor: "#1564c0",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.25,
+  shadowRadius: 8,
+  elevation: 6,
+},
 
   topImage: {
-    width: 150,
-    height: 150,
+    width: 170,
+    height: 170,
+    marginBottom: 5,
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#1f2d3d",
   },
 
-  input: {
-  backgroundColor: "#f8fafd",
-  borderRadius: 18,
-  padding: 12,
-  borderWidth: 1,
-  borderColor: "#8cd1b2",
-  marginTop: 10,
-},
+  /* FIXED INPUT */
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f7f9fc",
+    borderRadius: 18,
+    paddingHorizontal: 15,
+    borderWidth: 1.5,
+    borderColor: "#d8e2f1",
+    marginTop: 12,
+  },
+
+  inputFocused: {
+    borderColor: "#1564c0",
+    backgroundColor: "#fff",
+  },
 
   inputError: {
-    borderColor: "#e04f5f",
-    backgroundColor: "#fff8f8",
+    borderColor: "#ff5a6b",
+    backgroundColor: "#fff5f6",
+  },
+
+  icon: {
+    marginRight: 10,
+  },
+
+  textInput: {
+    flex: 1,
+    paddingVertical: 15,
+    fontSize: 15,
+    color: "#1f2d3d",
   },
 
   error: {
-    color: "#e04f5f",
+    color: "#ff5a6b",
     fontSize: 12,
-    minHeight: 16,
+    marginTop: 5,
+    minHeight: 18,
   },
 
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 28,
   },
 
   remember: {
     fontSize: 13,
-    color: "#6a7c94",
+    color: "#6c7a92",
   },
 
   forgot: {
     fontSize: 13,
     color: "#1564c0",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   button: {
     backgroundColor: "#1564c0",
-    padding: 14,
-    borderRadius: 40,
+    paddingVertical: 16,
+    borderRadius: 50,
     alignItems: "center",
   },
 
   buttonPressed: {
-    transform: [{ scale: 0.96 }],
+    transform: [{ scale: 0.97 }],
   },
 
   buttonText: {
     color: "#fff",
-    fontWeight: "700",
+    fontWeight: "800",
+    fontSize: 16,
   },
 
   bottomText: {
     textAlign: "center",
-    marginTop: 20,
-    marginBottom: 10,
-    color: "#6a7c94",
+    marginTop: 24,
+    marginBottom: 14,
+    color: "#6c7a92",
   },
 
   outlineButton: {
-    borderWidth: 1,
+    borderWidth: 1.8,
     borderColor: "#1564c0",
-    padding: 14,
-    borderRadius: 40,
+    paddingVertical: 15,
+    borderRadius: 50,
     alignItems: "center",
+    backgroundColor: "#f7fbff",
   },
 
   outlineButtonText: {
     color: "#1564c0",
-    fontWeight: "700",
+    fontWeight: "800",
   },
 });

@@ -4,14 +4,24 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  SafeAreaView,
   StyleSheet,
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Alert,
 } from "react-native";
+
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+
+import {
+  forgotPassword,
+  verifyCode,
+} from "@/services/authService";
 
 export default function VerifyScreen() {
   const router = useRouter();
@@ -20,174 +30,229 @@ export default function VerifyScreen() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
 
+  const [focusedInput, setFocusedInput] = useState("");
+
   const [code, setCode] = useState(["", "", "", ""]);
   const inputs = useRef<TextInput[]>([]);
 
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
-  /* ================= TIMER ================= */
+  const [message, setMessage] = useState("");
+
   useEffect(() => {
-  let interval: ReturnType<typeof setInterval>;
+    let interval: ReturnType<typeof setInterval>;
 
-  if (showStep2 && timer > 0) {
-    interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
-  }
+    if (showStep2 && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
 
-  if (timer === 0) {
-    setCanResend(true);
-  }
+    if (timer === 0) {
+      setCanResend(true);
+    }
 
-  return () => clearInterval(interval);
-}, [timer, showStep2]);
+    return () => clearInterval(interval);
+  }, [timer, showStep2]);
 
-  /* ================= ACTIONS ================= */
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
     if (!email || !name) return;
 
-    setShowStep2(true);
-    setTimer(30);
-    setCanResend(false);
+    setMessage("Vérification en cours...");
+
+    try {
+      await forgotPassword(email);
+
+      setShowStep2(true);
+      setTimer(30);
+      setCanResend(false);
+
+      setMessage("Code envoyé à votre email");
+      Alert.alert("Succès", "Code envoyé à votre email");
+    } catch (error) {
+      setMessage("Erreur");
+      Alert.alert("Erreur", "Impossible d'envoyer le code");
+    }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (!canResend) return;
 
-    setTimer(30);
-    setCanResend(false);
+    try {
+      await forgotPassword(email);
+
+      setTimer(30);
+      setCanResend(false);
+
+      Alert.alert("Succès", "Code renvoyé");
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de renvoyer le code");
+    }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const otp = code.join("");
-    console.log("OTP:", otp);
-    router.push("/ResetPasswordScreen");
-    // 👉 navigate after success
-    // router.push("/reset-password");
+
+    try {
+      await verifyCode(email, otp);
+
+      Alert.alert("Succès", "Code valide");
+
+      router.push({
+        pathname: "/ResetPasswordScreen",
+        params: { email },
+      });
+    } catch (error) {
+      Alert.alert("Erreur", "Code invalide");
+    }
   };
 
   const handleChange = (text: string, index: number) => {
-  const newCode = [...code];
-  newCode[index] = text;
-  setCode(newCode);
+    const newCode = [...code];
+    newCode[index] = text;
+    setCode(newCode);
 
-  if (text && index < inputs.current.length - 1) {
-    inputs.current[index + 1]?.focus();
-  }
-};
+    if (text && index < inputs.current.length - 1) {
+      inputs.current[index + 1]?.focus();
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.keyboardView}
       >
-        <View style={styles.container}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.container}>
 
-          {/* 🔙 BACK BUTTON */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
-          </TouchableOpacity>
+              {/* BACK */}
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
+              >
+                <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
+              </TouchableOpacity>
 
-          {/* 🔝 HEADER */}
-          <View style={styles.header}>
-            <Image
-              source={require("@/assets/images/logomob.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
+              {/* HEADER */}
+              <View style={styles.header}>
+                <Image
+                  source={require("@/assets/images/logomob.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
 
-          {/* 🧾 CARD */}
-          <View style={styles.card}>
+              {/* CARD */}
+              <View style={styles.card}>
 
-            {/* IMAGE + TITLE */}
-            <View style={styles.cardHeader}>
-              <Image
-                source={require("@/assets/images/compte.png")}
-                style={styles.topImage}
-                resizeMode="contain"
-              />
-              <Text style={styles.title}>Vérification</Text>
-            </View>
+                {/* ICON */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.iconBox}>
+                    <MaterialIcons name="verified-user" size={45} color="#fff" />
+                  </View>
 
-            {/* STEP 1 */}
-            <TextInput
-              placeholder="Nom"
-              placeholderTextColor="#8e9aaf"
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-            />
-
-            <TextInput
-              placeholder="Adresse email"
-              placeholderTextColor="#8e9aaf"
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.button,
-                (!email || !name) && { opacity: 0.5 },
-              ]}
-              onPress={handleSendCode}
-              disabled={!email || !name}
-            >
-              <Text style={styles.buttonText}>Envoyer le code</Text>
-            </TouchableOpacity>
-
-            {/* STEP 2 */}
-            {showStep2 && (
-              <>
-                <Text style={styles.subtitle}>
-                  Entrez le code envoyé à {email}
-                </Text>
-
-                {/* OTP */}
-                <View style={styles.otpContainer}>
-                  {code.map((c, i) => (
-                    <TextInput
-                      key={i}
-                      ref={(ref) => {
-                      if (ref) inputs.current[i] = ref;
-                      }}
-                      style={styles.otp}
-                      maxLength={1}
-                      keyboardType="numeric"
-                      onChangeText={(text) => handleChange(text, i)}
-                    />
-                  ))}
+                  <Text style={styles.title}>Vérification</Text>
                 </View>
 
-                {/* TIMER / RESEND */}
-                {!canResend ? (
-                  <Text style={styles.timer}>
-                    Renvoyer dans {timer}s
-                  </Text>
-                ) : (
-                  <TouchableOpacity onPress={handleResend}>
-                    <Text style={styles.resend}>Renvoyer le code</Text>
-                  </TouchableOpacity>
+                {/* MESSAGE */}
+                {message !== "" && (
+                  <Text style={styles.message}>{message}</Text>
                 )}
 
-                {/* VERIFY */}
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={handleVerify}
+                {/* INPUT NAME */}
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "name" && styles.inputFocused,
+                  ]}
                 >
-                  <Text style={styles.buttonText}>Vérifier</Text>
+                  <MaterialIcons name="person" size={22} color="#8e9aaf" />
+                  <TextInput
+                    placeholder="Nom"
+                    value={name}
+                    onChangeText={setName}
+                    style={styles.textInput}
+                    onFocus={() => setFocusedInput("name")}
+                    onBlur={() => setFocusedInput("")}
+                  />
+                </View>
+
+                {/* INPUT EMAIL */}
+                <View
+                  style={[
+                    styles.inputContainer,
+                    focusedInput === "email" && styles.inputFocused,
+                  ]}
+                >
+                  <MaterialIcons name="email" size={22} color="#8e9aaf" />
+                  <TextInput
+                    placeholder="Adresse email"
+                    value={email}
+                    onChangeText={setEmail}
+                    style={styles.textInput}
+                    onFocus={() => setFocusedInput("email")}
+                    onBlur={() => setFocusedInput("")}
+                  />
+                </View>
+
+                {/* BUTTON */}
+                <TouchableOpacity
+                  style={[styles.button, (!email || !name) && { opacity: 0.5 }]}
+                  onPress={handleSendCode}
+                  disabled={!email || !name}
+                >
+                  <Text style={styles.buttonText}>Envoyer le code</Text>
                 </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </View>
+
+                {/* STEP 2 */}
+                {showStep2 && (
+                  <>
+                    <Text style={styles.subtitle}>
+                      Entrez le code envoyé à {email}
+                    </Text>
+
+                    <View style={styles.otpContainer}>
+                      {code.map((c, i) => (
+                        <TextInput
+                          key={i}
+                          ref={(ref) => {
+                            if (ref) inputs.current[i] = ref;
+                          }}
+                          style={styles.otp}
+                          maxLength={1}
+                          keyboardType="numeric"
+                          value={c}
+                          onChangeText={(text) => handleChange(text, i)}
+                        />
+                      ))}
+                    </View>
+
+                    {!canResend ? (
+                      <Text style={styles.timer}>
+                        Renvoyer dans {timer}s
+                      </Text>
+                    ) : (
+                      <TouchableOpacity onPress={handleResend}>
+                        <Text style={styles.resend}>Renvoyer le code</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                      style={styles.button}
+                      onPress={handleVerify}
+                    >
+                      <Text style={styles.buttonText}>Vérifier</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+
+              </View>
+            </View>
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -196,116 +261,123 @@ export default function VerifyScreen() {
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#f2f5fc",
-  },
-
-  container: {
-    flex: 1,
-  },
+  safeArea: { flex: 1, backgroundColor: "#eef3fb" },
+  keyboardView: { flex: 1 },
+  container: { flex: 1, paddingBottom: 40 },
 
   backButton: {
     position: "absolute",
     top: 20,
-    left: 15,
-    zIndex: 10,
-    padding: 8,
-    marginTop: 5,
+    left: 18,
+    backgroundColor: "#fff",
+    borderRadius: 50,
+    padding: 10,
   },
 
-  header: {
-    alignItems: "center",
-    paddingTop: 20,
-  },
-
-  logo: {
-    width: 250,
-    height: 110,
-  },
+  header: { alignItems: "center", paddingTop: 35 },
+  logo: { width: 230, height: 100 },
 
   card: {
-    flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 32,
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 24,
+    borderRadius: 35,
+    margin: 20,
+    padding: 26,
   },
 
-  cardHeader: {
+  cardHeader: { alignItems: "center", marginBottom: 10 },
+
+  iconBox: {
+    width: 85,
+    height: 85,
+    backgroundColor: "#1564c0",
+    borderRadius: 20,
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 18,
-  },
-
-  topImage: {
-    width: 120,
-    height: 120,
+    marginBottom: 15,
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#1f2d3d",
+  },
+
+  message: {
+  textAlign: "center",
+  color: "#10b981",  
+  fontWeight: "600",
+  marginBottom: 10,
+},
+
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f7f9fc",
+    borderRadius: 18,
+    paddingHorizontal: 15,
+    borderWidth: 1.5,
+    borderColor: "#d8e2f1",
+    marginTop: 12,
+  },
+
+  inputFocused: {
+    borderColor: "#1564c0",
+    backgroundColor: "#fff",
+  },
+
+  textInput: {
+    flex: 1,
+    marginLeft: 10,
+    paddingVertical: 15,
+  },
+
+  button: {
+    backgroundColor: "#1564c0",
+    padding: 16,
+    borderRadius: 50,
+    alignItems: "center",
+    marginTop: 15,
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontWeight: "800",
   },
 
   subtitle: {
     textAlign: "center",
-    color: "#6a7c94",
-    marginTop: 10,
-  },
-
-  input: {
-    backgroundColor: "#f8fafd",
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#8cd1b2",
-    marginTop: 10,
-    marginBottom: 14,
+    marginVertical: 10,
+    color: "#6c7a92",
   },
 
   otpContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginVertical: 15,
+    marginVertical: 20,
   },
 
   otp: {
-    width: 55,
-    height: 55,
-    backgroundColor: "#bcdfcf",
-    borderRadius: 12,
-    textAlign: "center",
-    fontSize: 20,
-    fontWeight: "600",
-    borderWidth: 1,
-    borderColor: "#bcdfcf",
-  },
+  width: 55,
+  height: 55,
+  backgroundColor: "#fff",      // optional cleaner look
+  borderRadius: 14,
+  textAlign: "center",
+  fontSize: 20,
+  fontWeight: "700",
+  borderWidth: 2,
+  borderColor: "#99b1cc",       
+  color: "#1f2d3d",
+},
 
   timer: {
     textAlign: "center",
     color: "#1564c0",
-    fontWeight: "600",
-    marginBottom: 10,
   },
 
   resend: {
     textAlign: "center",
-    color: "#1564c0",
-    fontWeight: "600",
-    marginBottom: 10,
-  },
-
-  button: {
-    backgroundColor: "#1564c0",
-    padding: 14,
-    borderRadius: 40,
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "700",
+  color: "#10b981",  
+  fontWeight: "600",
+  marginBottom: 10,
   },
 });

@@ -2,8 +2,11 @@ package com.somap.backend.controller;
 
 import com.somap.backend.dto.AuthResponseDTO;
 import com.somap.backend.dto.ClientRegisterDTO;
+import com.somap.backend.dto.ForgotPasswordRequestDTO;
 import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
+import com.somap.backend.dto.ResetPasswordDTO;
+import com.somap.backend.dto.VerifyCodeDTO;
 import com.somap.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,4 +38,46 @@ public class AuthController {
                 authService.login(loginRequestDTO)
         );
     }
+
+    @PostMapping("/forgot-password")
+public ResponseEntity<?> forgotPassword(
+        @RequestBody ForgotPasswordRequestDTO dto
+) {
+
+    authService.forgotPassword(dto.getEmail());
+
+    return ResponseEntity.ok("Code envoyé");
+}
+@PostMapping("/verify-code")
+public ResponseEntity<?> verifyCode(
+        @RequestBody VerifyCodeDTO dto
+) {
+
+    boolean valid = authService.verifyCode(
+            dto.getEmail(),
+            dto.getCode()
+    );
+
+    if (!valid) {
+        return ResponseEntity
+                .badRequest()
+                .body("Code invalide");
+    }
+
+    return ResponseEntity.ok("Code valide");
+}
+@PostMapping("/reset-password")
+public ResponseEntity<?> resetPassword(
+        @RequestBody ResetPasswordDTO dto
+) {
+
+    authService.resetPassword(
+            dto.getEmail(),
+            dto.getNewPassword()
+    );
+
+    return ResponseEntity.ok(
+            "Mot de passe modifié"
+    );
+}
 }
