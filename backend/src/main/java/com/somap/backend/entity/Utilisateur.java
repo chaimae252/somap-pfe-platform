@@ -2,6 +2,8 @@ package com.somap.backend.entity;
 import com.somap.backend.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Entity
@@ -25,4 +27,7 @@ public class Utilisateur {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    private String resetCode;
+    private LocalDateTime resetCodeExpiration;
 }

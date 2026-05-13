@@ -10,6 +10,7 @@ import {
 } from "@/utils/storage";
 
 import React, { useState } from "react";
+
 import {
   View,
   Text,
@@ -21,18 +22,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
+
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 export default function LoginScreen() {
-
   const { setAuth } = useAuthStore();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+
+  const [focusedInput, setFocusedInput] = useState("");
 
   const [touched, setTouched] = useState({
     email: false,
@@ -41,12 +47,8 @@ export default function LoginScreen() {
 
   const [pressed, setPressed] = useState(false);
 
-  /* ================= VALIDATION ================= */
-
   const isEmailValid = validateEmail(email);
   const isPasswordValid = validateLoginPassword(password);
-
-  const isFormValid = isEmailValid && isPasswordValid;
 
   const markTouched = (field: keyof typeof touched) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -55,15 +57,11 @@ export default function LoginScreen() {
   /* ================= LOGIN ================= */
 
   const handleLogin = async () => {
-
     const emailValid = validateEmail(email);
     const passwordValid = validateLoginPassword(password);
 
     if (!emailValid || !passwordValid) {
-      Alert.alert(
-          "Erreur",
-          "Veuillez vérifier vos informations"
-      );
+      Alert.alert("Erreur", "Veuillez vérifier vos informations");
       return;
     }
 
@@ -92,13 +90,9 @@ export default function LoginScreen() {
       // 🔥 UPDATE ZUSTAND
       setAuth(token, user);
 
-      Alert.alert(
-          "Succès",
-          "Connexion réussie"
-      );
+      Alert.alert("Succès", "Connexion réussie");
 
       router.replace("/home");
-
     } catch (error) {
 
       console.log("LOGIN ERROR:", error);
@@ -240,7 +234,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f2f5fc",
+    backgroundColor: "#eef3fb",
   },
   keyboardView: { flex: 1 },
   container: { flex: 1 },
@@ -248,45 +242,61 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     top: 20,
-    left: 15,
+    left: 18,
     zIndex: 10,
-    padding: 8,
-    marginTop: 5,
+    backgroundColor: "#fff",
+    borderRadius: 50,
+    padding: 10,
   },
 
   header: {
     alignItems: "center",
-    paddingTop: 20,
+    paddingTop: 35,
   },
 
   logo: {
-    width: 250,
-    height: 110,
-    marginTop: 5,
+    width: 230,
+    height: 100,
   },
 
   card: {
-    flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 32,
+    borderRadius: 35,
     marginHorizontal: 20,
-    marginTop: 20,
-    padding: 24,
+    marginTop: 25,
+    padding: 26,
   },
 
   cardHeader: {
     alignItems: "center",
-    marginBottom: 18,
+    marginBottom: 22,
   },
+  iconBox: {
+  width: 85,
+  height: 85,
+  backgroundColor: "#1564c0",
+  borderRadius: 20,
+  justifyContent: "center",
+  alignItems: "center",
+  marginBottom: 15,
+
+  shadowColor: "#1564c0",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.25,
+  shadowRadius: 8,
+  elevation: 6,
+},
 
   topImage: {
-    width: 150,
-    height: 150,
+    width: 170,
+    height: 170,
+    marginBottom: 5,
   },
 
   title: {
-    fontSize: 24,
-    fontWeight: "700",
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#1f2d3d",
   },
 
   input: {
@@ -299,67 +309,81 @@ const styles = StyleSheet.create({
   },
 
   inputError: {
-    borderColor: "#e04f5f",
-    backgroundColor: "#fff8f8",
+    borderColor: "#ff5a6b",
+    backgroundColor: "#fff5f6",
+  },
+
+  icon: {
+    marginRight: 10,
+  },
+
+  textInput: {
+    flex: 1,
+    paddingVertical: 15,
+    fontSize: 15,
+    color: "#1f2d3d",
   },
 
   error: {
-    color: "#e04f5f",
+    color: "#ff5a6b",
     fontSize: 12,
-    minHeight: 16,
+    marginTop: 5,
+    minHeight: 18,
   },
 
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 10,
-    marginBottom: 20,
+    marginTop: 12,
+    marginBottom: 28,
   },
 
   remember: {
     fontSize: 13,
-    color: "#6a7c94",
+    color: "#6c7a92",
   },
 
   forgot: {
     fontSize: 13,
     color: "#1564c0",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   button: {
     backgroundColor: "#1564c0",
-    padding: 14,
-    borderRadius: 40,
+    paddingVertical: 16,
+    borderRadius: 50,
     alignItems: "center",
   },
 
   buttonPressed: {
-    transform: [{ scale: 0.96 }],
+    transform: [{ scale: 0.97 }],
   },
 
   buttonText: {
     color: "#fff",
-    fontWeight: "700",
+    fontWeight: "800",
+    fontSize: 16,
   },
 
   bottomText: {
     textAlign: "center",
-    marginTop: 20,
-    marginBottom: 10,
-    color: "#6a7c94",
+    marginTop: 24,
+    marginBottom: 14,
+    color: "#6c7a92",
   },
 
   outlineButton: {
-    borderWidth: 1,
+    borderWidth: 1.8,
     borderColor: "#1564c0",
-    padding: 14,
-    borderRadius: 40,
+    paddingVertical: 15,
+    borderRadius: 50,
     alignItems: "center",
+    backgroundColor: "#f7fbff",
   },
 
   outlineButtonText: {
     color: "#1564c0",
-    fontWeight: "700",
+    fontWeight: "800",
   },
 });
