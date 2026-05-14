@@ -13,7 +13,6 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -21,40 +20,43 @@ import { resetPassword } from "@/services/authService";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
-  const { email } = useLocalSearchParams();
+  const params = useLocalSearchParams();
 
+const email =
+  typeof params.email === "string"
+    ? params.email
+    : Array.isArray(params.email)
+    ? params.email[0]
+    : "";
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [touched, setTouched] = useState({
-    new: false,
-    confirm: false,
-  });
-
+  const [touched, setTouched] = useState({ new: false, confirm: false });
   const [pressed, setPressed] = useState(false);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   const isNewValid = newPassword.length >= 6;
   const isMatch = newPassword === confirmPassword;
   const isConfirmValid = isMatch && confirmPassword.length > 0;
   const isFormValid = isNewValid && isConfirmValid;
 
-  const markTouched = (field: keyof typeof touched) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-  };
+  const markTouched = (field: "new" | "confirm") => {
+  setTouched((prev) => ({ ...prev, [field]: true }));
+};
+
 
   const handleSubmit = async () => {
     if (!isFormValid) {
-      Alert.alert("Erreur", "Veuillez vérifier les champs.");
+      setMessage({ type: "error", text: "Veuillez vérifier les champs" });
       return;
     }
-
     try {
-      await resetPassword(email as string, newPassword);
-
-      Alert.alert("Succès", "Mot de passe mis à jour !");
-      router.replace("/login");
+      await resetPassword(email, newPassword);
+      setMessage({ type: "success", text: "Mot de passe mis à jour !" });
+      setTimeout(() => {
+        router.replace("/login");
+      }, 800);
     } catch (error) {
-      Alert.alert("Erreur", "Impossible de modifier le mot de passe");
+      setMessage({ type: "error", text: "Impossible de modifier le mot de passe" });
     }
   };
 
@@ -70,17 +72,26 @@ export default function ResetPasswordScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.container}>
+              {/* MESSAGE */}
+              {message.text !== "" && (
+                <View
+                  style={[
+                    styles.messageBox,
+                    message.type === "success"
+                      ? styles.messageSuccess
+                      : styles.messageError,
+                  ]}
+                >
+                  <Text style={styles.messageText}>{message.text}</Text>
+                </View>
+              )}
 
               {/* BACK */}
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => router.replace("/VerifyScreen")}
               >
-                <MaterialIcons
-                  name="arrow-back-ios"
-                  size={20}
-                  color="#1564c0"
-                />
+                <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
               </TouchableOpacity>
 
               {/* HEADER */}
@@ -94,21 +105,14 @@ export default function ResetPasswordScreen() {
 
               {/* CARD */}
               <View style={styles.card}>
-
                 {/* ICON HEADER (NEW STYLE) */}
                 <View style={styles.cardHeader}>
-                  <View style={styles.iconBox}>
-                    <MaterialIcons
-                      name="lock-reset"
-                      size={45}
-                      color="#fff"
-                    />
-                  </View>
-
-                  <Text style={styles.title}>
-                    Réinitialiser le mot de passe
-                  </Text>
-
+                  <Image
+                    source={require("@/assets/images/reset-login.png")}
+                    style={styles.resetIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.title}>Réinitialiser le mot de passe</Text>
                   <Text style={styles.subtitle}>
                     Choisissez un mot de passe fort et sécurisé
                   </Text>
@@ -127,7 +131,6 @@ export default function ResetPasswordScreen() {
                   onChangeText={setNewPassword}
                   onBlur={() => markTouched("new")}
                 />
-
                 <Text style={styles.error}>
                   {!isNewValid && touched.new ? "Min 6 caractères" : " "}
                 </Text>
@@ -146,7 +149,6 @@ export default function ResetPasswordScreen() {
                   onBlur={() => markTouched("confirm")}
                   onSubmitEditing={handleSubmit}
                 />
-
                 <Text style={styles.error}>
                   {!isConfirmValid && touched.confirm
                     ? "Les mots de passe ne correspondent pas"
@@ -155,17 +157,13 @@ export default function ResetPasswordScreen() {
 
                 {/* BUTTON */}
                 <TouchableOpacity
-                  style={[
-                    styles.button,
-                    pressed && styles.buttonPressed,
-                  ]}
+                  style={[styles.button, pressed && styles.buttonPressed]}
                   onPress={handleSubmit}
                   onPressIn={() => setPressed(true)}
                   onPressOut={() => setPressed(false)}
                 >
                   <Text style={styles.buttonText}>Valider</Text>
                 </TouchableOpacity>
-
               </View>
             </View>
           </ScrollView>
@@ -176,7 +174,6 @@ export default function ResetPasswordScreen() {
 }
 
 /* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -187,35 +184,47 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 30,
   },
-
   keyboardView: {
     flex: 1,
   },
-
   container: {
     flex: 1,
   },
-
   backButton: {
     position: "absolute",
-    top: 20,
+    top: 40,
     left: 18,
     zIndex: 10,
-    backgroundColor: "#fff",
-    borderRadius: 50,
-    padding: 10,
+    padding: 4,
   },
-
+  messageBox: {
+    marginTop: 35,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    alignSelf: "center",
+    width: "70%",
+  },
+  messageText: {
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+    width: "100%",
+  },
+  messageSuccess: {
+    backgroundColor: "#2ecc71",
+  },
+  messageError: {
+    backgroundColor: "#e74c3c",
+  },
   header: {
     alignItems: "center",
     paddingTop: 35,
   },
-
   logo: {
     width: 230,
     height: 100,
   },
-
   card: {
     backgroundColor: "#fff",
     borderRadius: 35,
@@ -223,43 +232,28 @@ const styles = StyleSheet.create({
     marginTop: 25,
     padding: 26,
   },
-
   cardHeader: {
     alignItems: "center",
     marginBottom: 22,
   },
-
-  /* ICON BOX (same as login/register) */
-  iconBox: {
-    width: 85,
-    height: 85,
-    backgroundColor: "#1564c0",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-
-    shadowColor: "#1564c0",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
+  resetIcon: {
+    width: 200,
+    height: 240,
+    marginBottom: -13,
+    marginTop: -50,
   },
-
   title: {
     fontSize: 24,
     fontWeight: "800",
     color: "#1f2d3d",
     textAlign: "center",
   },
-
   subtitle: {
     fontSize: 13,
     color: "#6c7a92",
     textAlign: "center",
     marginTop: 8,
   },
-
   input: {
     backgroundColor: "#f7f9fc",
     borderRadius: 18,
@@ -270,19 +264,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1f2d3d",
   },
-
   inputError: {
     borderColor: "#ff5a6b",
     backgroundColor: "#fff5f6",
   },
-
   error: {
     color: "#ff5a6b",
     fontSize: 12,
     minHeight: 16,
     marginTop: 4,
   },
-
   button: {
     backgroundColor: "#1564c0",
     padding: 16,
@@ -290,11 +281,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 15,
   },
-
   buttonPressed: {
     transform: [{ scale: 0.97 }],
   },
-
   buttonText: {
     color: "#fff",
     fontWeight: "800",

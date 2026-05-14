@@ -31,10 +31,12 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { register } from "@/services/authService";
+import { useAuthStore } from "@/store/authStore";
 
 export default function RegisterScreen() {
 
   const router = useRouter();
+  const { setAuth } = useAuthStore();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,6 +55,12 @@ export default function RegisterScreen() {
 
   const [pressed, setPressed] = useState(false);
 
+  // ✅ MESSAGE STATE (ADDED LIKE LOGIN)
+  const [message, setMessage] = useState({
+    type: "",
+    text: "",
+  });
+
   const isNameValid = validateName(fullName);
   const isEmailValid = validateEmail(email);
   const isPhoneValid = validatePhone(phone);
@@ -69,36 +77,61 @@ export default function RegisterScreen() {
     const phoneValid = validatePhone(phone);
 
     if (!emailValid || !passwordValid || !nameValid || !phoneValid) {
-      Alert.alert("Erreur", "Vérifie tes champs");
+      setMessage({
+        type: "error",
+        text: "Veuillez vérifier vos informations",
+      });
       return;
     }
 
     if (!agree) {
-      Alert.alert("Erreur", "Accepte les conditions");
+      setMessage({
+        type: "error",
+        text: "Acceptez les conditions",
+      });
       return;
     }
 
     try {
-      const data = await register({
-        nom: fullName,
-        email,
-        motDePasse: password,
-        telephone: phone,
-        adresse: "",
+
+  const data = await register({
+    nom: fullName,
+    email,
+    motDePasse: password,
+    telephone: phone,
+    adresse: "",
+  });
+
+  const token = data?.token;
+
+  const user = data?.user || {
+    nom: fullName,
+    email,
+  };
+
+  if (token) {
+    await saveToken(token);
+  }
+
+  await saveUser(user);
+
+  // ✅ THIS FIXES THE PROBLEM
+  setAuth(token, user);
+
+  setMessage({
+    type: "success",
+    text: "Compte créé avec succès !",
+  });
+
+  setTimeout(() => {
+    router.replace("/home");
+  }, 800);
+
+} catch (error: any) {
+      setMessage({
+        type: "error",
+        text: error?.response?.data?.message || "Impossible de créer le compte",
       });
-
-      if (data?.token) await saveToken(data.token);
-      if (data?.user) await saveUser(data.user);
-      else await saveUser(data);
-
-      Alert.alert("Succès", "Compte créé 🎉");
-      router.replace("/home");
-
-    } catch (error: any) {
-      Alert.alert(
-        "Erreur",
-        error?.response?.data?.message || "Impossible de créer le compte"
-      );
     }
   };
 
@@ -113,7 +146,23 @@ export default function RegisterScreen() {
 
             <View style={styles.container}>
 
-              {/* BACK */}
+              {/* ✅ MESSAGE (LIKE LOGIN) */}
+              {message.text !== "" && (
+                <View
+                  style={[
+                    styles.messageBox,
+                    message.type === "success"
+                      ? styles.messageSuccess
+                      : styles.messageError,
+                  ]}
+                >
+                  <Text style={styles.messageText}>
+                    {message.text}
+                  </Text>
+                </View>
+              )}
+
+              {/* BACK (STYLE LIKE LOGIN) */}
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => router.replace("/login")}
@@ -133,15 +182,14 @@ export default function RegisterScreen() {
               {/* CARD */}
               <View style={styles.card}>
 
-               <View style={styles.cardHeader}>
-
-  <View style={styles.iconBox}>
-  <MaterialIcons name="person-add-alt-1" size={45} color="#fff" />
-</View>
-
-  <Text style={styles.title}>Créer un compte</Text>
-
-</View>
+                <View style={styles.cardHeader}>
+                  <Image
+                    source={require("@/assets/images/signup-p.png")}
+                    style={styles.regiIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.title}>Créer un compte</Text>
+                </View>
 
                 {/* NAME */}
                 <View style={[
@@ -244,10 +292,9 @@ export default function RegisterScreen() {
                   <Text style={styles.buttonText}>S’inscrire</Text>
                 </TouchableOpacity>
 
-                {/* 🔥 SAME LINE LOGIN LINK */}
+                {/* BOTTOM TEXT (UNCHANGED) */}
                 <View style={styles.bottomRow}>
                   <Text style={styles.bottomText}>Déjà membre ? </Text>
-
                   <TouchableOpacity onPress={() => router.replace("/login")}>
                     <Text style={styles.signinText}>Se connecter</Text>
                   </TouchableOpacity>
@@ -271,14 +318,13 @@ const styles = StyleSheet.create({
   keyboardView: { flex: 1 },
   container: { flex: 1 },
 
+  /* BACK BUTTON LIKE LOGIN */
   backButton: {
     position: "absolute",
-    top: 20,
+    top: 40,
     left: 18,
     zIndex: 10,
-    backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 50,
+    padding: 4,
   },
 
   header: {
@@ -302,30 +348,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  iconBox: {
-  width: 85,
-  height: 85,
-  backgroundColor: "#1564c0",
-  borderRadius: 20,
-  justifyContent: "center",
-  alignItems: "center",
-  marginBottom: 15,
 
-  shadowColor: "#1564c0",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.25,
-  shadowRadius: 8,
-  elevation: 6,
-},
-  topImage: {
-    width: 150,
-    height: 150,
+  regiIcon: {
+    width: 190,   // bigger
+    height: 200,  // bigger
+    marginBottom: -13, // minimal space below image
+    marginTop: -50,
   },
 
   title: {
     fontSize: 26,
     fontWeight: "800",
     color: "#1f2d3d",
+    marginTop: 1,
   },
 
   inputContainer: {
@@ -349,9 +384,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff5f6",
   },
 
-  icon: {
-    marginRight: 10,
-  },
+  icon: { marginRight: 10 },
 
   textInput: {
     flex: 1,
@@ -412,5 +445,30 @@ const styles = StyleSheet.create({
     color: "#1564c0",
     fontSize: 13,
     fontWeight: "800",
+  },
+
+  /* MESSAGE LIKE LOGIN */
+  messageBox: {
+    marginTop: 35,
+    padding: 12,
+    borderRadius: 12,
+    alignSelf: "center",
+    width: "60%",
+    alignItems: "center",
+  },
+
+  messageText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "600",
+    width: "100%",
+  },
+
+  messageSuccess: {
+    backgroundColor: "#2ecc71",
+  },
+
+  messageError: {
+    backgroundColor: "#e74c3c",
   },
 });

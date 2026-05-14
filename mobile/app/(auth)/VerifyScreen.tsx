@@ -38,8 +38,10 @@ export default function VerifyScreen() {
   const [timer, setTimer] = useState(30);
   const [canResend, setCanResend] = useState(false);
 
-  const [message, setMessage] = useState("");
-
+const [message, setMessage] = useState({
+  type: "",
+  text: "",
+});
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
 
@@ -57,56 +59,80 @@ export default function VerifyScreen() {
   }, [timer, showStep2]);
 
   const handleSendCode = async () => {
-    if (!email || !name) return;
+  if (!email || !name) return;
 
-    setMessage("Vérification en cours...");
+  setMessage({
+    type: "success",
+    text: "Vérification en cours...",
+  });
 
-    try {
-      await forgotPassword(email);
+  try {
+    await forgotPassword(email);
 
-      setShowStep2(true);
-      setTimer(30);
-      setCanResend(false);
+    setShowStep2(true);
+    setTimer(30);
+    setCanResend(false);
 
-      setMessage("Code envoyé à votre email");
-      Alert.alert("Succès", "Code envoyé à votre email");
-    } catch (error) {
-      setMessage("Erreur");
-      Alert.alert("Erreur", "Impossible d'envoyer le code");
-    }
-  };
+    setMessage({
+      type: "success",
+      text: "Code envoyé à votre email",
+    });
+
+  } catch (error) {
+    setMessage({
+      type: "error",
+      text: "Impossible d'envoyer le code",
+    });
+  }
+};
 
   const handleResend = async () => {
-    if (!canResend) return;
+  if (!canResend) return;
 
-    try {
-      await forgotPassword(email);
+  try {
+    await forgotPassword(email);
 
-      setTimer(30);
-      setCanResend(false);
+    setTimer(30);
+    setCanResend(false);
 
-      Alert.alert("Succès", "Code renvoyé");
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de renvoyer le code");
-    }
-  };
+    setMessage({
+      type: "success",
+      text: "Code renvoyé",
+    });
+
+  } catch (error) {
+    setMessage({
+      type: "error",
+      text: "Impossible de renvoyer le code",
+    });
+  }
+};
 
   const handleVerify = async () => {
-    const otp = code.join("");
+  const otp = code.join("");
 
-    try {
-      await verifyCode(email, otp);
+  try {
+    await verifyCode(email, otp);
 
-      Alert.alert("Succès", "Code valide");
+    setMessage({
+      type: "success",
+      text: "Code valide",
+    });
 
+    setTimeout(() => {
       router.push({
         pathname: "/ResetPasswordScreen",
         params: { email },
       });
-    } catch (error) {
-      Alert.alert("Erreur", "Code invalide");
-    }
-  };
+    }, 800);
+
+  } catch (error) {
+    setMessage({
+      type: "error",
+      text: "Code invalide",
+    });
+  }
+};
 
   const handleChange = (text: string, index: number) => {
     const newCode = [...code];
@@ -150,17 +176,30 @@ export default function VerifyScreen() {
 
                 {/* ICON */}
                 <View style={styles.cardHeader}>
-                  <View style={styles.iconBox}>
-                    <MaterialIcons name="verified-user" size={45} color="#fff" />
-                  </View>
+                   <Image
+                    source={require("@/assets/images/verify-page.png")}
+                    style={styles.verifyIcon}
+                    resizeMode="contain"
+                  />
 
                   <Text style={styles.title}>Vérification</Text>
                 </View>
 
                 {/* MESSAGE */}
-                {message !== "" && (
-                  <Text style={styles.message}>{message}</Text>
-                )}
+                {message.text !== "" && (
+  <View
+    style={[
+      styles.messageBox,
+      message.type === "success"
+        ? styles.messageSuccess
+        : styles.messageError,
+    ]}
+  >
+    <Text style={styles.messageText}>
+      {message.text}
+    </Text>
+  </View>
+)}
 
                 {/* INPUT NAME */}
                 <View
@@ -266,13 +305,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingBottom: 40 },
 
   backButton: {
-    position: "absolute",
-    top: 20,
-    left: 18,
-    backgroundColor: "#fff",
-    borderRadius: 50,
-    padding: 10,
-  },
+  position: "absolute",
+  top: 40,
+  left: 18,
+  zIndex: 10,
+  padding: 4,
+},
 
   header: { alignItems: "center", paddingTop: 35 },
   logo: { width: 230, height: 100 },
@@ -286,29 +324,41 @@ const styles = StyleSheet.create({
 
   cardHeader: { alignItems: "center", marginBottom: 10 },
 
-  iconBox: {
-    width: 85,
-    height: 85,
-    backgroundColor: "#1564c0",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-
+   
   title: {
     fontSize: 28,
     fontWeight: "800",
     color: "#1f2d3d",
   },
-
-  message: {
-  textAlign: "center",
-  color: "#10b981",  
-  fontWeight: "600",
+  messageBox: {
+  marginTop: 10,
   marginBottom: 10,
+  padding: 12,
+  borderRadius: 12,
+  alignItems: "center",
+  alignSelf: "center",
+  width: "75%",
+},
+verifyIcon: {
+    width: 200,   // bigger
+    height: 240,  // bigger
+    marginBottom: -13, // minimal space below image
+    marginTop: -50,
+  },
+messageText: {
+  color: "#fff",
+  fontWeight: "600",
+  textAlign: "center",
+  width: "100%",
 },
 
+messageSuccess: {
+  backgroundColor: "#2ecc71",
+},
+
+messageError: {
+  backgroundColor: "#e74c3c",
+},
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",

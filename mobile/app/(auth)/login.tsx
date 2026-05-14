@@ -6,7 +6,7 @@ import {
 } from "@/utils/validators";
 import {
   saveToken,
- saveUser,
+  saveUser,
 } from "@/utils/storage";
 
 import React, { useState } from "react";
@@ -21,7 +21,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ScrollView,
   TouchableWithoutFeedback,
   Keyboard,
@@ -48,6 +47,12 @@ export default function LoginScreen() {
 
   const [pressed, setPressed] = useState(false);
 
+  // ✅ NEW STATE (ONLY ADDITION)
+  const [message, setMessage] = useState({
+    type: "", // "success" | "error"
+    text: "",
+  });
+
   const isEmailValid = validateEmail(email);
   const isPasswordValid = validateLoginPassword(password);
 
@@ -63,7 +68,13 @@ export default function LoginScreen() {
     const passwordValid = validateLoginPassword(password);
 
     if (!emailValid || !passwordValid) {
-      Alert.alert("Erreur", "Veuillez vérifier vos informations");
+
+      // ❌ replaced Alert ONLY
+      setMessage({
+        type: "error",
+        text: "Veuillez vérifier vos informations",
+      });
+
       return;
     }
 
@@ -76,10 +87,8 @@ export default function LoginScreen() {
 
       const { token, id, nom, role } = response;
 
-      // SAVE TOKEN
       await saveToken(token);
 
-      // CREATE USER OBJECT
       const user = {
         id,
         email,
@@ -87,24 +96,29 @@ export default function LoginScreen() {
         role,
       };
 
-      // SAVE USER
       await saveUser(user);
 
-      // UPDATE ZUSTAND STORE
       setAuth(token, user);
 
-      Alert.alert("Succès", "Connexion réussie");
+      // ✅ SUCCESS MESSAGE ONLY CHANGE
+      setMessage({
+        type: "success",
+        text: "Connexion réussie",
+      });
 
-      router.replace("/home");
+      setTimeout(() => {
+        router.replace("/home");
+      }, 800);
 
     } catch (error) {
 
       console.log("LOGIN ERROR:", error);
 
-      Alert.alert(
-        "Erreur",
-        "Email ou mot de passe incorrect"
-      );
+      // ❌ replaced Alert ONLY
+      setMessage({
+        type: "error",
+        text: "Email ou mot de passe incorrect",
+      });
     }
   };
 
@@ -125,6 +139,22 @@ export default function LoginScreen() {
           >
 
             <View style={styles.container}>
+
+              {/* ✅ MESSAGE (ONLY ADDITION) */}
+              {message.text !== "" && (
+                <View
+                  style={[
+                    styles.messageBox,
+                    message.type === "success"
+                      ? styles.messageSuccess
+                      : styles.messageError,
+                  ]}
+                >
+                  <Text style={styles.messageText}>
+                    {message.text}
+                  </Text>
+                </View>
+              )}
 
               {/* BACK */}
               <TouchableOpacity
@@ -151,21 +181,13 @@ export default function LoginScreen() {
               <View style={styles.card}>
 
                 <View style={styles.cardHeader}>
-
-                  {/* ICON BOX */}
-                  <View style={styles.iconBox}>
-                    <MaterialIcons
-                      name="lock-outline"
-                      size={45}
-                      color="#fff"
-                    />
-                  </View>
-
-                  <Text style={styles.title}>
-                    Connexion
-                  </Text>
-
-                </View>
+ <Image
+  source={require("@/assets/images/login-page.png")}
+  style={styles.loginIcon}
+  resizeMode="contain"
+/>
+  <Text style={styles.title}>Connexion</Text>
+</View>
 
                 {/* EMAIL */}
                 <View
@@ -192,26 +214,19 @@ export default function LoginScreen() {
                     placeholderTextColor="#8e9aaf"
                     value={email}
                     onChangeText={setEmail}
-
-                    onFocus={() =>
-                      setFocusedInput("email")
-                    }
-
+                    onFocus={() => setFocusedInput("email")}
                     onBlur={() => {
                       setFocusedInput("");
                       markTouched("email");
                     }}
-
                     style={styles.textInput}
                   />
                 </View>
 
                 <Text style={styles.error}>
-                  {
-                    !isEmailValid && touched.email
-                      ? "Email invalide"
-                      : " "
-                  }
+                  {!isEmailValid && touched.email
+                    ? "Email invalide"
+                    : " "}
                 </Text>
 
                 {/* PASSWORD */}
@@ -240,26 +255,19 @@ export default function LoginScreen() {
                     secureTextEntry
                     value={password}
                     onChangeText={setPassword}
-
-                    onFocus={() =>
-                      setFocusedInput("password")
-                    }
-
+                    onFocus={() => setFocusedInput("password")}
                     onBlur={() => {
                       setFocusedInput("");
                       markTouched("password");
                     }}
-
                     style={styles.textInput}
                   />
                 </View>
 
                 <Text style={styles.error}>
-                  {
-                    !isPasswordValid && touched.password
-                      ? "Mot de passe trop court"
-                      : " "
-                  }
+                  {!isPasswordValid && touched.password
+                    ? "Mot de passe trop court"
+                    : " "}
                 </Text>
 
                 {/* OPTIONS */}
@@ -291,11 +299,8 @@ export default function LoginScreen() {
                     styles.button,
                     pressed && styles.buttonPressed,
                   ]}
-
                   onPress={handleLogin}
-
                   onPressIn={() => setPressed(true)}
-
                   onPressOut={() => setPressed(false)}
                 >
                   <Text style={styles.buttonText}>
@@ -332,80 +337,54 @@ export default function LoginScreen() {
 /* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
-
   safeArea: {
     flex: 1,
     backgroundColor: "#eef3fb",
   },
-
   keyboardView: {
     flex: 1,
   },
-
   container: {
     flex: 1,
     paddingBottom: 40,
   },
-
   backButton: {
     position: "absolute",
-    top: 20,
+    top: 40,
     left: 18,
     zIndex: 10,
-    backgroundColor: "#fff",
-    borderRadius: 50,
-    padding: 10,
+    padding: 4,
   },
-
   header: {
     alignItems: "center",
-    paddingTop: 35,
+    paddingTop: 20, // reduced from 35
   },
-
   logo: {
     width: 230,
     height: 100,
   },
-
   card: {
     backgroundColor: "#fff",
     borderRadius: 35,
-    marginHorizontal: 20,
-    marginTop: 25,
-    padding: 26,
+    marginHorizontal: 15,
+    marginTop: 15, // reduced from 25
+    padding: 40,   // reduced from 26
   },
-
   cardHeader: {
     alignItems: "center",
-    marginBottom: 22,
+    marginBottom: 8, // reduced from 22
   },
-
-  iconBox: {
-    width: 85,
-    height: 85,
-    backgroundColor: "#1564c0",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-
-    shadowColor: "#1564c0",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 6,
+  loginIcon: {
+    width: 200,   // bigger
+    height: 240,  // bigger
+    marginBottom: -13, // minimal space below image
+    marginTop: -50,
   },
-
   title: {
     fontSize: 28,
     fontWeight: "800",
     color: "#1f2d3d",
   },
-
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -414,90 +393,98 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderWidth: 1.5,
     borderColor: "#d8e2f1",
-    marginTop: 12,
+    marginTop: 8, // reduced from 12
   },
-
   inputFocused: {
     borderColor: "#1564c0",
     backgroundColor: "#fff",
   },
-
   inputError: {
     borderColor: "#ff5a6b",
     backgroundColor: "#fff5f6",
   },
-
   icon: {
     marginRight: 10,
   },
-
   textInput: {
     flex: 1,
     paddingVertical: 15,
     fontSize: 15,
     color: "#1f2d3d",
   },
-
   error: {
     color: "#ff5a6b",
     fontSize: 12,
-    marginTop: 5,
-    minHeight: 18,
+    marginTop: 2,   // reduced from 5
+    minHeight: 14,  // reduced from 18
   },
-
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 12,
-    marginBottom: 28,
+    marginTop: 8,    // reduced from 12
+    marginBottom: 20, // reduced from 28
   },
-
   remember: {
     fontSize: 13,
     color: "#6c7a92",
+    marginTop: 10,
   },
-
   forgot: {
     fontSize: 13,
     color: "#1564c0",
     fontWeight: "700",
+    marginTop: 10,
   },
-
   button: {
     backgroundColor: "#1564c0",
-    paddingVertical: 16,
+    paddingVertical: 14, // reduced from 16
     borderRadius: 50,
     alignItems: "center",
   },
-
   buttonPressed: {
     transform: [{ scale: 0.97 }],
   },
-
   buttonText: {
     color: "#fff",
     fontWeight: "800",
     fontSize: 16,
   },
-
   bottomText: {
     textAlign: "center",
-    marginTop: 24,
-    marginBottom: 14,
+    marginTop: 16,   // reduced from 24
+    marginBottom: 10, // reduced from 14
     color: "#6c7a92",
   },
-
   outlineButton: {
     borderWidth: 1.8,
     borderColor: "#1564c0",
-    paddingVertical: 15,
+    paddingVertical: 12, // reduced from 15
     borderRadius: 50,
     alignItems: "center",
     backgroundColor: "#f7fbff",
   },
-
   outlineButtonText: {
     color: "#1564c0",
     fontWeight: "800",
+  },
+  messageBox: {
+    marginTop: 35,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    alignSelf: "center",
+    width: "60%",
+  },
+  messageText: {
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+    width: "100%",
+  },
+  messageSuccess: {
+    backgroundColor: "#2ecc71",
+  },
+  messageError: {
+    backgroundColor: "#e74c3c",
   },
 });
