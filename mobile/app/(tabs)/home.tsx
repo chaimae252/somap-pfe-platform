@@ -12,7 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuthStore } from "../../store/authStore";
 import Theme from "../../constants/theme";
-
+import { router } from "expo-router";
 import { getAllServices } from "../../services/serviceService";
 import { getHomeStats } from "../../services/homeService";
 import { getCurrentProject } from "../../services/projectService";
@@ -211,6 +211,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                   activeOpacity={0.8}
                   style={styles.notificationButton}
+                  onPress={() => router.push("/notifications")}
               >
                 <Ionicons
                     name="notifications-outline"
@@ -225,7 +226,11 @@ export default function HomeScreen() {
                 </View>
               </TouchableOpacity>
 
-              <View style={styles.avatarWrap}>
+              <TouchableOpacity
+                  style={styles.avatarWrap}
+                  activeOpacity={0.8}
+                  onPress={() => router.push("/(tabs)/profile")}
+              >
                 <LinearGradient
                     colors={[colors.blueAccent, colors.cyan]}
                     style={styles.avatar}
@@ -234,7 +239,7 @@ export default function HomeScreen() {
                 </LinearGradient>
 
                 <View style={styles.avatarDot} />
-              </View>
+              </TouchableOpacity>
 
             </View>
           </View>
@@ -272,6 +277,7 @@ export default function HomeScreen() {
             <TouchableOpacity
                 style={styles.actionPrimaryWrap}
                 activeOpacity={0.85}
+                onPress={() => router.push("/demande/create")}
             >
               <LinearGradient
                   colors={["#1271b8", "#2D9C7C"]}
@@ -299,6 +305,7 @@ export default function HomeScreen() {
             <TouchableOpacity
                 style={styles.actionSecondaryWrap}
                 activeOpacity={0.85}
+                onPress={() => router.push("/(tabs)/services")}
             >
               <View style={styles.actionIconWrapAlt}>
                 <Ionicons
@@ -327,7 +334,11 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Projet en cours</Text>
 
-              <View style={styles.projCard}>
+              <TouchableOpacity
+                  style={styles.projCard}
+                  activeOpacity={0.88}
+                  onPress={() => router.push("/(tabs)/projets")}
+              >
                 <View style={styles.projCardHeader}>
 
                   <View style={styles.projIconWrap}>
@@ -378,7 +389,7 @@ export default function HomeScreen() {
                       ]}
                   />
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
         )}
 
@@ -411,6 +422,7 @@ export default function HomeScreen() {
                       key={i}
                       style={styles.serviceCard}
                       activeOpacity={0.85}
+                      onPress={() => router.push(`/service/${service.id}`)}
                   >
                     <View
                         style={[

@@ -80,11 +80,11 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="notifications"
+                name="projets"
                 options={{
-                    title: "Alertes",
+                    title: "Projets",
                     tabBarIcon: ({ focused, color, size }) => (
-                        <TabIcon focused={focused} icon="notifications" color={color} size={size} />
+                        <TabIcon focused={focused} icon="business" color={color} size={size} />
                     ),
                 }}
             />
