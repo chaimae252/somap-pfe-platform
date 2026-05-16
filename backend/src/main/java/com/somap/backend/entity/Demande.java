@@ -18,9 +18,9 @@ public class Demande {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private String objet;
     private String description;
-
+    
     @OneToMany(mappedBy = "demande", cascade = CascadeType.ALL)
     private List<Image> images;
 

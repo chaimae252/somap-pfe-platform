@@ -26,12 +26,11 @@ type ServiceAnimMap = {
 
 type Urgence = "Faible" | "Normal" | "Urgent";
 
-// ✅ Local service type (matches the static array)
 type LocalService = {
   id: string;
   title: string;
   description: string;
-  image: any; // require() returns a number
+  image: any;
 };
 
 type SelectedImage = {
@@ -56,46 +55,46 @@ export default function CreateDemandeScreen() {
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [loading, setLoading] = useState(false);
   
-  // ✅ Use the static services array directly
+  // ✅ Static services array (matching your IDs and images)
   const services: LocalService[] = [
     {
-      id: "1",
+      id: "3",
       title: "Traitement de surface",
       description: "Solutions complètes de préparation, nettoyage et protection des surfaces métalliques industrielles.",
       image: require("../../assets/traitement-surface.jpg"),
     },
     {
-      id: "2",
+      id: "4",
       title: "Sablage",
       description: "Nettoyage industriel des surfaces par projection d’abrasif à grande vitesse.",
       image: require("../../assets/sablage.jpg"),
     },
     {
-      id: "3",
+      id: "5",
       title: "Métallisation",
       description: "Protection anticorrosion durable par application de couches métalliques.",
       image: require("../../assets/metallisation.jpg"),
     },
     {
-      id: "4",
+      id: "6",
       title: "Peinture industrielle",
       description: "Application de peintures techniques pour industrie et bâtiment.",
       image: require("../../assets/peinture.jpg"),
     },
     {
-      id: "5",
+      id: "7",
       title: "Traitement des eaux",
       description: "Installation et maintenance des systèmes de traitement des eaux industrielles.",
       image: require("../../assets/eaux.jpg"),
     },
     {
-      id: "6",
+      id: "8",
       title: "Produits chimiques",
       description: "Fourniture de produits chimiques adaptés aux besoins industriels.",
       image: require("../../assets/chimique.jpg"),
     },
     {
-      id: "7",
+      id: "9",
       title: "Travaux polyester",
       description: "Fabrication et réparation de cuves et structures en polyester.",
       image: require("../../assets/polyester.png"),
@@ -107,7 +106,6 @@ export default function CreateDemandeScreen() {
   const descAnim = useRef(new Animated.Value(0)).current;
   const serviceAnims = useRef<ServiceAnimMap>({}).current;
 
-  // ✅ Initialize animations when component mounts
   useEffect(() => {
     services.forEach(service => {
       if (!serviceAnims[service.title]) {
@@ -152,6 +150,7 @@ export default function CreateDemandeScreen() {
     }
   };
 
+  // Image picker
   const pickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -179,6 +178,7 @@ export default function CreateDemandeScreen() {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Submit demande
   const handleSubmit = async () => {
     if (!selectedServiceId) {
       Alert.alert("Champ requis", "Veuillez sélectionner un service");
@@ -199,11 +199,11 @@ export default function CreateDemandeScreen() {
       const clientId = await AsyncStorage.getItem("userId");
       if (!clientId) throw new Error("Utilisateur non connecté");
 
-      // Note: serviceId must be sent as number (convert from string)
       const demandePayload = {
+        objet: objet,
         description: description,
         clientId: parseInt(clientId),
-        serviceId: parseInt(selectedServiceId), // ✅ convert to number
+        serviceId: parseInt(selectedServiceId),
         urgence: urgence.toUpperCase(),
       };
 
@@ -255,16 +255,18 @@ export default function CreateDemandeScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
+      {/* Back button */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
       </TouchableOpacity>
 
+      {/* Header */}
       <LinearGradient colors={["#0B1F3A", "#123C69", "#1B6CA8"]} style={styles.headerCard}>
         <Text style={styles.headerTitle}>Nouvelle Demande</Text>
         <Text style={styles.headerSubtitle}>Décrivez votre besoin industriel</Text>
       </LinearGradient>
 
-      {/* Services - using static array */}
+      {/* Services carousel */}
       <View style={styles.section}>
         <Label icon="layers-outline" title="Type de service" />
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -284,17 +286,41 @@ export default function CreateDemandeScreen() {
                   ],
                 }}
               >
-                <TouchableOpacity
-                  onPress={() => setSelectedServiceId(service.id)}
-                  onPressIn={() => animateServiceIn(service.title)}
-                  onPressOut={() => animateServiceOut(service.title)}
-                  style={[styles.serviceCardHorizontal, { borderColor: active ? "#1271b8" : "#E8EEF5" }]}
+                <View
+                  style={[
+                    styles.serviceCardHorizontal,
+                    { borderColor: active ? "#1271b8" : "#E8EEF5" },
+                  ]}
                 >
-                  <Image source={service.image} style={styles.serviceImage} />
-                  <Text style={[styles.serviceTextHorizontal, { color: active ? "#1271b8" : "#1B2430" }]}>
-                    {service.title}
-                  </Text>
-                </TouchableOpacity>
+                  {/* Toucher la zone image + titre sélectionne le service */}
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => setSelectedServiceId(service.id)}
+                    onPressIn={() => animateServiceIn(service.title)}
+                    onPressOut={() => animateServiceOut(service.title)}
+                    style={styles.serviceSelectArea}
+                  >
+                    <Image source={service.image} style={styles.serviceImage} />
+                    <Text
+                      style={[
+                        styles.serviceTextHorizontal,
+                        { color: active ? "#1271b8" : "#1B2430" },
+                      ]}
+                    >
+                      {service.title}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Bouton Détails (ne sélectionne pas, seulement navigation) */}
+                  <TouchableOpacity
+                    style={styles.detailsButton}
+                    onPress={() => router.push(`/service/${service.id}` as any)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="information-circle-outline" size={20} color="#1271B8" />
+                    <Text style={styles.detailsText}>Détails</Text>
+                  </TouchableOpacity>
+                </View>
               </Animated.View>
             );
           })}
@@ -401,7 +427,7 @@ export default function CreateDemandeScreen() {
         </View>
       </View>
 
-      {/* Submit */}
+      {/* Submit button */}
       <TouchableOpacity
         activeOpacity={0.9}
         style={{ marginHorizontal: 50, marginTop: 25 }}
@@ -417,7 +443,6 @@ export default function CreateDemandeScreen() {
   );
 }
 
-// Styles remain identical to your original (unchanged)
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F7FB" },
   backButton: { position: "absolute", top: 40, left: 18, zIndex: 10, padding: 4 },
@@ -498,6 +523,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     elevation: 2,
   },
+  serviceSelectArea: {
+    alignItems: "center",
+  },
   serviceImage: { width: "100%", height: 85, borderRadius: 12, marginBottom: 8 },
-  serviceTextHorizontal: { fontSize: 13, fontWeight: "700", textAlign: "center" },
+  serviceTextHorizontal: { fontSize: 13, fontWeight: "700", textAlign: "center", marginBottom: 8 },
+  detailsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "rgba(18,113,184,0.08)",
+    gap: 4,
+  },
+  detailsText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#1271B8",
+  },
 });

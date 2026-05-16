@@ -35,6 +35,7 @@ public class DemandeServiceImpl implements DemandeService {
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
         Demande demande = new Demande();
+        demande.setObjet(dto.getObjet());
         demande.setDescription(dto.getDescription());
         demande.setDateCreation(LocalDateTime.now());
         demande.setStatut(DemandeStatus.EN_ATTENTE);

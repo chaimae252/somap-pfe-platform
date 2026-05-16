@@ -10,6 +10,7 @@ public class DemandeMapper {
 
         DemandeDTO dto = new DemandeDTO();
         dto.setId(demande.getId());
+        dto.setObjet(demande.getObjet());
         dto.setDescription(demande.getDescription());
         dto.setStatut(demande.getStatut());
         dto.setDateCreation(demande.getDateCreation());
@@ -22,6 +23,7 @@ public class DemandeMapper {
 
         Demande demande = new Demande();
         demande.setId(dto.getId());
+        demande.setObjet(dto.getObjet());  
         demande.setDescription(dto.getDescription());
         demande.setStatut(dto.getStatut());
         demande.setDateCreation(dto.getDateCreation());

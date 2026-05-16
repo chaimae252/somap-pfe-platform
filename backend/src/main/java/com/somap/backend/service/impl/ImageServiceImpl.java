@@ -54,6 +54,7 @@ public class ImageServiceImpl implements ImageService {
             );
 
             image.setDemande(demande);
+            image.setService(demande.getService());
         }
 
         // 🔗 Service
