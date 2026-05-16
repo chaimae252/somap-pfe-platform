@@ -14,8 +14,11 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-
+import { useEffect } from "react";
+import { getHomeStats } from "../../services/homeService";
+import { useAuthStore } from "../../store/authStore";
 import Theme from "../../constants/theme";
+import NotificationButton from "@/components/ui/NotificationButton";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -29,6 +32,25 @@ type Service = {
 export default function ServicesScreen() {
     const router = useRouter();
     const [search, setSearch] = useState("");
+    const { user } = useAuthStore();
+    const [stats, setStats] = useState<any>(null);
+
+
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
+    const fetchStats = async () => {
+        try {
+            if (!user?.id) return;
+
+            const data = await getHomeStats(user.id);
+            setStats(data);
+        } catch (err) {
+            console.log("Stats error:", err);
+        }
+    };
+
 
     const services: Service[] = [
         {
@@ -217,22 +239,7 @@ export default function ServicesScreen() {
                         </Text>
                     </View>
 
-                    <TouchableOpacity
-                        activeOpacity={0.85}
-                        style={styles.notificationButton}
-                    >
-                        <Ionicons
-                            name="notifications-outline"
-                            size={22}
-                            color="#fff"
-                        />
-
-                        <View style={styles.notificationBadge}>
-                            <Text style={styles.notificationBadgeText}>
-                                3
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    <NotificationButton count={stats?.notifications || 0} />
                 </View>
             </LinearGradient>
 
@@ -330,36 +337,6 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: fonts.body,
         marginTop: 4,
-    },
-
-    notificationButton: {
-        width: 46,
-        height: 46,
-        borderRadius: 23,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.18)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-
-    notificationBadge: {
-        position: "absolute",
-        top: 5,
-        right: 5,
-        minWidth: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: "#49C69A",
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 4,
-    },
-
-    notificationBadgeText: {
-        color: "#fff",
-        fontSize: 9,
-        fontFamily: fonts.bodySemiBold,
     },
 
     // SEARCH

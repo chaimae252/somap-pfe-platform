@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { getAllServices } from "../../services/serviceService";
 import { getHomeStats } from "../../services/homeService";
 import { getCurrentProject } from "../../services/projectService";
+import NotificationButton from "@/components/ui/NotificationButton";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -208,23 +209,9 @@ export default function HomeScreen() {
 
             <View style={styles.rightHeader}>
 
-              <TouchableOpacity
-                  activeOpacity={0.8}
-                  style={styles.notificationButton}
-                  onPress={() => router.push("/notifications")}
-              >
-                <Ionicons
-                    name="notifications-outline"
-                    size={22}
-                    color="#fff"
-                />
-
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {stats?.notifications || 0}
-                  </Text>
-                </View>
-              </TouchableOpacity>
+              <NotificationButton
+                  count={stats?.notifications || 0}
+              />
 
               <TouchableOpacity
                   style={styles.avatarWrap}
@@ -666,33 +653,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-  },
-  notificationButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#49C69A",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  notificationBadgeText: {
-    color: "#fff",
-    fontSize: 9,
-    fontFamily: fonts.bodySemiBold,
   },
   avatarWrap: { position: "relative" },
   avatar: {

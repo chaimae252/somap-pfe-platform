@@ -107,7 +107,7 @@ export default function LoginScreen() {
       });
 
       setTimeout(() => {
-        router.replace("/home");
+        router.replace("/(tabs)/home");
       }, 800);
 
     } catch (error) {
