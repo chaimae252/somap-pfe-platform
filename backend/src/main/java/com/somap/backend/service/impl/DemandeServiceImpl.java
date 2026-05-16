@@ -40,7 +40,7 @@ public class DemandeServiceImpl implements DemandeService {
         demande.setStatut(DemandeStatus.EN_ATTENTE);
         demande.setClient(client);
         demande.setService(service);
-
+        demande.setUrgence(dto.getUrgence());
         Demande saved = demandeRepository.save(demande);
 
         return mapToDTO(saved);

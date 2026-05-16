@@ -1,5 +1,7 @@
 package com.somap.backend.entity;
 import com.somap.backend.enums.DemandeStatus;
+import com.somap.backend.enums.Urgence;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,7 +32,8 @@ public class Demande {
     @ManyToOne
     @JoinColumn(name = "client_id")
     private Client client;
-
+    @Enumerated(EnumType.STRING)
+    private Urgence urgence;
     @ManyToOne
     @JoinColumn(name = "service_id")
     private Service service;

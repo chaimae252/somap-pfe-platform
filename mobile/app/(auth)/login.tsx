@@ -10,7 +10,7 @@ import {
 } from "@/utils/storage";
 
 import React, { useState } from "react";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View,
   Text,
@@ -88,7 +88,7 @@ export default function LoginScreen() {
       const { token, id, nom, role } = response;
 
       await saveToken(token);
-
+      await AsyncStorage.setItem("userId", id.toString());
       const user = {
         id,
         email,
