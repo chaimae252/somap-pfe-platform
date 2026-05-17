@@ -28,6 +28,7 @@ import {
 
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { getClientById } from "@/services/clientService";
 
 export default function LoginScreen() {
 
@@ -63,64 +64,42 @@ export default function LoginScreen() {
   /* ================= LOGIN ================= */
 
   const handleLogin = async () => {
+  const emailValid = validateEmail(email);
+  const passwordValid = validateLoginPassword(password);
 
-    const emailValid = validateEmail(email);
-    const passwordValid = validateLoginPassword(password);
+  if (!emailValid || !passwordValid) {
+    setMessage({ type: "error", text: "Veuillez vérifier vos informations" });
+    return;
+  }
 
-    if (!emailValid || !passwordValid) {
+  try {
+    const response = await login({ email, motDePasse: password });
+    const { token, id, nom, role } = response;
 
-      // ❌ replaced Alert ONLY
-      setMessage({
-        type: "error",
-        text: "Veuillez vérifier vos informations",
-      });
+    // ✅ Fetch full client profile to get telephone & adresse
+    const fullClient = await getClientById(id);
 
-      return;
-    }
+    const user = {
+      id,
+      email,
+      nom,
+      role,
+      telephone: fullClient?.telephone || "",
+      adresse: fullClient?.adresse || "",
+    };
 
-    try {
+    await saveToken(token);
+    await AsyncStorage.setItem("userId", id.toString());
+    await saveUser(user);
+    setAuth(token, user);
 
-      const response = await login({
-        email,
-        motDePasse: password,
-      });
-
-      const { token, id, nom, role } = response;
-
-      await saveToken(token);
-      await AsyncStorage.setItem("userId", id.toString());
-      const user = {
-        id,
-        email,
-        nom,
-        role,
-      };
-
-      await saveUser(user);
-
-      setAuth(token, user);
-
-      // ✅ SUCCESS MESSAGE ONLY CHANGE
-      setMessage({
-        type: "success",
-        text: "Connexion réussie",
-      });
-
-      setTimeout(() => {
-        router.replace("/(tabs)/home");
-      }, 800);
-
-    } catch (error) {
-
-      console.log("LOGIN ERROR:", error);
-
-      // ❌ replaced Alert ONLY
-      setMessage({
-        type: "error",
-        text: "Email ou mot de passe incorrect",
-      });
-    }
-  };
+    setMessage({ type: "success", text: "Connexion réussie" });
+    setTimeout(() => router.replace("/(tabs)/home"), 800);
+  } catch (error) {
+    console.log("LOGIN ERROR:", error);
+    setMessage({ type: "error", text: "Email ou mot de passe incorrect" });
+  }
+};
 
   return (
     <SafeAreaView style={styles.safeArea}>

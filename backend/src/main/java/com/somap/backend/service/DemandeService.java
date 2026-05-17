@@ -13,6 +13,7 @@ public interface DemandeService {
     DemandeDTO getDemandeById(Long id);
 
     DemandeDTO updateDemandeStatus(Long id, String status);
-
+    DemandeDTO updateDemande(Long id, DemandeDTO demandeDTO);
     void deleteDemande(Long id);
+    List<DemandeDTO> getDemandesByClient(Long clientId);
 }

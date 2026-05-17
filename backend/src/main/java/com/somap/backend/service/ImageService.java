@@ -13,4 +13,6 @@ public interface ImageService {
     ImageDTO getImageById(Long id);
 
     void deleteImage(Long id);
+
+    List<ImageDTO> getImagesByDemande(Long demandeId);
 }

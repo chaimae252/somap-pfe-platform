@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useState,useCallback  } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +17,7 @@ import { getAllServices } from "../../services/serviceService";
 import { getHomeStats } from "../../services/homeService";
 import { getCurrentProject } from "../../services/projectService";
 import NotificationButton from "@/components/ui/NotificationButton";
+import { useFocusEffect } from "expo-router";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -70,9 +71,11 @@ export default function HomeScreen() {
   const [stats, setStats] = useState<any>(null);
   const [project, setProject] = useState<any>(null);
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     fetchHomeData();
-  }, []);
+  }, [])
+);
 
   const fetchHomeData = async () => {
     try {

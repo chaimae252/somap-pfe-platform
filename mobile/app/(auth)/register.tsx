@@ -32,6 +32,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { register } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegisterScreen() {
 
@@ -41,6 +42,7 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [adresse, setAdresse] = useState(""); // ✅ NEW STATE
   const [password, setPassword] = useState("");
   const [agree, setAgree] = useState(false);
 
@@ -51,11 +53,12 @@ export default function RegisterScreen() {
     email: false,
     phone: false,
     password: false,
+    adresse: false, // ✅ ADDED
   });
 
   const [pressed, setPressed] = useState(false);
 
-  // ✅ MESSAGE STATE (ADDED LIKE LOGIN)
+  // ✅ MESSAGE STATE
   const [message, setMessage] = useState({
     type: "",
     text: "",
@@ -65,6 +68,7 @@ export default function RegisterScreen() {
   const isEmailValid = validateEmail(email);
   const isPhoneValid = validatePhone(phone);
   const isPasswordValid = validateRegisterPassword(password);
+  // Adresse is optional – no validation required (or you can add a simple non-empty check if needed)
 
   const markTouched = (field: keyof typeof touched) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -75,6 +79,7 @@ export default function RegisterScreen() {
     const passwordValid = validateRegisterPassword(password);
     const nameValid = validateName(fullName);
     const phoneValid = validatePhone(phone);
+    // Adresse optional – no validation needed
 
     if (!emailValid || !passwordValid || !nameValid || !phoneValid) {
       setMessage({
@@ -93,41 +98,42 @@ export default function RegisterScreen() {
     }
 
     try {
+      const data = await register({
+        nom: fullName,
+        email,
+        motDePasse: password,
+        telephone: phone,
+        adresse: adresse, // ✅ SEND ADRESSE
+      });
 
-  const data = await register({
-    nom: fullName,
-    email,
-    motDePasse: password,
-    telephone: phone,
-    adresse: "",
-  });
+      const token = data?.token;
 
-  const token = data?.token;
+      const user = {
+        id: data?.id,
+        nom: data?.nom || fullName,
+        email: data?.email || email,
+        role: data?.role,
+        telephone: phone,
+        adresse: adresse, // ✅ STORE ADRESSE
+      };
 
-  const user = data?.user || {
-    nom: fullName,
-    email,
-  };
+      if (token) {
+        await saveToken(token);
+      }
 
-  if (token) {
-    await saveToken(token);
-  }
+      await saveUser(user);
+      setAuth(token, user);
+      await AsyncStorage.setItem("userId", user.id.toString());
+      setMessage({
+        type: "success",
+        text: "Compte créé avec succès !",
+      });
 
-  await saveUser(user);
+      setTimeout(() => {
+        router.replace("/(tabs)/home");
+      }, 800);
 
-  // ✅ THIS FIXES THE PROBLEM
-  setAuth(token, user);
-
-  setMessage({
-    type: "success",
-    text: "Compte créé avec succès !",
-  });
-
-  setTimeout(() => {
-    router.replace("/home");
-  }, 800);
-
-} catch (error: any) {
+    } catch (error: any) {
       setMessage({
         type: "error",
         text: error?.response?.data?.message || "Impossible de créer le compte",
@@ -143,10 +149,9 @@ export default function RegisterScreen() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-
             <View style={styles.container}>
 
-              {/* ✅ MESSAGE (LIKE LOGIN) */}
+              {/* MESSAGE */}
               {message.text !== "" && (
                 <View
                   style={[
@@ -162,7 +167,7 @@ export default function RegisterScreen() {
                 </View>
               )}
 
-              {/* BACK (STYLE LIKE LOGIN) */}
+              {/* BACK BUTTON */}
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => router.replace("/login")}
@@ -181,7 +186,6 @@ export default function RegisterScreen() {
 
               {/* CARD */}
               <View style={styles.card}>
-
                 <View style={styles.cardHeader}>
                   <Image
                     source={require("@/assets/images/signup-p.png")}
@@ -207,7 +211,6 @@ export default function RegisterScreen() {
                     style={styles.textInput}
                   />
                 </View>
-
                 <Text style={styles.error}>
                   {!isNameValid && touched.name ? "Nom requis" : " "}
                 </Text>
@@ -228,7 +231,6 @@ export default function RegisterScreen() {
                     style={styles.textInput}
                   />
                 </View>
-
                 <Text style={styles.error}>
                   {!isEmailValid && touched.email ? "Email invalide" : " "}
                 </Text>
@@ -247,11 +249,30 @@ export default function RegisterScreen() {
                     onFocus={() => setFocusedInput("phone")}
                     onBlur={() => { setFocusedInput(""); markTouched("phone"); }}
                     style={styles.textInput}
+                    keyboardType="phone-pad"
                   />
                 </View>
-
                 <Text style={styles.error}>
                   {!isPhoneValid && touched.phone ? "Numéro invalide" : " "}
+                </Text>
+
+                {/* ADRESSE - NEW FIELD */}
+                <View style={[
+                  styles.inputContainer,
+                  focusedInput === "adresse" && styles.inputFocused,
+                ]}>
+                  <MaterialIcons name="location-on" size={22} color="#8e9aaf" style={styles.icon} />
+                  <TextInput
+                    placeholder="Adresse (facultatif)"
+                    value={adresse}
+                    onChangeText={setAdresse}
+                    onFocus={() => setFocusedInput("adresse")}
+                    onBlur={() => { setFocusedInput(""); markTouched("adresse"); }}
+                    style={styles.textInput}
+                  />
+                </View>
+                <Text style={styles.error}>
+                  {/* Optional field – no error */}
                 </Text>
 
                 {/* PASSWORD */}
@@ -271,7 +292,6 @@ export default function RegisterScreen() {
                     style={styles.textInput}
                   />
                 </View>
-
                 <Text style={styles.error}>
                   {!isPasswordValid && touched.password ? "Mot de passe trop court" : " "}
                 </Text>
@@ -292,7 +312,7 @@ export default function RegisterScreen() {
                   <Text style={styles.buttonText}>S’inscrire</Text>
                 </TouchableOpacity>
 
-                {/* BOTTOM TEXT (UNCHANGED) */}
+                {/* BOTTOM TEXT */}
                 <View style={styles.bottomRow}>
                   <Text style={styles.bottomText}>Déjà membre ? </Text>
                   <TouchableOpacity onPress={() => router.replace("/login")}>
@@ -302,7 +322,6 @@ export default function RegisterScreen() {
 
               </View>
             </View>
-
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -311,14 +330,10 @@ export default function RegisterScreen() {
 }
 
 /* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
-
   safeArea: { flex: 1, backgroundColor: "#eef3fb" },
   keyboardView: { flex: 1 },
   container: { flex: 1 },
-
-  /* BACK BUTTON LIKE LOGIN */
   backButton: {
     position: "absolute",
     top: 40,
@@ -326,43 +341,36 @@ const styles = StyleSheet.create({
     zIndex: 10,
     padding: 4,
   },
-
   header: {
     alignItems: "center",
     paddingTop: 35,
   },
-
   logo: {
     width: 230,
     height: 100,
   },
-
   card: {
     backgroundColor: "#fff",
     borderRadius: 35,
     margin: 20,
     padding: 26,
   },
-
   cardHeader: {
     alignItems: "center",
     marginBottom: 20,
   },
-
   regiIcon: {
-    width: 190,   // bigger
-    height: 200,  // bigger
-    marginBottom: -13, // minimal space below image
+    width: 190,
+    height: 200,
+    marginBottom: -13,
     marginTop: -50,
   },
-
   title: {
     fontSize: 26,
     fontWeight: "800",
     color: "#1f2d3d",
     marginTop: 1,
   },
-
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -373,81 +381,65 @@ const styles = StyleSheet.create({
     borderColor: "#d8e2f1",
     marginTop: 12,
   },
-
   inputFocused: {
     borderColor: "#1564c0",
     backgroundColor: "#fff",
   },
-
   inputError: {
     borderColor: "#ff5a6b",
     backgroundColor: "#fff5f6",
   },
-
   icon: { marginRight: 10 },
-
   textInput: {
     flex: 1,
     paddingVertical: 14,
   },
-
   error: {
     fontSize: 12,
     color: "#ff5a6b",
     minHeight: 16,
   },
-
   row: {
     flexDirection: "row",
     marginTop: 15,
     marginBottom: 20,
   },
-
   checkbox: {
     marginRight: 8,
     color: "#1564c0",
   },
-
   terms: {
     color: "#6c7a92",
     fontSize: 13,
   },
-
   button: {
     backgroundColor: "#1564c0",
     padding: 16,
     borderRadius: 50,
     alignItems: "center",
   },
-
   buttonPressed: {
     transform: [{ scale: 0.97 }],
   },
-
   buttonText: {
     color: "#fff",
     fontWeight: "800",
   },
-
   bottomRow: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
   },
-
   bottomText: {
     color: "#6c7a92",
     fontSize: 13,
   },
-
   signinText: {
     color: "#1564c0",
     fontSize: 13,
     fontWeight: "800",
   },
-
-  /* MESSAGE LIKE LOGIN */
   messageBox: {
     marginTop: 35,
     padding: 12,
@@ -456,18 +448,15 @@ const styles = StyleSheet.create({
     width: "60%",
     alignItems: "center",
   },
-
   messageText: {
     color: "#fff",
     textAlign: "center",
     fontWeight: "600",
     width: "100%",
   },
-
   messageSuccess: {
     backgroundColor: "#2ecc71",
   },
-
   messageError: {
     backgroundColor: "#e74c3c",
   },

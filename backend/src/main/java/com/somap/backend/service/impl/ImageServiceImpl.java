@@ -130,4 +130,12 @@ public class ImageServiceImpl implements ImageService {
 
         return dto;
     }
+
+    @Override
+public List<ImageDTO> getImagesByDemande(Long demandeId) {
+    return imageRepository.findByDemandeId(demandeId)
+            .stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+}
 }

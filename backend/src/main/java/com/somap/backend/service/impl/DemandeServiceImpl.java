@@ -79,7 +79,19 @@ public class DemandeServiceImpl implements DemandeService {
 
         return mapToDTO(updated);
     }
+    @Override
+public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
+    Demande demande = demandeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Demande not found"));
 
+    demande.setObjet(dto.getObjet());
+    demande.setDescription(dto.getDescription());
+    demande.setUrgence(dto.getUrgence());
+    // (status is usually updated separately, but you can add it if needed)
+
+    Demande updated = demandeRepository.save(demande);
+    return mapToDTO(updated);
+}
     // ❌ DELETE
     @Override
     public void deleteDemande(Long id) {
@@ -95,13 +107,21 @@ public class DemandeServiceImpl implements DemandeService {
 
         DemandeDTO dto = new DemandeDTO();
         dto.setId(demande.getId());
+        dto.setObjet(demande.getObjet()); 
         dto.setDescription(demande.getDescription());
         dto.setDateCreation(demande.getDateCreation());
         dto.setStatut(demande.getStatut());
-
+        dto.setUrgence(demande.getUrgence());
         dto.setClientId(demande.getClient().getId());
         dto.setServiceId(demande.getService().getId());
 
         return dto;
     }
+    @Override
+public List<DemandeDTO> getDemandesByClient(Long clientId) {
+    return demandeRepository.findByClientId(clientId)
+            .stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+}
 }

@@ -79,4 +79,8 @@ public class ImageController {
 
     return ResponseEntity.ok(imageService.uploadImage(dto));
 }
+@GetMapping("/demande/{demandeId}")
+public ResponseEntity<List<ImageDTO>> getImagesByDemande(@PathVariable Long demandeId) {
+    return ResponseEntity.ok(imageService.getImagesByDemande(demandeId));
+}
 }

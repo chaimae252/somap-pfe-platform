@@ -53,7 +53,12 @@ public class DemandeController {
                 demandeService.updateDemandeStatus(id, status)
         );
     }
-
+@PutMapping("/{id}")
+public ResponseEntity<DemandeDTO> updateDemande(
+        @PathVariable Long id,
+        @RequestBody DemandeDTO demandeDTO) {
+    return ResponseEntity.ok(demandeService.updateDemande(id, demandeDTO));
+}
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteDemande(
             @PathVariable Long id
@@ -63,4 +68,8 @@ public class DemandeController {
 
         return ResponseEntity.ok("Demande supprimée avec succès");
     }
+    @GetMapping("/client/{clientId}")
+public ResponseEntity<List<DemandeDTO>> getDemandesByClient(@PathVariable Long clientId) {
+    return ResponseEntity.ok(demandeService.getDemandesByClient(clientId));
+}
 }
