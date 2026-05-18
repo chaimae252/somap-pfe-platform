@@ -10,15 +10,17 @@ import {
   Image,
   Animated,
   Modal,
+  StatusBar,
 } from "react-native";
 import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import api from "@/services/api";
-// At the top of the file, after imports
+
 const TOAST_SUCCESS_GRADIENT = ["#49C69A", "#2D9C7C"] as const;
 const TOAST_ERROR_GRADIENT = ["#EB5757", "#C0392B"] as const;
+
 // ================= TYPES =================
 type Urgence = "FAIBLE" | "NORMAL" | "URGENT";
 
@@ -30,7 +32,7 @@ type LocalService = {
   id: string;
   title: string;
   description: string;
-  image: any;   // local require image (for display only)
+  image: any;
 };
 
 type ImageItem = {
@@ -45,13 +47,13 @@ type SelectedImage = {
   isNew?: boolean;
 };
 
-// ================= CUSTOM TOAST (TOP) =================
+// ================= CUSTOM TOAST =================
 type ToastType = "success" | "error";
 
-const Toast = ({ visible, message, type, onHide }: { 
-  visible: boolean; 
-  message: string; 
-  type: ToastType; 
+const Toast = ({ visible, message, type, onHide }: {
+  visible: boolean;
+  message: string;
+  type: ToastType;
   onHide: () => void;
 }) => {
   const translateY = useRef(new Animated.Value(-100)).current;
@@ -75,19 +77,16 @@ const Toast = ({ visible, message, type, onHide }: {
 
   if (!visible) return null;
 
-  // Use constants instead of inline arrays
   const bgColors = type === "success" ? TOAST_SUCCESS_GRADIENT : TOAST_ERROR_GRADIENT;
   const icon = type === "success" ? "checkmark-circle" : "alert-circle";
 
   return (
-    <Animated.View
-      style={[styles.toastContainer, { transform: [{ translateY }], opacity: fadeAnim }]}
-    >
-      <LinearGradient colors={bgColors} style={styles.toastGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-        <Ionicons name={icon} size={24} color="#fff" />
-        <Text style={styles.toastText}>{message}</Text>
-      </LinearGradient>
-    </Animated.View>
+      <Animated.View style={[styles.toastContainer, { transform: [{ translateY }], opacity: fadeAnim }]}>
+        <LinearGradient colors={bgColors} style={styles.toastGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+          <Ionicons name={icon} size={24} color="#fff" />
+          <Text style={styles.toastText}>{message}</Text>
+        </LinearGradient>
+      </Animated.View>
   );
 };
 
@@ -95,7 +94,6 @@ export default function EditDemandeScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
 
-  // Demande state
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
@@ -105,25 +103,21 @@ export default function EditDemandeScreen() {
   const [existingImages, setExistingImages] = useState<ImageItem[]>([]);
   const [newImages, setNewImages] = useState<SelectedImage[]>([]);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({
-    visible: false,
-    message: "",
-    type: "success",
+    visible: false, message: "", type: "success",
   });
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<{ id?: number; uri?: string; index?: number; isNew?: boolean } | null>(null);
 
-  // Services (static – same as create screen)
- const services: LocalService[] = [
-  { id: "3", title: "Traitement de surface", description: "Solutions complètes...", image: require("../../../assets/traitement-surface.jpg") },
-  { id: "4", title: "Sablage", description: "Nettoyage industriel...", image: require("../../../assets/sablage.jpg") },
-  { id: "5", title: "Métallisation", description: "Protection anticorrosion...", image: require("../../../assets/metallisation.jpg") },
-  { id: "6", title: "Peinture industrielle", description: "Application de peintures...", image: require("../../../assets/peinture.jpg") },
-  { id: "7", title: "Traitement des eaux", description: "Installation et maintenance...", image: require("../../../assets/eaux.jpg") },
-  { id: "8", title: "Produits chimiques", description: "Fourniture de produits...", image: require("../../../assets/chimique.jpg") },
-  { id: "9", title: "Travaux polyester", description: "Fabrication et réparation...", image: require("../../../assets/polyester.png") },
-];
+  const services: LocalService[] = [
+    { id: "3", title: "Traitement de surface", description: "Solutions complètes...", image: require("../../../assets/traitement-surface.jpg") },
+    { id: "4", title: "Sablage", description: "Nettoyage industriel...", image: require("../../../assets/sablage.jpg") },
+    { id: "5", title: "Métallisation", description: "Protection anticorrosion...", image: require("../../../assets/metallisation.jpg") },
+    { id: "6", title: "Peinture industrielle", description: "Application de peintures...", image: require("../../../assets/peinture.jpg") },
+    { id: "7", title: "Traitement des eaux", description: "Installation et maintenance...", image: require("../../../assets/eaux.jpg") },
+    { id: "8", title: "Produits chimiques", description: "Fourniture de produits...", image: require("../../../assets/chimique.jpg") },
+    { id: "9", title: "Travaux polyester", description: "Fabrication et réparation...", image: require("../../../assets/polyester.png") },
+  ];
 
-  // Animations for service cards
   const serviceAnims = useRef<ServiceAnimMap>({}).current;
   useEffect(() => {
     services.forEach(service => {
@@ -132,17 +126,13 @@ export default function EditDemandeScreen() {
   }, []);
 
   const animateServiceIn = (key: string) => {
-    if (serviceAnims[key]) {
-      Animated.timing(serviceAnims[key], { toValue: 1, duration: 180, useNativeDriver: false }).start();
-    }
+    if (serviceAnims[key]) Animated.timing(serviceAnims[key], { toValue: 1, duration: 180, useNativeDriver: false }).start();
   };
   const animateServiceOut = (key: string) => {
-    if (serviceAnims[key]) {
-      Animated.timing(serviceAnims[key], { toValue: 0, duration: 180, useNativeDriver: false }).start();
-    }
+    if (serviceAnims[key]) Animated.timing(serviceAnims[key], { toValue: 0, duration: 180, useNativeDriver: false }).start();
   };
 
-  const BASE_URL = "http://192.168.1.119:8080"; // <-- replace with your backend IP
+  const BASE_URL = "http://192.168.1.119:8080";
 
   const fetchDemande = async () => {
     try {
@@ -153,14 +143,13 @@ export default function EditDemandeScreen() {
       setUrgence(data.urgence || "NORMAL");
       setSelectedServiceId(data.serviceId?.toString() || null);
 
-      // Fetch images and filter by demandeId
       const imagesRes = await api.get(`/images`);
       const filtered = imagesRes.data
-        .filter((img: any) => img.demandeId === Number(id) && img.imageUrl)
-        .map((img: any) => ({
-          ...img,
-          imageUrl: img.imageUrl.startsWith('http') ? img.imageUrl : `${BASE_URL}${img.imageUrl}`,
-        }));
+          .filter((img: any) => img.demandeId === Number(id) && img.imageUrl)
+          .map((img: any) => ({
+            ...img,
+            imageUrl: img.imageUrl.startsWith("http") ? img.imageUrl : `${BASE_URL}${img.imageUrl}`,
+          }));
       setExistingImages(filtered);
     } catch (error) {
       console.error(error);
@@ -171,11 +160,7 @@ export default function EditDemandeScreen() {
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchDemande();
-    }, [id])
-  );
+  useFocusEffect(useCallback(() => { fetchDemande(); }, [id]));
 
   const pickImages = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -210,7 +195,7 @@ export default function EditDemandeScreen() {
       await api.delete(`/images/${imageId}`);
       setExistingImages(prev => prev.filter(img => img.id !== imageId));
       setToast({ visible: true, message: "Image supprimée", type: "success" });
-    } catch (error) {
+    } catch {
       setToast({ visible: true, message: "Erreur lors de la suppression", type: "error" });
     }
   };
@@ -242,7 +227,6 @@ export default function EditDemandeScreen() {
     }
     setSubmitting(true);
     try {
-      // 1. Update demande fields (including serviceId)
       await api.put(`/demandes/${id}`, {
         objet: objet.trim(),
         description: description.trim(),
@@ -250,23 +234,15 @@ export default function EditDemandeScreen() {
         serviceId: parseInt(selectedServiceId),
       });
 
-      // 2. Upload new images
       for (const img of newImages) {
         const formData = new FormData();
-        formData.append("file", {
-          uri: img.uri,
-          name: img.name,
-          type: img.type,
-        } as any);
+        formData.append("file", { uri: img.uri, name: img.name, type: img.type } as any);
         formData.append("demandeId", String(id));
-        await api.post("/images/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        await api.post("/images/upload", formData, { headers: { "Content-Type": "multipart/form-data" } });
       }
 
       setNewImages([]);
       await fetchDemande();
-
       setToast({ visible: true, message: "Demande mise à jour avec succès", type: "success" });
       setTimeout(() => router.back(), 2000);
     } catch (error) {
@@ -278,10 +254,10 @@ export default function EditDemandeScreen() {
   };
 
   const Label = ({ icon, title }: { icon: any; title: string }) => (
-    <View style={styles.labelRow}>
-      <Ionicons name={icon} size={16} color="#1271B8" />
-      <Text style={styles.label}>{title}</Text>
-    </View>
+      <View style={styles.labelRow}>
+        <Ionicons name={icon} size={16} color="#1271B8" />
+        <Text style={styles.label}>{title}</Text>
+      </View>
   );
 
   const urgences = [
@@ -292,216 +268,280 @@ export default function EditDemandeScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1271B8" />
-      </View>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#1271B8" />
+        </View>
     );
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1564c0" />
-        </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: "#F4F7FB" }}>
+        <StatusBar barStyle="light-content" />
 
-        <LinearGradient colors={["#0B1F3A", "#123C69", "#1B6CA8"] as const} style={styles.headerCard}>
-          <Text style={styles.headerTitle}>Modifier la demande</Text>
-          <Text style={styles.headerSubtitle}>Modifiez votre besoin industriel</Text>
-        </LinearGradient>
+        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
 
-        {/* SERVICES CAROUSEL */}
-        <View style={styles.section}>
-          <Label icon="layers-outline" title="Type de service" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {services.map(service => {
-              const active = selectedServiceId === service.id;
-              return (
-                <Animated.View
-                  key={service.id}
-                  style={{
-                    transform: [{ scale: serviceAnims[service.title]?.interpolate({ inputRange: [0,1], outputRange: [1,1.05] }) ?? 1 }],
-                  }}
-                >
-                  <View style={[styles.serviceCardHorizontal, { borderColor: active ? "#1271b8" : "#E8EEF5" }]}>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      onPress={() => setSelectedServiceId(service.id)}
-                      onPressIn={() => animateServiceIn(service.title)}
-                      onPressOut={() => animateServiceOut(service.title)}
-                      style={styles.serviceSelectArea}
+          {/* ── HEADER — matches ServicesScreen, HomeScreen & CreateDemandeScreen ── */}
+          <LinearGradient
+              colors={["#0d2d5e", "#1271b8", "#2D9C7C"] as const}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.header}
+          >
+            <View style={styles.blob1} />
+            <View style={styles.blob2} />
+
+            <View style={styles.headerTop}>
+              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <Ionicons name="chevron-back" size={24} color="#fff" />
+              </TouchableOpacity>
+
+              <View style={styles.headerTextBlock}>
+                <Text style={styles.headerLabel}>SOMAP & SERVICE</Text>
+                <Text style={styles.headerTitle}>Modifier la Demande</Text>
+                <Text style={styles.headerSubtitle}>Modifiez votre besoin industriel</Text>
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* SERVICES CAROUSEL */}
+          <View style={styles.section}>
+            <Label icon="layers-outline" title="Type de service" />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {services.map(service => {
+                const active = selectedServiceId === service.id;
+                return (
+                    <Animated.View
+                        key={service.id}
+                        style={{
+                          transform: [{ scale: serviceAnims[service.title]?.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) ?? 1 }],
+                        }}
                     >
-                      <Image source={service.image} style={styles.serviceImage} />
-                      <Text style={[styles.serviceTextHorizontal, { color: active ? "#1271b8" : "#1B2430" }]}>
-                        {service.title}
+                      <View style={[styles.serviceCardHorizontal, { borderColor: active ? "#1271b8" : "#E8EEF5" }]}>
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            onPress={() => setSelectedServiceId(service.id)}
+                            onPressIn={() => animateServiceIn(service.title)}
+                            onPressOut={() => animateServiceOut(service.title)}
+                            style={styles.serviceSelectArea}
+                        >
+                          <Image source={service.image} style={styles.serviceImage} />
+                          <Text style={[styles.serviceTextHorizontal, { color: active ? "#1271b8" : "#1B2430" }]}>
+                            {service.title}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.detailsButton}
+                            onPress={() => router.push(`/service/${service.id}` as any)}
+                            activeOpacity={0.7}
+                        >
+                          <Ionicons name="information-circle-outline" size={20} color="#1271B8" />
+                          <Text style={styles.detailsText}>Détails</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </Animated.View>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* OBJET */}
+          <View style={styles.section}>
+            <Label icon="document-text-outline" title="Objet" />
+            <TextInput
+                style={styles.input}
+                placeholder="Objet de la demande"
+                value={objet}
+                onChangeText={setObjet}
+            />
+          </View>
+
+          {/* DESCRIPTION */}
+          <View style={styles.section}>
+            <Label icon="create-outline" title="Description" />
+            <TextInput
+                style={[styles.input, styles.textArea]}
+                multiline
+                numberOfLines={4}
+                placeholder="Description détaillée"
+                value={description}
+                onChangeText={setDescription}
+            />
+          </View>
+
+          {/* URGENCE */}
+          <View style={styles.section}>
+            <Label icon="warning-outline" title="Niveau d'urgence" />
+            <View style={styles.urgenceRow}>
+              {urgences.map(item => {
+                const active = urgence === item.title;
+                return (
+                    <TouchableOpacity
+                        key={item.title}
+                        onPress={() => setUrgence(item.title as Urgence)}
+                        style={[styles.urgenceChip, { backgroundColor: active ? item.color : item.bg }]}
+                    >
+                      <Ionicons name={item.icon as any} size={16} color={active ? "#fff" : item.color} />
+                      <Text style={[styles.urgenceText, { color: active ? "#fff" : item.color }]}>
+                        {item.label}
                       </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.detailsButton}
-                      onPress={() => router.push(`/service/${service.id}` as any)}
-                      activeOpacity={0.7}
-                    >
-                      <Ionicons name="information-circle-outline" size={20} color="#1271B8" />
-                      <Text style={styles.detailsText}>Détails</Text>
-                    </TouchableOpacity>
-                  </View>
-                </Animated.View>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* OBJET */}
-        <View style={styles.section}>
-          <Label icon="document-text-outline" title="Objet" />
-          <TextInput
-            style={styles.input}
-            placeholder="Objet de la demande"
-            value={objet}
-            onChangeText={setObjet}
-          />
-        </View>
-
-        {/* DESCRIPTION */}
-        <View style={styles.section}>
-          <Label icon="create-outline" title="Description" />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            multiline
-            numberOfLines={4}
-            placeholder="Description détaillée"
-            value={description}
-            onChangeText={setDescription}
-          />
-        </View>
-
-        {/* URGENCE */}
-        <View style={styles.section}>
-          <Label icon="warning-outline" title="Niveau d'urgence" />
-          <View style={styles.urgenceRow}>
-            {urgences.map(item => {
-              const active = urgence === item.title;
-              return (
-                <TouchableOpacity
-                  key={item.title}
-                  onPress={() => setUrgence(item.title as Urgence)}
-                  style={[styles.urgenceChip, { backgroundColor: active ? item.color : item.bg }]}
-                >
-                  <Ionicons name={item.icon as any} size={16} color={active ? "#fff" : item.color} />
-                  <Text style={[styles.urgenceText, { color: active ? "#fff" : item.color }]}>
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+                );
+              })}
+            </View>
           </View>
-        </View>
 
-        {/* IMAGES */}
-        <View style={styles.section}>
-          <Label icon="cloud-upload-outline" title="Pièces jointes" />
-          <TouchableOpacity style={styles.uploadBox} onPress={pickImages}>
-            <Ionicons name="cloud-upload-outline" size={34} color="#1271B8" />
-            <Text style={styles.uploadTitle}>Ajouter des images</Text>
-            <Text style={styles.uploadSubtitle}>JPG, PNG ou PDF</Text>
-          </TouchableOpacity>
+          {/* IMAGES */}
+          <View style={styles.section}>
+            <Label icon="cloud-upload-outline" title="Pièces jointes" />
+            <TouchableOpacity style={styles.uploadBox} onPress={pickImages}>
+              <Ionicons name="cloud-upload-outline" size={34} color="#1271B8" />
+              <Text style={styles.uploadTitle}>Ajouter des images</Text>
+              <Text style={styles.uploadSubtitle}>JPG, PNG ou PDF</Text>
+            </TouchableOpacity>
 
-          {/* Existing images */}
-          {existingImages.length > 0 && (
-            <View style={styles.imageList}>
-              <Text style={styles.imageSubtitle}>Images actuelles :</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-                {existingImages.map((img) => (
-                  <View key={img.id} style={styles.imageItem}>
-                    <Image source={{ uri: img.imageUrl }} style={styles.imagePreview} />
-                    <TouchableOpacity style={styles.removeImageIcon} onPress={() => confirmDeleteImage({ id: img.id })}>
-                      <Ionicons name="trash-outline" size={20} color="#EB5757" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+            {existingImages.length > 0 && (
+                <View style={styles.imageList}>
+                  <Text style={styles.imageSubtitle}>Images actuelles :</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                    {existingImages.map(img => (
+                        <View key={img.id} style={styles.imageItem}>
+                          <Image source={{ uri: img.imageUrl }} style={styles.imagePreview} />
+                          <TouchableOpacity style={styles.removeImageIcon} onPress={() => confirmDeleteImage({ id: img.id })}>
+                            <Ionicons name="trash-outline" size={20} color="#EB5757" />
+                          </TouchableOpacity>
+                        </View>
+                    ))}
+                  </ScrollView>
+                </View>
+            )}
 
-          {/* New images */}
-          {newImages.length > 0 && (
-            <View style={styles.imageList}>
-              <Text style={styles.imageSubtitle}>Nouvelles images :</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-                {newImages.map((img, idx) => (
-                  <View key={idx} style={styles.imageItem}>
-                    <Image source={{ uri: img.uri }} style={styles.imagePreview} />
-                    <TouchableOpacity style={styles.removeImageIcon} onPress={() => confirmDeleteImage({ uri: img.uri, isNew: true }, idx)}>
-                      <Ionicons name="close-circle" size={20} color="#EB5757" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+            {newImages.length > 0 && (
+                <View style={styles.imageList}>
+                  <Text style={styles.imageSubtitle}>Nouvelles images :</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                    {newImages.map((img, idx) => (
+                        <View key={idx} style={styles.imageItem}>
+                          <Image source={{ uri: img.uri }} style={styles.imagePreview} />
+                          <TouchableOpacity style={styles.removeImageIcon} onPress={() => confirmDeleteImage({ uri: img.uri, isNew: true }, idx)}>
+                            <Ionicons name="close-circle" size={20} color="#EB5757" />
+                          </TouchableOpacity>
+                        </View>
+                    ))}
+                  </ScrollView>
+                </View>
+            )}
+          </View>
 
-        {/* SUBMIT BUTTON */}
-        <TouchableOpacity
-          activeOpacity={0.9}
-          style={{ marginHorizontal: 50, marginTop: 25, marginBottom: 40 }}
-          onPress={handleUpdate}
-          disabled={submitting}
-        >
-          <LinearGradient colors={["#1271b8", "#1271b8"] as const} style={styles.submitButton}>
-            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Enregistrer</Text>}
-            {!submitting && <Ionicons name="arrow-forward" size={20} color="#fff" />}
-          </LinearGradient>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* DELETE CONFIRMATION MODAL */}
-      <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <LinearGradient colors={["#fff", "#f8f9fc"] as const} style={styles.modalGradient}>
-              <Ionicons name="alert-circle" size={60} color="#EB5757" />
-              <Text style={styles.modalTitle}>Confirmation</Text>
-              <Text style={styles.modalMessage}>Supprimer cette image ?</Text>
-              <View style={styles.modalButtons}>
-                <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setDeleteModalVisible(false)}>
-                  <Text style={styles.cancelButtonText}>Annuler</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalButton, styles.deleteButton]} onPress={handleDeleteConfirm}>
-                  <LinearGradient colors={["#EB5757", "#C0392B"] as const} style={styles.deleteGradient}>
-                    <Text style={styles.deleteButtonText}>Supprimer</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
+          {/* SUBMIT */}
+          <TouchableOpacity
+              activeOpacity={0.9}
+              style={{ marginHorizontal: 50, marginTop: 25, marginBottom: 40 }}
+              onPress={handleUpdate}
+              disabled={submitting}
+          >
+            <LinearGradient colors={["#1271b8", "#1271b8"] as const} style={styles.submitButton}>
+              {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Enregistrer</Text>}
+              {!submitting && <Ionicons name="arrow-forward" size={20} color="#fff" />}
             </LinearGradient>
-          </View>
-        </View>
-      </Modal>
+          </TouchableOpacity>
+        </ScrollView>
 
-      <Toast
-        visible={toast.visible}
-        message={toast.message}
-        type={toast.type}
-        onHide={() => setToast(prev => ({ ...prev, visible: false }))}
-      />
-    </View>
+        {/* DELETE IMAGE MODAL */}
+        <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <LinearGradient colors={["#fff", "#f8f9fc"] as const} style={styles.modalGradient}>
+                <Ionicons name="alert-circle" size={60} color="#EB5757" />
+                <Text style={styles.modalTitle}>Confirmation</Text>
+                <Text style={styles.modalMessage}>Supprimer cette image ?</Text>
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setDeleteModalVisible(false)}>
+                    <Text style={styles.cancelButtonText}>Annuler</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.modalButton, styles.deleteButton]} onPress={handleDeleteConfirm}>
+                    <LinearGradient colors={["#EB5757", "#C0392B"] as const} style={styles.deleteGradient}>
+                      <Text style={styles.deleteButtonText}>Supprimer</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          </View>
+        </Modal>
+
+        <Toast
+            visible={toast.visible}
+            message={toast.message}
+            type={toast.type}
+            onHide={() => setToast(prev => ({ ...prev, visible: false }))}
+        />
+      </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F7FB" },
-  backButton: { position: "absolute", top: 40, left: 18, zIndex: 10, padding: 4 },
-  headerCard: {
-    marginHorizontal: 20,
-    marginTop: 65,
-    paddingVertical: 28,
-    paddingHorizontal: 22,
-    borderRadius: 28,
-    alignItems: "center",
-    elevation: 6,
+
+  // ── HEADER — matches ServicesScreen, HomeScreen & CreateDemandeScreen ─────
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingBottom: 35,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    overflow: "hidden",
+    marginBottom: 8,
   },
-  headerTitle: { color: "#fff", fontSize: 30, fontWeight: "800", textAlign: "center" },
-  headerSubtitle: { color: "rgba(255,255,255,0.8)", marginTop: 8, fontSize: 14, textAlign: "center" },
+  blob1: {
+    position: "absolute",
+    top: -40,
+    right: -40,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "rgba(77,184,232,0.16)",
+  },
+  blob2: {
+    position: "absolute",
+    bottom: 16,
+    left: -24,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "rgba(73,198,154,0.10)",
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    zIndex: 2,
+    gap: 8,
+  },
+  backButton: {
+    padding: 4,
+    marginTop: 20,
+    marginRight: 4,
+  },
+  headerTextBlock: { flex: 1 },
+  headerLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 11,
+    letterSpacing: 1,
+    fontWeight: "500",
+    marginBottom: 6,
+  },
+  headerTitle: {
+    color: "#fff",
+    fontSize: 30,
+    fontWeight: "800",
+    letterSpacing: 0.4,
+  },
+  headerSubtitle: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 13,
+    marginTop: 4,
+  },
+
+  // ── FORM ──────────────────────────────────────────────────────────────────
   section: { marginTop: 24, paddingHorizontal: 20 },
   labelRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
   label: { fontSize: 15, fontWeight: "600", letterSpacing: 0.5, color: "#6B7A90", marginLeft: 8 },
