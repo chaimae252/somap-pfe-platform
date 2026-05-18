@@ -7,6 +7,7 @@ import com.somap.backend.dto.LoginRequestDTO;
 import com.somap.backend.dto.LoginResponseDTO;
 import com.somap.backend.dto.ResetPasswordDTO;
 import com.somap.backend.dto.VerifyCodeDTO;
+import com.somap.backend.dto.ChangePasswordRequestDTO;
 import com.somap.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -79,5 +80,15 @@ public ResponseEntity<?> resetPassword(
     return ResponseEntity.ok(
             "Mot de passe modifié"
     );
+}
+@PutMapping("/change-password")
+public ResponseEntity<?> changePassword(
+        @RequestHeader("Authorization") String authorization,
+        @RequestBody ChangePasswordRequestDTO request
+) {
+    // Extract token from "Bearer <token>"
+    String token = authorization.substring(7);
+    authService.changePassword(token, request.getCurrentPassword(), request.getNewPassword());
+    return ResponseEntity.ok("Mot de passe modifié avec succès");
 }
 }

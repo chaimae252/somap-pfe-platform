@@ -19,4 +19,6 @@ public interface AuthService {
 
     // NEW
     void resetPassword(String email, String newPassword);
+    void changePassword(String token, String currentPassword, String newPassword);
+
 }

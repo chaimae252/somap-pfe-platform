@@ -3,6 +3,7 @@ import {
     LoginRequest,
     LoginResponse,
 } from "@/types/auth";
+import { useAuthStore } from '../store/authStore';
 
 export const login = async (
     data: LoginRequest
@@ -67,4 +68,14 @@ export const resetPassword = async (
     );
 
     return response.data;
+};
+export const changePassword = async (oldPassword: string, newPassword: string) => {
+  const token = useAuthStore.getState().token;
+  if (!token) throw new Error('Non authentifié');
+
+   const response = await api.put('/auth/change-password', 
+    { currentPassword: oldPassword, newPassword },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
 };

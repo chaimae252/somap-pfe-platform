@@ -139,4 +139,25 @@ public void resetPassword(
 
     utilisateurRepository.save(user);
 }
+@Override
+public void changePassword(String token, String currentPassword, String newPassword) {
+    // Remove "Bearer " prefix if it exists
+    if (token != null && token.startsWith("Bearer ")) {
+        token = token.substring(7);
+    }
+    
+    // Extract email using existing JwtService method
+    String email = jwtService.extractUsername(token);
+    Utilisateur user = utilisateurRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    
+    // Verify current password
+    if (!passwordEncoder.matches(currentPassword, user.getMotDePasse())) {
+        throw new RuntimeException("Mot de passe actuel incorrect");
+    }
+    
+    // Encode and save new password
+    user.setMotDePasse(passwordEncoder.encode(newPassword));
+    utilisateurRepository.save(user);
+}
 }
