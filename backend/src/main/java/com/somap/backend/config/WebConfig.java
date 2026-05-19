@@ -9,8 +9,13 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Map "/uploads/**" URLs to the "uploads/" folder on disk
+
+        // For uploaded files (dynamic storage)
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
+
+        // For static images inside resources
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("classpath:/static/images/");
     }
 }

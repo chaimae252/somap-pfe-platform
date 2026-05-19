@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -9,184 +9,152 @@ import {
     TextInput,
     SafeAreaView,
     StatusBar,
+    ActivityIndicator,
 } from "react-native";
 
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect } from "react";
+
 import { getHomeStats } from "../../services/homeService";
+import { getAllServices } from "../../services/serviceService";
 import { useAuthStore } from "../../store/authStore";
 import Theme from "../../constants/theme";
 import NotificationButton from "@/components/ui/NotificationButton";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
+/* ---------------- TYPES ---------------- */
 type Service = {
-    id: string;
-    title: string;
+    id: number;
+    titre: string;
     description: string;
-    image: any;
+    images: {
+        imageUrl: string | null;
+    }[];
+};
+
+/* ---------------- HELPERS ---------------- */
+const normalize = (url?: string | null) => {
+    if (!url) return "https://via.placeholder.com/400";
+    if (url.startsWith("http")) return url;
+    return `http://10.0.2.2:8080${url}`;
+};
+
+const getSafeServiceImage = (images?: { imageUrl: string | null }[]) => {
+    if (!images || images.length === 0) {
+        return "https://via.placeholder.com/400";
+    }
+
+    // 1. PRIORITY: official /images/ folder (your real service images)
+    const official = images.find(img =>
+        img?.imageUrl?.includes("/images/")
+    );
+
+    if (official) return normalize(official.imageUrl);
+
+    // 2. fallback: uploads (not ideal but better than nothing)
+    const upload = images.find(img =>
+        img?.imageUrl?.includes("/uploads/")
+    );
+
+    if (upload) return normalize(upload.imageUrl);
+
+    return "https://via.placeholder.com/400";
 };
 
 export default function ServicesScreen() {
     const router = useRouter();
+
     const [search, setSearch] = useState("");
-    const { user } = useAuthStore();
+    const [services, setServices] = useState<Service[]>([]);
+    const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<any>(null);
 
+    const { user } = useAuthStore();
 
+    /* ---------------- FETCH STATS ---------------- */
     useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                if (!user?.id) return;
+                const data = await getHomeStats(user.id);
+                setStats(data);
+            } catch (err) {
+                console.log("Stats error:", err);
+            }
+        };
+
         fetchStats();
+    }, [user]);
+
+    /* ---------------- FETCH SERVICES ---------------- */
+    useEffect(() => {
+        const fetchServices = async () => {
+            try {
+                setLoading(true);
+                const data = await getAllServices();
+                setServices(data);
+            } catch (error) {
+                console.log("Services error:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchServices();
     }, []);
 
-    const fetchStats = async () => {
-        try {
-            if (!user?.id) return;
-
-            const data = await getHomeStats(user.id);
-            setStats(data);
-        } catch (err) {
-            console.log("Stats error:", err);
-        }
-    };
-
-
-    const services: Service[] = [
-        {
-            id: "1",
-            title: "Traitement de surface",
-            description:
-                "Solutions complètes de préparation, nettoyage et protection des surfaces métalliques industrielles.",
-            image: require("../../assets/traitement-surface.jpg"),
-        },
-
-        {
-            id: "2",
-            title: "Sablage",
-            description:
-                "Nettoyage industriel des surfaces par projection d’abrasif à grande vitesse.",
-            image: require("../../assets/sablage.jpg"),
-        },
-
-        {
-            id: "3",
-            title: "Métallisation",
-            description:
-                "Protection anticorrosion durable par application de couches métalliques.",
-            image: require("../../assets/metallisation.jpg"),
-        },
-
-        {
-            id: "4",
-            title: "Peinture industrielle",
-            description:
-                "Application de peintures techniques pour industrie et bâtiment.",
-            image: require("../../assets/peinture.jpg"),
-        },
-
-        {
-            id: "5",
-            title: "Traitement des eaux",
-            description:
-                "Installation et maintenance des systèmes de traitement des eaux industrielles.",
-            image: require("../../assets/eaux.jpg"),
-        },
-
-        {
-            id: "6",
-            title: "Produits chimiques",
-            description:
-                "Fourniture de produits chimiques adaptés aux besoins industriels.",
-            image: require("../../assets/chimique.jpg"),
-        },
-
-        {
-            id: "7",
-            title: "Travaux polyester",
-            description:
-                "Fabrication et réparation de cuves et structures en polyester.",
-            image: require("../../assets/polyester.png"),
-        },
-    ];
-
+    /* ---------------- FILTER ---------------- */
     const filteredServices = services.filter((item) =>
-        item.title.toLowerCase().includes(search.toLowerCase())
+        item.titre?.toLowerCase().includes(search.toLowerCase())
     );
 
+    /* ---------------- COLORS ---------------- */
     const getServiceColor = (title: string) => {
-        const lower = title.toLowerCase();
+        const lower = title?.toLowerCase() || "";
 
         if (lower.includes("sablage")) {
-            return {
-                bg: "rgba(18,113,184,0.10)",
-                color: "#1271B8",
-                icon: "hammer",
-            };
+            return { bg: "rgba(18,113,184,0.10)", color: "#1271B8", icon: "hammer" };
         }
 
         if (lower.includes("peinture")) {
-            return {
-                bg: "rgba(19,172,213,0.10)",
-                color: "#13ACD5",
-                icon: "color-fill",
-            };
+            return { bg: "rgba(19,172,213,0.10)", color: "#13ACD5", icon: "color-fill" };
         }
 
         if (lower.includes("traitement")) {
-            return {
-                bg: "rgba(73,198,154,0.12)",
-                color: "#2D9C7C",
-                icon: "water",
-            };
+            return { bg: "rgba(73,198,154,0.12)", color: "#2D9C7C", icon: "water" };
         }
 
-        return {
-            bg: "rgba(212,160,23,0.12)",
-            color: "#D4A017",
-            icon: "construct",
-        };
+        return { bg: "rgba(212,160,23,0.12)", color: "#D4A017", icon: "construct" };
     };
 
+    /* ---------------- RENDER CARD ---------------- */
     const renderItem = ({ item }: { item: Service }) => {
-        const config = getServiceColor(item.title);
+        const config = getServiceColor(item.titre);
 
+        const imageUri = getSafeServiceImage(item.images);
+        console.log("SERVICE DEBUG:", item.titre, item.images);
         return (
             <TouchableOpacity
                 activeOpacity={0.88}
                 style={styles.card}
                 onPress={() => router.push(`/service/${item.id}` as any)}
             >
-                <Image source={item.image} style={styles.image} />
+                <Image
+                    source={{ uri: imageUri }}
+                    style={styles.image}
+                />
 
                 <View style={styles.content}>
-                    <View
-                        style={[
-                            styles.badge,
-                            {
-                                backgroundColor: config.bg,
-                            },
-                        ]}
-                    >
-                        <Ionicons
-                            name={config.icon as any}
-                            size={14}
-                            color={config.color}
-                        />
-
-                        <Text
-                            style={[
-                                styles.badgeText,
-                                {
-                                    color: config.color,
-                                },
-                            ]}
-                        >
+                    <View style={[styles.badge, { backgroundColor: config.bg }]}>
+                        <Ionicons name={config.icon as any} size={14} color={config.color} />
+                        <Text style={[styles.badgeText, { color: config.color }]}>
                             Service industriel
                         </Text>
                     </View>
 
-                    <Text style={styles.title}>{item.title}</Text>
+                    <Text style={styles.title}>{item.titre}</Text>
 
                     <Text style={styles.description} numberOfLines={3}>
                         {item.description}
@@ -194,15 +162,8 @@ export default function ServicesScreen() {
 
                     <View style={styles.footer}>
                         <TouchableOpacity style={styles.detailsButton}>
-                            <Text style={styles.detailsText}>
-                                Voir détails
-                            </Text>
-
-                            <Ionicons
-                                name="arrow-forward"
-                                size={16}
-                                color={colors.blue}
-                            />
+                            <Text style={styles.detailsText}>Voir détails</Text>
+                            <Ionicons name="arrow-forward" size={16} color={colors.blue} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -210,30 +171,30 @@ export default function ServicesScreen() {
         );
     };
 
+    /* ---------------- LOADING ---------------- */
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.blue} />
+            </View>
+        );
+    }
+
+    /* ---------------- UI ---------------- */
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
 
-            {/* HEADER */}
             <LinearGradient
                 colors={["#0d2d5e", "#1271b8", "#2D9C7C"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
             >
-                <View style={styles.blob1} />
-                <View style={styles.blob2} />
-
                 <View style={styles.headerTop}>
                     <View>
-                        <Text style={styles.headerLabel}>
-                            SOMAP & SERVICE
-                        </Text>
-
-                        <Text style={styles.headerTitle}>
-                            Nos Services
-                        </Text>
-
+                        <Text style={styles.headerLabel}>SOMAP & SERVICE</Text>
+                        <Text style={styles.headerTitle}>Nos Services</Text>
                         <Text style={styles.headerSubtitle}>
                             Découvrez notre expertise industrielle
                         </Text>
@@ -243,15 +204,9 @@ export default function ServicesScreen() {
                 </View>
             </LinearGradient>
 
-            {/* SEARCH */}
             <View style={styles.searchWrapper}>
                 <View style={styles.searchContainer}>
-                    <Ionicons
-                        name="search"
-                        size={18}
-                        color={colors.textMuted}
-                    />
-
+                    <Ionicons name="search" size={18} color={colors.textMuted} />
                     <TextInput
                         placeholder="Rechercher un service..."
                         placeholderTextColor={colors.textMuted}
@@ -262,10 +217,9 @@ export default function ServicesScreen() {
                 </View>
             </View>
 
-            {/* LIST */}
             <FlatList
                 data={filteredServices}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id.toString()}
                 renderItem={renderItem}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}
@@ -440,5 +394,12 @@ const styles = StyleSheet.create({
         color: colors.blue,
         fontSize: 13,
         fontFamily: fonts.bodySemiBold,
+    },
+
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: colors.bgScreen,
     },
 });
