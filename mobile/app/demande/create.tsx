@@ -19,6 +19,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "@/services/api";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 
 /* ================= TYPES ================= */
 type ServiceAnimMap = {
@@ -46,9 +48,9 @@ type ImagePickerAsset = {
   mimeType?: string | null;
 };
 
-// ================= CUSTOM TOAST COMPONENT =================
 type ToastType = "success" | "error";
 
+// ================= CUSTOM TOAST COMPONENT =================
 const Toast = ({ visible, message, type, onHide }: {
   visible: boolean;
   message: string;
@@ -100,6 +102,7 @@ export default function CreateDemandeScreen() {
   const [urgence, setUrgence] = useState<Urgence>("Normal");
   const [images, setImages] = useState<SelectedImage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({
     visible: false,
     message: "",
@@ -223,6 +226,64 @@ export default function CreateDemandeScreen() {
     }
   };
 
+  // ================= NEW: Download / Print functions =================
+  const generateDraftHTML = () => {
+    const selectedService = services.find(s => s.id === selectedServiceId);
+    const urgencyLabels = { Faible: "Faible", Normal: "Normal", Urgent: "Urgent" };
+    return `
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Helvetica', sans-serif; padding: 40px; }
+          h1 { color: #1271B8; }
+          .section { margin-bottom: 20px; }
+        </style>
+      </head>
+      <body>
+        <h1>Nouvelle demande (brouillon)</h1>
+        <div class="section">
+          <p><strong>Service :</strong> ${selectedService?.title || "Non sélectionné"}</p>
+          <p><strong>Objet :</strong> ${objet || "(vide)"}</p>
+          <p><strong>Description :</strong> ${description || "(vide)"}</p>
+          <p><strong>Urgence :</strong> ${urgence}</p>
+          <p><strong>Images jointes :</strong> ${images.length}</p>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
+  const handleDownloadDraft = async () => {
+    setProcessing(true);
+    try {
+      const html = generateDraftHTML();
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: "Enregistrer le brouillon" });
+      } else {
+        alert("Le partage n'est pas disponible sur cet appareil");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de la génération du PDF");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handlePrintDraft = async () => {
+    setProcessing(true);
+    try {
+      const html = generateDraftHTML();
+      await Print.printAsync({ html });
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de l'impression");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const Label = ({ icon, title }: { icon: any; title: string }) => (
       <View style={styles.labelRow}>
         <Ionicons name={icon} size={16} color="#1271B8" />
@@ -242,14 +303,13 @@ export default function CreateDemandeScreen() {
 
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
 
-          {/* ── HEADER — matches ServicesScreen & HomeScreen ── */}
+          {/* HEADER with added Download & Print buttons */}
           <LinearGradient
               colors={["#0d2d5e", "#1271b8", "#2D9C7C"] as const}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.header}
           >
-            {/* Decorative blobs */}
             <View style={styles.blob1} />
             <View style={styles.blob2} />
 
@@ -257,6 +317,16 @@ export default function CreateDemandeScreen() {
               <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                 <Ionicons name="chevron-back" size={24} color="#fff" />
               </TouchableOpacity>
+
+              {/* NEW: Download / Print buttons */}
+              <View style={styles.headerActionButtons}>
+                <TouchableOpacity onPress={handleDownloadDraft} disabled={processing} style={styles.headerAction}>
+                  <Ionicons name="download-outline" size={22} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handlePrintDraft} disabled={processing} style={styles.headerAction}>
+                  <Ionicons name="print-outline" size={22} color="#fff" />
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.headerTextBlock}>
                 <Text style={styles.headerLabel}>SOMAP & SERVICE</Text>
@@ -438,7 +508,7 @@ export default function CreateDemandeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F7FB" },
 
-  // ── HEADER — matches ServicesScreen & HomeScreen ──────────────
+  // HEADER
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
@@ -477,6 +547,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginRight: 4,
   },
+  headerActionButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 20,
+    marginRight: 8,
+  },
+  headerAction: {
+    padding: 8,
+  },
   headerTextBlock: {
     flex: 1,
   },
@@ -484,25 +563,26 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
     fontSize: 11,
     letterSpacing: 1,
-    fontWeight: "500",
+    fontWeight: "normal", // was 500
     marginBottom: 6,
   },
   headerTitle: {
     color: "#fff",
     fontSize: 30,
-    fontWeight: "800",
     letterSpacing: 0.4,
+    fontWeight: "normal", // was 800
   },
   headerSubtitle: {
     color: "rgba(255,255,255,0.82)",
     fontSize: 13,
     marginTop: 4,
+    fontWeight: "normal", // not originally bold, but ensure no bold
   },
 
-  // ── FORM ──────────────────────────────────────────────────────
+  // FORM
   section: { marginTop: 24, paddingHorizontal: 20 },
   labelRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  label: { fontSize: 15, fontWeight: "600", letterSpacing: 0.5, color: "#6B7A90", marginLeft: 8 },
+  label: { fontSize: 15, letterSpacing: 0.5, color: "#6B7A90", marginLeft: 8, fontWeight: "normal" }, // was 600
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -518,7 +598,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     elevation: 2,
   },
-  input: { flex: 1, marginLeft: 12, fontSize: 15, color: "#1B2430" },
+  input: { flex: 1, marginLeft: 12, fontSize: 15, color: "#1B2430", fontWeight: "normal" },
   textAreaWrapper: {
     backgroundColor: "#fff",
     borderRadius: 18,
@@ -531,7 +611,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     elevation: 2,
   },
-  textArea: { minHeight: 140, fontSize: 15, color: "#1B2430" },
+  textArea: { minHeight: 140, fontSize: 15, color: "#1B2430", fontWeight: "normal" },
   uploadBox: {
     height: 160,
     borderRadius: 22,
@@ -542,17 +622,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#fff",
   },
-  uploadTitle: { marginTop: 12, fontSize: 15, fontWeight: "600", color: "#1B2430" },
-  uploadSubtitle: { marginTop: 4, color: "#7B8794", fontSize: 12 },
+  uploadTitle: { marginTop: 12, fontSize: 15, color: "#1B2430", fontWeight: "normal" }, // was 600
+  uploadSubtitle: { marginTop: 4, color: "#7B8794", fontSize: 12, fontWeight: "normal" },
   imagePreviewContainer: { flexDirection: "row", flexWrap: "wrap", marginTop: 12, gap: 8 },
   imagePreview: { width: 80, height: 80, borderRadius: 8, position: "relative" },
   previewImage: { width: "100%", height: "100%", borderRadius: 8 },
   removeImageBtn: { position: "absolute", top: -8, right: -8 },
   urgenceRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 10, flexWrap: "wrap" },
   urgenceChip: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999 },
-  urgenceText: { fontWeight: "700", fontSize: 13, letterSpacing: 0.3 },
+  urgenceText: { fontSize: 13, letterSpacing: 0.3, fontWeight: "normal" }, // was 700
   submitButton: { height: 60, borderRadius: 20, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 10, marginTop: 10 },
-  submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  submitText: { color: "#fff", fontSize: 16, fontWeight: "normal" }, // was 700
   serviceCardHorizontal: {
     width: 200,
     marginRight: 12,
@@ -568,7 +648,7 @@ const styles = StyleSheet.create({
   },
   serviceSelectArea: { alignItems: "center" },
   serviceImage: { width: "100%", height: 85, borderRadius: 12, marginBottom: 8 },
-  serviceTextHorizontal: { fontSize: 13, fontWeight: "700", textAlign: "center", marginBottom: 8 },
+  serviceTextHorizontal: { fontSize: 13, textAlign: "center", marginBottom: 8, fontWeight: "normal" }, // was 700
   detailsButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -579,9 +659,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(18,113,184,0.08)",
     gap: 4,
   },
-  detailsText: { fontSize: 12, fontWeight: "600", color: "#1271B8" },
-  errorText: { color: "#EB5757", fontSize: 12, marginTop: 4, marginLeft: 4 },
-  hintText: { color: "#8A94A6", fontSize: 12, marginTop: 8, textAlign: "center" },
+  detailsText: { fontSize: 12, color: "#1271B8", fontWeight: "normal" }, // was 600
+  errorText: { color: "#EB5757", fontSize: 12, marginTop: 4, marginLeft: 4, fontWeight: "normal" },
+  hintText: { color: "#8A94A6", fontSize: 12, marginTop: 8, textAlign: "center", fontWeight: "normal" },
   toastContainer: { position: "absolute", top: 60, left: 20, right: 20, zIndex: 1000 },
   toastGradient: {
     flexDirection: "row",
@@ -596,5 +676,5 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  toastText: { color: "#fff", fontSize: 15, fontWeight: "600", flex: 1 },
+  toastText: { color: "#fff", fontSize: 15, flex: 1, fontWeight: "normal" }, // was 600
 });

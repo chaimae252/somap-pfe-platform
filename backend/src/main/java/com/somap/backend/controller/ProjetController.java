@@ -70,4 +70,9 @@ public class ProjetController {
     ) {
         return projetService.getCurrentProject(clientId);
     }
+
+    @GetMapping("/client/{clientId}")
+public ResponseEntity<List<ProjetDTO>> getProjectsByClient(@PathVariable Long clientId) {
+    return ResponseEntity.ok(projetService.getProjectsByClient(clientId));
+}
 }

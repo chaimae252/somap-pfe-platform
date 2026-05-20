@@ -225,7 +225,9 @@ export default function HomeScreen() {
                     colors={[colors.blueAccent, colors.cyan]}
                     style={styles.avatar}
                 >
-                  <Text style={styles.avatarInitial}>C</Text>
+                  <Text style={styles.avatarInitial}>
+        {user?.nom?.charAt(0).toUpperCase() || 'C'}
+    </Text>
                 </LinearGradient>
 
                 <View style={styles.avatarDot} />
