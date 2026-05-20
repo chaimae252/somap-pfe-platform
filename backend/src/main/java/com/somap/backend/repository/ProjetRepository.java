@@ -14,4 +14,6 @@ public interface ProjetRepository extends JpaRepository<Projet, Long> {
     Optional<Projet> findFirstByClientIdOrderByDateDebutDesc(
             Long clientId
     );
+     
+Optional<Projet> findByIdAndClientId(Long id, Long clientId); 
 }

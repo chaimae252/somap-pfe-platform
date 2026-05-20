@@ -146,4 +146,11 @@ public class ProjetServiceImpl implements ProjetService {
 
         return mapToDTO(projet);
     }
+    @Override
+public List<ProjetDTO> getProjectsByClient(Long clientId) {
+    return projetRepository.findByClientId(clientId)
+            .stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+}
 }

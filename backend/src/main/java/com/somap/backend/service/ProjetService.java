@@ -17,4 +17,6 @@ public interface ProjetService {
     void deleteProjet(Long id);
 
     ProjetDTO getCurrentProject(Long clientId);
+
+    List<ProjetDTO> getProjectsByClient(Long clientId);
 }
