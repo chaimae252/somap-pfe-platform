@@ -19,7 +19,10 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
 
-    public JwtFilter(JwtService jwtService, CustomUserDetailsService userDetailsService) {
+    public JwtFilter(
+            JwtService jwtService,
+            CustomUserDetailsService userDetailsService
+    ) {
         this.jwtService = jwtService;
         this.userDetailsService = userDetailsService;
     }
@@ -31,10 +34,33 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+// normalize
+        if (path == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+// 🚨 STRONG STATIC BYPASS (IMPORTANT FIX)
+        if (
+                path.startsWith("/images/") ||
+                        path.startsWith("/uploads/") ||
+                        path.startsWith("/static/") ||
+                        path.contains(".jpg") ||
+                        path.contains(".png") ||
+                        path.contains(".jpeg") ||
+                        path.contains(".webp")
+        ) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
+        // ✅ No token
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -42,20 +68,27 @@ public class JwtFilter extends OncePerRequestFilter {
 
         jwt = authHeader.substring(7);
 
-        // IMPORTANT FIX
-        if (jwt.isBlank() || jwt.equals("undefined") || jwt.equals("null")) {
+        // ✅ Invalid token values
+        if (
+                jwt.isBlank() ||
+                        jwt.equals("undefined") ||
+                        jwt.equals("null")
+        ) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
+
             userEmail = jwtService.extractUsername(jwt);
 
-            if (userEmail != null
-                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (
+                    userEmail != null &&
+                            SecurityContextHolder.getContext().getAuthentication() == null
+            ) {
 
                 UserDetails userDetails =
-                        this.userDetailsService.loadUserByUsername(userEmail);
+                        userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
 
@@ -67,10 +100,13 @@ public class JwtFilter extends OncePerRequestFilter {
                             );
 
                     authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
+                            new WebAuthenticationDetailsSource()
+                                    .buildDetails(request)
                     );
 
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    SecurityContextHolder
+                            .getContext()
+                            .setAuthentication(authToken);
                 }
             }
 

@@ -20,6 +20,7 @@ import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "@/services/api";
 import {getAllServices} from "../../services/serviceService";
+import { useLocalSearchParams } from "expo-router";
 
 /* ================= TYPES ================= */
 type ServiceAnimMap = {
@@ -96,7 +97,7 @@ const Toast = ({visible, message, type, onHide}: {
 
 export default function CreateDemandeScreen() {
     const router = useRouter();
-
+    const { serviceId } = useLocalSearchParams();
     const [services, setServices] = useState<Service[]>([]);
     const [servicesLoading, setServicesLoading] = useState(true);
     const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
@@ -140,6 +141,16 @@ export default function CreateDemandeScreen() {
             const data = await getAllServices();
 
             setServices(data);
+
+            if (serviceId && data.length > 0) {
+                const selected = data.find(
+                    (s: Service) => s.id === parseInt(serviceId as string)
+                );
+
+                if (selected) {
+                    setSelectedService(selected);
+                }
+            }
         } catch (error) {
             console.log("Services error:", error);
         } finally {

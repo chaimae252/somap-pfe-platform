@@ -16,6 +16,7 @@ public class Service {
 
     private String titre;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL)

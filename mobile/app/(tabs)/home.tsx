@@ -412,7 +412,12 @@ export default function HomeScreen() {
                       key={i}
                       style={styles.serviceCard}
                       activeOpacity={0.85}
-                      onPress={() => router.push(`/service/${service.id}`)}
+                      onPress={() =>
+                          router.push({
+                            pathname: "/service/[id]",
+                            params: { id: service.id },
+                          })
+                      }
                   >
                     <View
                         style={[
@@ -433,7 +438,11 @@ export default function HomeScreen() {
                       {service.titre}
                     </Text>
 
-                    <Text style={styles.serviceDesc}>
+                    <Text
+                        style={styles.serviceDesc}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                    >
                       {service.description}
                     </Text>
 
