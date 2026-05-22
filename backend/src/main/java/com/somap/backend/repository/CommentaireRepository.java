@@ -8,4 +8,5 @@ import java.util.List;
 public interface CommentaireRepository extends JpaRepository<Commentaire, Long> {
 
     List<Commentaire> findByServiceId(Long serviceId);
+    List<Commentaire> findByServiceIdAndParentIsNull(Long serviceId);
 }

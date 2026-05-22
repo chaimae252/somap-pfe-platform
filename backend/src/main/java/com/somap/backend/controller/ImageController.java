@@ -62,7 +62,8 @@ public class ImageController {
     @PostMapping("/upload")
     public ResponseEntity<ImageDTO> uploadFile(
        @RequestParam("file") MultipartFile file,
-       @RequestParam("demandeId") Long demandeId) throws IOException {
+       @RequestParam(value = "demandeId", required = false) Long demandeId,
+       @RequestParam(value = "commentaireId", required = false) Long commentaireId) throws IOException {
     String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
     String uploadDir = "uploads/";
     Path uploadPath = Paths.get(uploadDir);
@@ -76,6 +77,7 @@ public class ImageController {
     ImageDTO dto = new ImageDTO();
     dto.setImageUrl(fileUrl);
     dto.setDemandeId(demandeId);
+    dto.setCommentaireId(commentaireId);
 
     return ResponseEntity.ok(imageService.uploadImage(dto));
 }

@@ -15,6 +15,10 @@ public class CommentaireDTO {
     private LocalDateTime dateCommentaire;
 
     private Long clientId;
+    private String clientNom;
     private Long serviceId;
 
+    // CommentaireDTO.java
+    private Long parentId;
+    private List<CommentaireDTO> replies; // nested replies
 }

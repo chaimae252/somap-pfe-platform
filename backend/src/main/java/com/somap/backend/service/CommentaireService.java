@@ -10,7 +10,11 @@ public interface CommentaireService {
 
     List<CommentaireDTO> getAllCommentaires();
 
+    List<CommentaireDTO> getCommentairesByService(Long serviceId);
+
     CommentaireDTO getCommentaireById(Long id);
+
+    CommentaireDTO updateCommentaire(Long id, CommentaireDTO commentaireDTO);
 
     void deleteCommentaire(Long id);
 }

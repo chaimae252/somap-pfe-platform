@@ -43,6 +43,27 @@ public class CommentaireController {
         );
     }
 
+    @GetMapping("/service/{serviceId}")
+    public ResponseEntity<List<CommentaireDTO>> getCommentairesByService(
+            @PathVariable Long serviceId
+    ) {
+
+        return ResponseEntity.ok(
+                commentaireService.getCommentairesByService(serviceId)
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CommentaireDTO> updateCommentaire(
+            @PathVariable Long id,
+            @RequestBody CommentaireDTO commentaireDTO
+    ) {
+
+        return ResponseEntity.ok(
+                commentaireService.updateCommentaire(id, commentaireDTO)
+        );
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteCommentaire(
             @PathVariable Long id

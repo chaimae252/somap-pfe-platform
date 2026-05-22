@@ -9,7 +9,6 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     SafeAreaView,
-    FlatList,
     StatusBar,
     Animated,
     Dimensions,
@@ -17,9 +16,10 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-
 import Theme from "../../constants/theme";
 import { getServiceById } from "../../services/serviceService";
+import CommentsSheet from "../../components/comments/CommentsSheet";
+import { useAuthStore } from "../../store/authStore";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -44,10 +44,12 @@ const getSafeImages = (images?: { imageUrl: string | null }[]) => {
 export default function ServiceDetails() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { user } = useAuthStore();
 
     const [service, setService] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [activeImg, setActiveImg] = useState(0);
+    const [commentsVisible, setCommentsVisible] = useState(false);
 
     const slideAnim = useRef(new Animated.Value(28)).current;
     const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -99,7 +101,6 @@ export default function ServiceDetails() {
             </View>
         );
     }
-
     return (
         <SafeAreaView style={styles.safe}>
             <StatusBar barStyle="dark-content" backgroundColor="#F4F7FB" />
@@ -168,7 +169,10 @@ export default function ServiceDetails() {
 
             {/* ── CTA ── */}
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={styles.ctaSecondary}>
+                <TouchableOpacity
+                    style={styles.ctaSecondary}
+                    onPress={() => setCommentsVisible(true)}
+                >
                     <Ionicons name="chatbubble-ellipses-outline" size={18} color="#1271b8" />
                 </TouchableOpacity>
 
@@ -192,6 +196,15 @@ export default function ServiceDetails() {
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
+
+            {commentsVisible && (
+                <CommentsSheet
+                    serviceId={Number(id)}
+                    clientId={user?.id}
+                    onClose={() => setCommentsVisible(false)}
+                />
+            )}
+
         </SafeAreaView>
     );
 }

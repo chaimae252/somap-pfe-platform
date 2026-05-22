@@ -30,4 +30,12 @@ public class Commentaire {
     @ManyToOne
     @JoinColumn(name = "service_id")
     private Service service;
+
+    // Commentaire.java
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private Commentaire parent;
+
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Commentaire> replies = new ArrayList<>();
 }

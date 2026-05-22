@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,7 +38,13 @@ public class JwtFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // ✅ Skip only static resources
-        if (path.startsWith("/images/")
+        if (HttpMethod.OPTIONS.matches(request.getMethod())
+                || path.startsWith("/api/auth/")
+                || path.equals("/api/upload")
+                || path.equals("/api/images/upload")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs/")
+                || path.startsWith("/images/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/static/")) {
             filterChain.doFilter(request, response);

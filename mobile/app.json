@@ -22,6 +22,7 @@
         "backgroundColor": "#0F172A"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.somapapp"
     }
