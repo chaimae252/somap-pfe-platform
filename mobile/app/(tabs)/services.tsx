@@ -292,6 +292,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         color: "#fff",
         fontSize: 30,
+        fontWeight: "800",
         fontFamily: fonts.condensedBold,
         letterSpacing: 0.4,
     },

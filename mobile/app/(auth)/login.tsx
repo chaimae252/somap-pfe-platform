@@ -1,7 +1,7 @@
 import {login} from "@/services/authService";
 import {useAuthStore} from "@/store/authStore";
-import {validateEmail, validateLoginPassword,} from "@/utils/validators";
-import {saveToken, saveUser,} from "@/utils/storage";
+import {validateEmail, validateLoginPassword} from "@/utils/validators";
+import {saveToken, saveUser} from "@/utils/storage";
 
 import React, {useState} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -33,6 +33,7 @@ export default function LoginScreen() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [remember, setRemember] = useState(false);
+    const [showPassword, setShowPassword] = useState(false); // 👈 NEW: toggle state
 
     const [focusedInput, setFocusedInput] = useState("");
 
@@ -43,7 +44,6 @@ export default function LoginScreen() {
 
     const [pressed, setPressed] = useState(false);
 
-    // ✅ NEW STATE (ONLY ADDITION)
     const [message, setMessage] = useState({
         type: "", // "success" | "error"
         text: "",
@@ -77,15 +77,9 @@ export default function LoginScreen() {
 
             const {token, id, nom, role} = response;
 
-// SAVE TOKEN FIRST
             await saveToken(token);
+            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-// SET AXIOS AUTH HEADER
-            axios.defaults.headers.common[
-                "Authorization"
-                ] = `Bearer ${token}`;
-
-// NOW protected route works
             const fullClient = await getClientById(id);
 
             const user = {
@@ -128,7 +122,6 @@ export default function LoginScreen() {
 
                         <View style={styles.container}>
 
-                            {/* ✅ MESSAGE (ONLY ADDITION) */}
                             {message.text !== "" && (
                                 <View
                                     style={[
@@ -144,7 +137,6 @@ export default function LoginScreen() {
                                 </View>
                             )}
 
-                            {/* BACK */}
                             <TouchableOpacity
                                 style={styles.backButton}
                                 onPress={() => router.replace("/onboarding")}
@@ -156,7 +148,6 @@ export default function LoginScreen() {
                                 />
                             </TouchableOpacity>
 
-                            {/* HEADER */}
                             <View style={styles.header}>
                                 <Image
                                     source={require("@/assets/images/logomob.png")}
@@ -165,7 +156,6 @@ export default function LoginScreen() {
                                 />
                             </View>
 
-                            {/* CARD */}
                             <View style={styles.card}>
 
                                 <View style={styles.cardHeader}>
@@ -181,22 +171,16 @@ export default function LoginScreen() {
                                 <View
                                     style={[
                                         styles.inputContainer,
-                                        focusedInput === "email" &&
-                                        styles.inputFocused,
-
-                                        !isEmailValid &&
-                                        touched.email &&
-                                        styles.inputError,
+                                        focusedInput === "email" && styles.inputFocused,
+                                        !isEmailValid && touched.email && styles.inputError,
                                     ]}
                                 >
-
                                     <MaterialIcons
                                         name="email"
                                         size={22}
                                         color="#8e9aaf"
                                         style={styles.icon}
                                     />
-
                                     <TextInput
                                         placeholder="Adresse email"
                                         placeholderTextColor="#8e9aaf"
@@ -217,30 +201,24 @@ export default function LoginScreen() {
                                         : " "}
                                 </Text>
 
-                                {/* PASSWORD */}
+                                {/* PASSWORD with visibility toggle */}
                                 <View
                                     style={[
                                         styles.inputContainer,
-                                        focusedInput === "password" &&
-                                        styles.inputFocused,
-
-                                        !isPasswordValid &&
-                                        touched.password &&
-                                        styles.inputError,
+                                        focusedInput === "password" && styles.inputFocused,
+                                        !isPasswordValid && touched.password && styles.inputError,
                                     ]}
                                 >
-
                                     <MaterialIcons
                                         name="lock"
                                         size={22}
                                         color="#8e9aaf"
                                         style={styles.icon}
                                     />
-
                                     <TextInput
                                         placeholder="Mot de passe (min 6 caractères)"
                                         placeholderTextColor="#8e9aaf"
-                                        secureTextEntry
+                                        secureTextEntry={!showPassword}   // 👈 dynamic
                                         value={password}
                                         onChangeText={setPassword}
                                         onFocus={() => setFocusedInput("password")}
@@ -250,6 +228,18 @@ export default function LoginScreen() {
                                         }}
                                         style={styles.textInput}
                                     />
+                                    {/* 👇 eye icon toggles visibility */}
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        style={styles.eyeIcon}
+                                        activeOpacity={0.7}
+                                    >
+                                        <MaterialIcons
+                                            name={showPassword ? "visibility-off" : "visibility"}
+                                            size={22}
+                                            color="#8e9aaf"
+                                        />
+                                    </TouchableOpacity>
                                 </View>
 
                                 <Text style={styles.error}>
@@ -258,30 +248,20 @@ export default function LoginScreen() {
                                         : " "}
                                 </Text>
 
-                                {/* OPTIONS */}
                                 <View style={styles.row}>
-
-                                    <TouchableOpacity
-                                        onPress={() => setRemember(!remember)}
-                                    >
+                                    <TouchableOpacity onPress={() => setRemember(!remember)}>
                                         <Text style={styles.remember}>
                                             {remember ? "☑" : "☐"} Se souvenir de moi
                                         </Text>
                                     </TouchableOpacity>
 
-                                    <TouchableOpacity
-                                        onPress={() =>
-                                            router.push("/VerifyScreen")
-                                        }
-                                    >
+                                    <TouchableOpacity onPress={() => router.push("/VerifyScreen")}>
                                         <Text style={styles.forgot}>
                                             Mot de passe oublié ?
                                         </Text>
                                     </TouchableOpacity>
-
                                 </View>
 
-                                {/* BUTTON */}
                                 <TouchableOpacity
                                     style={[
                                         styles.button,
@@ -323,7 +303,6 @@ export default function LoginScreen() {
 }
 
 /* ================= STYLES ================= */
-
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
@@ -345,7 +324,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: "center",
-        paddingTop: 20, // reduced from 35
+        paddingTop: 20,
     },
     logo: {
         width: 230,
@@ -355,17 +334,17 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
         borderRadius: 35,
         marginHorizontal: 15,
-        marginTop: 15, // reduced from 25
-        padding: 40,   // reduced from 26
+        marginTop: 15,
+        padding: 40,
     },
     cardHeader: {
         alignItems: "center",
-        marginBottom: 8, // reduced from 22
+        marginBottom: 8,
     },
     loginIcon: {
-        width: 200,   // bigger
-        height: 240,  // bigger
-        marginBottom: -13, // minimal space below image
+        width: 200,
+        height: 240,
+        marginBottom: -13,
         marginTop: -50,
     },
     title: {
@@ -381,7 +360,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         borderWidth: 1.5,
         borderColor: "#d8e2f1",
-        marginTop: 8, // reduced from 12
+        marginTop: 8,
     },
     inputFocused: {
         borderColor: "#1564c0",
@@ -400,17 +379,21 @@ const styles = StyleSheet.create({
         fontSize: 15,
         color: "#1f2d3d",
     },
+    eyeIcon: {
+        padding: 5,               // increase tap area
+        marginLeft: "auto",      // push to the right edge
+    },
     error: {
         color: "#ff5a6b",
         fontSize: 12,
-        marginTop: 2,   // reduced from 5
-        minHeight: 14,  // reduced from 18
+        marginTop: 2,
+        minHeight: 14,
     },
     row: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginTop: 8,    // reduced from 12
-        marginBottom: 20, // reduced from 28
+        marginTop: 8,
+        marginBottom: 20,
     },
     remember: {
         fontSize: 13,
@@ -425,7 +408,7 @@ const styles = StyleSheet.create({
     },
     button: {
         backgroundColor: "#1564c0",
-        paddingVertical: 14, // reduced from 16
+        paddingVertical: 14,
         borderRadius: 50,
         alignItems: "center",
     },
@@ -439,14 +422,14 @@ const styles = StyleSheet.create({
     },
     bottomText: {
         textAlign: "center",
-        marginTop: 16,   // reduced from 24
-        marginBottom: 10, // reduced from 14
+        marginTop: 16,
+        marginBottom: 10,
         color: "#6c7a92",
     },
     outlineButton: {
         borderWidth: 1.8,
         borderColor: "#1564c0",
-        paddingVertical: 12, // reduced from 15
+        paddingVertical: 12,
         borderRadius: 50,
         alignItems: "center",
         backgroundColor: "#f7fbff",

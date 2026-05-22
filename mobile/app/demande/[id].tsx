@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   StatusBar,
   Share,
+  Modal,
 } from "react-native";
 import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,6 +19,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import api from "@/services/api";
 import { Alert } from "react-native";
+
 type Demande = {
   id: number;
   objet: string;
@@ -34,9 +36,19 @@ type Service = {
   description: string;
 };
 
-type ImageAttachement = {
+type ImageAttachment = {
   id: number;
-  url: string;
+  imageUrl: string;     // consistent with edit screen
+};
+
+// Base URL for image prefix (same as in EditDemandeScreen)
+const BASE_URL = "http://192.168.1.119:8080"; // replace with your actual base URL
+
+const getImageUrl = (url?: string | null) => {
+  if (!url) return null;
+  const clean = url.trim();
+  if (clean.startsWith("http")) return clean;
+  return `${BASE_URL}${clean}`;
 };
 
 const getUrgenceInfo = (urgence: string) => {
@@ -74,10 +86,12 @@ export default function DemandeDetailScreen() {
   const router = useRouter();
   const [demande, setDemande] = useState<Demande | null>(null);
   const [service, setService] = useState<Service | null>(null);
-  const [images, setImages] = useState<ImageAttachement[]>([]);
+  const [images, setImages] = useState<ImageAttachment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [printing, setPrinting] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [lightboxVisible, setLightboxVisible] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
   useEffect(() => {
     fetchDemande();
   }, [id]);
@@ -92,12 +106,12 @@ export default function DemandeDetailScreen() {
         const serviceRes = await api.get(`/services/${data.serviceId}`);
         setService(serviceRes.data);
       }
-      try {
-        const imgRes = await api.get(`/images/demande/${data.id}`);
-        setImages(imgRes.data || []);
-      } catch {
-        setImages([]);
-      }
+      // Fetch images – adapt to the endpoint used in edit screen
+      const imagesRes = await api.get(`/images`);
+      const filtered = imagesRes.data.filter(
+        (img: any) => img.demandeId === Number(id) && img.imageUrl
+      );
+      setImages(filtered);
     } catch (error) {
       console.error(error);
     } finally {
@@ -105,89 +119,99 @@ export default function DemandeDetailScreen() {
     }
   };
 
-// Generate HTML for PDF (includes service, images, all details)
-const generateDemandeHTML = () => {
-  if (!demande || !service) return "";
-  const urgencyLabel = getUrgenceInfo(demande.urgence).label;
-  const statusLabel = getStatusInfo(demande.statut).label;
-  const imagesHtml = images.length > 0
-    ? `<div><strong>Pièces jointes :</strong><br/>${images.map(img => `<img src="${img.url}" style="max-width:200px; margin:5px;" />`).join('')}</div>`
-    : "";
-  return `
-    <html>
-    <head>
-      <style>
-        body { font-family: 'Helvetica', sans-serif; padding: 40px; }
-        h1 { color: #1271B8; }
-        .label { font-weight: bold; width: 120px; display: inline-block; }
-      </style>
-    </head>
-    <body>
-      <h1>${demande.objet}</h1>
-      <p><strong>N° demande :</strong> #${demande.id}</p>
-      <p><strong>Service :</strong> ${service.titre}</p>
-      <p><strong>Description :</strong> ${demande.description}</p>
-      <p><strong>Urgence :</strong> ${urgencyLabel}</p>
-      <p><strong>Statut :</strong> ${statusLabel}</p>
-      <p><strong>Date de création :</strong> ${formatDate(demande.dateCreation)}</p>
-      ${imagesHtml}
-    </body>
-    </html>
-  `;
-};
+  const generateDemandeHTML = () => {
+    if (!demande || !service) return "";
+    const urgencyLabel = getUrgenceInfo(demande.urgence).label;
+    const statusLabel = getStatusInfo(demande.statut).label;
+    const imagesHtml =
+      images.length > 0
+        ? `<div><strong>Pièces jointes :</strong><br/>${images
+            .map(
+              (img) =>
+                `<img src="${getImageUrl(img.imageUrl)}" style="max-width:200px; margin:5px;" />`
+            )
+            .join("")}</div>`
+        : "";
+    return `
+      <html>
+      <head>
+        <style>
+          body { font-family: 'Helvetica', sans-serif; padding: 40px; }
+          h1 { color: #1271B8; }
+          .label { font-weight: bold; width: 120px; display: inline-block; }
+        </style>
+      </head>
+      <body>
+        <h1>${demande.objet}</h1>
+        <p><strong>N° demande :</strong> #${demande.id}</p>
+        <p><strong>Service :</strong> ${service.titre}</p>
+        <p><strong>Description :</strong> ${demande.description}</p>
+        <p><strong>Urgence :</strong> ${urgencyLabel}</p>
+        <p><strong>Statut :</strong> ${statusLabel}</p>
+        <p><strong>Date de création :</strong> ${formatDate(demande.dateCreation)}</p>
+        ${imagesHtml}
+      </body>
+      </html>
+    `;
+  };
 
-// 1. Download / Share PDF
-const handleDownload = async () => {
-  if (!demande || !service) return;
-  setProcessing(true);
-  try {
-    const html = generateDemandeHTML();
-    const { uri } = await Print.printToFileAsync({ html });
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(uri, {
-        mimeType: "application/pdf",
-        dialogTitle: "Enregistrer la demande",
-      });
-    } else {
-      Alert.alert("Erreur", "Le partage n'est pas disponible");
+  const handleDownload = async () => {
+    if (!demande || !service) return;
+    setProcessing(true);
+    try {
+      const html = generateDemandeHTML();
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          dialogTitle: "Enregistrer la demande",
+        });
+      } else {
+        Alert.alert("Erreur", "Le partage n'est pas disponible");
+      }
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible de générer le PDF");
+    } finally {
+      setProcessing(false);
     }
-  } catch (error) {
-    Alert.alert("Erreur", "Impossible de générer le PDF");
-  } finally {
-    setProcessing(false);
-  }
-};
+  };
 
-// 2. Direct print (no sharing)
-const handlePrint = async () => {
-  if (!demande || !service) return;
-  setProcessing(true);
-  try {
-    const html = generateDemandeHTML();
-    await Print.printAsync({ html });
-  } catch (error) {
-    Alert.alert("Erreur", "Impossible d'imprimer");
-  } finally {
-    setProcessing(false);
-  }
-};
+  const handlePrint = async () => {
+    if (!demande || !service) return;
+    setProcessing(true);
+    try {
+      const html = generateDemandeHTML();
+      await Print.printAsync({ html });
+    } catch (error) {
+      Alert.alert("Erreur", "Impossible d'imprimer");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
-// 3. Share as text (optional – keep existing)
-const handleShareText = async () => {
-  if (!demande || !service) return;
-  await Share.share({
-    message: `Demande #${demande.id}\nService: ${service.titre}\nObjet: ${demande.objet}\nDescription: ${demande.description}\nUrgence: ${demande.urgence}\nStatut: ${demande.statut}\nDate: ${formatDate(demande.dateCreation)}`,
-  });
-};
+  const handleShareText = async () => {
+    if (!demande || !service) return;
+    await Share.share({
+      message: `Demande #${demande.id}\nService: ${service.titre}\nObjet: ${demande.objet}\nDescription: ${demande.description}\nUrgence: ${demande.urgence}\nStatut: ${demande.statut}\nDate: ${formatDate(demande.dateCreation)}`,
+    });
+  };
 
-  if (loading) return <SafeAreaView style={styles.center}><ActivityIndicator size="large" color="#1271B8" /></SafeAreaView>;
-  if (!demande) return (
-    <SafeAreaView style={styles.center}>
-      <Ionicons name="alert-circle-outline" size={64} color="#EB5757" />
-      <Text style={styles.errorText}>Demande introuvable</Text>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}><Text style={styles.backButtonText}>Retour</Text></TouchableOpacity>
-    </SafeAreaView>
-  );
+  if (loading)
+    return (
+      <SafeAreaView style={styles.center}>
+        <ActivityIndicator size="large" color="#1271B8" />
+      </SafeAreaView>
+    );
+  if (!demande)
+    return (
+      <SafeAreaView style={styles.center}>
+        <Ionicons name="alert-circle-outline" size={64} color="#EB5757" />
+        <Text style={styles.errorText}>Demande introuvable</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Retour</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
 
   const urgence = getUrgenceInfo(demande.urgence);
   const status = getStatusInfo(demande.statut);
@@ -196,7 +220,7 @@ const handleShareText = async () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* ORIGINAL HEADER (gradient with title and badges) */}
+      {/* Header */}
       <LinearGradient
         colors={["#0d2d5e", "#1271b8", "#2D9C7C"]}
         start={{ x: 0, y: 0 }}
@@ -210,20 +234,17 @@ const handleShareText = async () => {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButtonHeader}>
             <Ionicons name="arrow-back" size={28} color="#fff" />
           </TouchableOpacity>
-         <View style={styles.headerActions}>
-  {/* Download PDF */}
-  <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={processing}>
-    <Ionicons name="download-outline" size={24} color="#fff" />
-  </TouchableOpacity>
-  {/* Direct Print */}
-  <TouchableOpacity onPress={handlePrint} style={styles.iconButton} disabled={processing}>
-    <Ionicons name="print-outline" size={24} color="#fff" />
-  </TouchableOpacity>
-  {/* Edit button (optional – keep or remove as you like) */}
-  <TouchableOpacity onPress={() => router.push(`/demande/edit/${demande.id}`)} style={styles.iconButton}>
-    <Ionicons name="pencil-outline" size={24} color="#fff" />
-  </TouchableOpacity>
-</View>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={processing}>
+              <Ionicons name="download-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handlePrint} style={styles.iconButton} disabled={processing}>
+              <Ionicons name="print-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push(`/demande/edit/${demande.id}`)} style={styles.iconButton}>
+              <Ionicons name="pencil-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.headerTitle}>{demande.objet}</Text>
@@ -238,7 +259,6 @@ const handleShareText = async () => {
         </View>
       </LinearGradient>
 
-      {/* SINGLE CARD CONTAINING ALL DETAILS */}
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         <View style={styles.unifiedCard}>
           {/* Service */}
@@ -264,7 +284,7 @@ const handleShareText = async () => {
             <Text style={styles.description}>{demande.description}</Text>
           </View>
 
-          {/* Images */}
+          {/* Images – displayed exactly like in EditDemandeScreen */}
           {images.length > 0 && (
             <>
               <View style={styles.divider} />
@@ -274,11 +294,23 @@ const handleShareText = async () => {
                   <Text style={styles.sectionTitle}>Pièces jointes ({images.length})</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
-                  {images.map((img, idx) => (
-                    <TouchableOpacity key={img.id || idx}>
-                      <Image source={{ uri: img.url }} style={styles.galleryImage} />
-                    </TouchableOpacity>
-                  ))}
+                  {images.map((img) => {
+                    const fullUrl = getImageUrl(img.imageUrl);
+                    return (
+                      <TouchableOpacity
+                        key={img.id}
+                        onPress={() => {
+                          setSelectedImage(fullUrl);
+                          setLightboxVisible(true);
+                        }}
+                        activeOpacity={0.9}
+                      >
+                        <View style={styles.imageItem}>
+                          <Image source={{ uri: fullUrl ?? undefined }} style={styles.imagePreview} />
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               </View>
             </>
@@ -304,6 +336,22 @@ const handleShareText = async () => {
         </View>
         <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* Full‑screen lightbox modal */}
+      <Modal visible={lightboxVisible} transparent animationType="fade">
+        <View style={styles.lightboxOverlay}>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => setLightboxVisible(false)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={32} color="#fff" />
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image source={{ uri: selectedImage }} style={styles.fullscreenImage} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -315,7 +363,7 @@ const styles = StyleSheet.create({
   backButton: { marginTop: 20, backgroundColor: "#1271B8", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 40 },
   backButtonText: { color: "#fff", fontWeight: "600" },
 
-  // Header original design
+  // Header
   header: {
     paddingTop: 50,
     paddingHorizontal: 20,
@@ -351,14 +399,13 @@ const styles = StyleSheet.create({
   backButtonHeader: { padding: 4 },
   headerActions: { flexDirection: "row", gap: 16 },
   iconButton: { padding: 4 },
-  headerTitle: { fontSize: 25, fontWeight: "800", color: "#fff", marginBottom: 12 },
+  headerTitle: { fontSize: 24, fontWeight: "400", color: "#fff", marginBottom: 12 },
   statusBadgeHeader: { flexDirection: "row", gap: 12, alignSelf: "flex-start" },
   badgeRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 40 },
   badgeText: { fontSize: 13, fontWeight: "600" },
 
   scrollView: { flex: 1, paddingHorizontal: 16, paddingTop: 20 },
 
-  // Unified card
   unifiedCard: {
     backgroundColor: "#fff",
     borderRadius: 28,
@@ -378,8 +425,31 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 17, fontWeight: "700", color: "#1271B8", marginBottom: 6 },
   serviceDesc: { fontSize: 14, lineHeight: 20, color: "#5A6B7F" },
   description: { fontSize: 15, lineHeight: 22, color: "#2C3E50" },
+
+  // Image styling – exactly as in EditDemandeScreen
   imageScroll: { flexDirection: "row", marginTop: 8 },
-  galleryImage: { width: 100, height: 100, borderRadius: 16, marginRight: 12, backgroundColor: "#F0F2F5" },
+  imageItem: { marginRight: 12, position: "relative" },
+  imagePreview: { width: 100, height: 100, borderRadius: 12, backgroundColor: "#E8EEF5" },
+
   infoRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 12 },
   infoText: { fontSize: 14, color: "#5A6B7F" },
+
+  // Lightbox modal
+  lightboxOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.92)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 50,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  fullscreenImage: {
+    width: "100%",
+    height: "80%",
+  },
 });

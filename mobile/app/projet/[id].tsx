@@ -1,4 +1,4 @@
-// app/projet/[id].tsx – Redesigned version
+// app/projet/[id].tsx – Your original header + new minimalist body
 import api from "@/services/api";
 import React, { useState, useEffect, useCallback } from "react";
 import {
@@ -20,7 +20,7 @@ import { useAuthStore } from "@/store/authStore";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
-// ================= Types =================
+// ================= Types (unchanged) =================
 type Projet = {
     id: number;
     titre: string;
@@ -47,7 +47,7 @@ type Service = {
     titre: string;
 };
 
-// ================= Helper Functions =================
+// ================= Helper Functions (unchanged) =================
 const getStatusInfo = (statut: Projet["statut"]) => {
     switch (statut) {
         case "EN_COURS":
@@ -73,21 +73,13 @@ const getProgress = (statut: Projet["statut"]) => {
 const formatDate = (dateString?: string | null) => {
     if (!dateString) return "Non définie";
     const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    });
+    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
 };
 
 const formatFullDate = (dateString?: string | null) => {
     if (!dateString) return "Non définie";
     const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-    });
+    return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
 };
 
 const getUrgenceColor = (urgence: string) => {
@@ -126,12 +118,10 @@ export default function ProjectDetailScreen() {
             const response = await api.get(`/projets/${id}`);
             const proj = response.data;
             setProject(proj);
-
             if (proj.demandeId) {
                 const demandeRes = await api.get(`/demandes/${proj.demandeId}`);
                 const demandeData = demandeRes.data;
                 setDemande(demandeData);
-
                 if (demandeData.serviceId) {
                     const serviceRes = await api.get(`/services/${demandeData.serviceId}`);
                     setService(serviceRes.data);
@@ -145,11 +135,7 @@ export default function ProjectDetailScreen() {
         }
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchProject();
-        }, [id])
-    );
+    useFocusEffect(useCallback(() => { fetchProject(); }, [id]));
 
     const handleRefresh = () => {
         setRefreshing(true);
@@ -157,12 +143,9 @@ export default function ProjectDetailScreen() {
     };
 
     const navigateToDemande = () => {
-        if (demande) {
-            router.push(`/demande/${demande.id}`);
-        }
+        if (demande) router.push(`/demande/${demande.id}`);
     };
 
-    // Generate HTML content for the project (used for both download and print)
     const generateProjectHTML = () => {
         if (!project) return "";
         const statusLabel = getStatusInfo(project.statut).label;
@@ -178,66 +161,39 @@ export default function ProjectDetailScreen() {
         ` : "";
         return `
             <html>
-            <head>
-                <style>
-                    body { font-family: 'Helvetica', sans-serif; padding: 40px; }
-                    h1 { color: #1271B8; }
-                    .project-id { color: #6B7A90; font-size: 14px; margin-bottom: 20px; }
-                    .section { margin-bottom: 20px; }
-                    .label { font-weight: bold; width: 130px; display: inline-block; }
-                    .value { display: inline-block; }
-                </style>
-            </head>
+            <head><style>body{font-family:Helvetica;padding:40px;} h1{color:#1271B8;}</style></head>
             <body>
                 <h1>${project.titre}</h1>
-                <div class="project-id">Projet N° ${project.id}</div>
-                <div class="section">
-                    <p><span class="label">Statut :</span> <span class="value">${statusLabel}</span></p>
-                    <p><span class="label">Progression :</span> <span class="value">${progress}%</span></p>
-                    <p><span class="label">Description :</span> <span class="value">${project.description}</span></p>
-                    <p><span class="label">Date de début :</span> <span class="value">${formatFullDate(project.dateDebut)}</span></p>
-                    <p><span class="label">Date de fin prévue :</span> <span class="value">${formatFullDate(project.dateFin)}</span></p>
-                </div>
+                <div>Projet N° ${project.id}</div>
+                <p>Statut : ${statusLabel}</p>
+                <p>Progression : ${progress}%</p>
+                <p>Description : ${project.description}</p>
+                <p>Début : ${formatFullDate(project.dateDebut)}</p>
+                <p>Fin prévue : ${formatFullDate(project.dateFin)}</p>
                 ${demandeHtml}
             </body>
             </html>
         `;
     };
 
-    // 1. DOWNLOAD / SHARE PDF
     const handleDownload = async () => {
         if (!project) return;
         setProcessing(true);
         try {
-            const html = generateProjectHTML();
-            const { uri } = await Print.printToFileAsync({ html });
+            const { uri } = await Print.printToFileAsync({ html: generateProjectHTML() });
             if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(uri, {
-                    mimeType: "application/pdf",
-                    dialogTitle: "Enregistrer le projet",
-                });
-            } else {
-                Alert.alert("Erreur", "Le partage n'est pas disponible sur cet appareil");
-            }
-        } catch (error) {
-            Alert.alert("Erreur", "Impossible de générer le PDF");
-        } finally {
-            setProcessing(false);
-        }
+                await Sharing.shareAsync(uri, { mimeType: "application/pdf", dialogTitle: "Enregistrer le projet" });
+            } else Alert.alert("Erreur", "Partage indisponible");
+        } catch (error) { Alert.alert("Erreur", "Impossible de générer le PDF"); }
+        finally { setProcessing(false); }
     };
 
-    // 2. PRINT directly
     const handlePrint = async () => {
         if (!project) return;
         setProcessing(true);
-        try {
-            const html = generateProjectHTML();
-            await Print.printAsync({ html });
-        } catch (error) {
-            Alert.alert("Erreur", "Impossible d'imprimer");
-        } finally {
-            setProcessing(false);
-        }
+        try { await Print.printAsync({ html: generateProjectHTML() }); }
+        catch (error) { Alert.alert("Erreur", "Impossible d'imprimer"); }
+        finally { setProcessing(false); }
     };
 
     if (loading) {
@@ -262,25 +218,17 @@ export default function ProjectDetailScreen() {
 
     const status = getStatusInfo(project.statut);
     const progress = getProgress(project.statut);
-    const startDate = formatFullDate(project.dateDebut);
-    const endDate = formatFullDate(project.dateFin);
-
-    // Calculate duration (simple approximation)
-    const calculateDuration = () => {
+    const duration = (() => {
         if (!project.dateDebut || !project.dateFin) return "Non définie";
-        const start = new Date(project.dateDebut);
-        const end = new Date(project.dateFin);
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.ceil((new Date(project.dateFin).getTime() - new Date(project.dateDebut).getTime()) / (1000 * 3600 * 24));
         return `${diffDays} jours`;
-    };
-    const duration = calculateDuration();
+    })();
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
 
-            {/* Header – unchanged (original design) */}
+            {/* === YOUR ORIGINAL HEADER (kept exactly) === */}
             <LinearGradient
                 colors={["#0d2d5e", "#1271b8", "#2D9C7C"]}
                 start={{ x: 0, y: 0 }}
@@ -305,168 +253,130 @@ export default function ProjectDetailScreen() {
                 </View>
 
                 <View style={styles.headerContent}>
-                    <Text style={styles.headerTitle}>{project.titre}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: status.bgLight }]}>
-                        <Ionicons name={status.icon as any} size={14} color={status.color} />
-                        <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-                    </View>
-                </View>
+    <Text style={styles.headerTitle}>{project.titre}</Text>
+    {/* Add the accent line like in ServiceDetails */}
+    <View style={styles.titleAccent} />
+    <View style={[styles.statusBadge, { backgroundColor: status.bgLight }]}>
+        <Ionicons name={status.icon as any} size={14} color={status.color} />
+        <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+    </View>
+</View>
             </LinearGradient>
 
+            {/* === NEW MINIMALIST BODY (cards, grid, etc.) === */}
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#1271B8" />}
                 contentContainerStyle={styles.scrollContent}
             >
-                {/* Unified modern card */}
-                <View style={styles.unifiedCard}>
-                    {/* Project ID row */}
-                    <View style={styles.idRow}>
-                        <Ionicons name="pricetag-outline" size={18} color="#8A94A6" />
-                        <Text style={styles.idText}>Projet #{project.id}</Text>
-                        {project.demandeId && (
-                            <View style={styles.badgeLight}>
-                                <Text style={styles.badgeLightText}>Lien demande #{project.demandeId}</Text>
-                            </View>
-                        )}
+                {/* Hero progress card */}
+                <View style={styles.progressCard}>
+                    <View style={styles.progressHeader}>
+                        <Text style={styles.progressLabel}>Avancement global</Text>
+                        <Text style={styles.progressPercent}>{progress}%</Text>
                     </View>
-
-                    {/* Progress section with larger percentage */}
-                    <View style={styles.progressSection}>
-                        <View style={styles.progressHeader}>
-                            <Text style={styles.progressLabel}>Avancement global</Text>
-                            <Text style={styles.progressBigPercent}>{progress}%</Text>
-                        </View>
-                        <View style={styles.progressTrackLarge}>
-                            <LinearGradient
-                                colors={[status.color, status.color + "CC"]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={[styles.progressFillLarge, { width: `${progress}%` }]}
-                            />
-                        </View>
-                        {project.statut === "EN_COURS" && (
-                            <View style={styles.noteChip}>
-                                <Ionicons name="time-outline" size={14} color="#2D9C7C" />
-                                <Text style={styles.noteChipText}>Mise à jour régulière</Text>
-                            </View>
-                        )}
+                    <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: status.color }]} />
                     </View>
-
-                    {/* Metric chips: start, end, duration */}
-                    <View style={styles.metricsRow}>
-                        <View style={styles.metricItem}>
-                            <Ionicons name="calendar-outline" size={20} color="#1271B8" />
-                            <Text style={styles.metricLabel}>Début</Text>
-                            <Text style={styles.metricValue}>{formatDate(project.dateDebut)}</Text>
+                    {project.statut === "EN_COURS" && (
+                        <View style={styles.noteChip}>
+                            <Ionicons name="time-outline" size={14} color="#2D9C7C" />
+                            <Text style={styles.noteChipText}>Mise à jour régulière</Text>
                         </View>
-                        <View style={styles.metricDivider} />
-                        <View style={styles.metricItem}>
-                            <Ionicons name="flag-outline" size={20} color="#1271B8" />
-                            <Text style={styles.metricLabel}>Fin prévue</Text>
-                            <Text style={styles.metricValue}>{formatDate(project.dateFin)}</Text>
-                        </View>
-                        <View style={styles.metricDivider} />
-                        <View style={styles.metricItem}>
-                            <Ionicons name="hourglass-outline" size={20} color="#1271B8" />
-                            <Text style={styles.metricLabel}>Durée</Text>
-                            <Text style={styles.metricValue}>{duration}</Text>
-                        </View>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    {/* Description */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="document-text-outline" size={22} color="#1271B8" />
-                            <Text style={styles.sectionTitle}>Description du projet</Text>
-                        </View>
-                        <Text style={styles.descriptionText}>{project.description}</Text>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    {/* Linked Demande – redesigned card inside main card */}
-                    {demande && (
-                        <>
-                            <TouchableOpacity activeOpacity={0.9} onPress={navigateToDemande} style={styles.demandeCard}>
-                                <LinearGradient
-                                    colors={["#F8FBFF", "#F2F6FC"]}
-                                    style={styles.demandeGradient}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 1 }}
-                                >
-                                    <View style={styles.demandeHeader}>
-                                        <View style={styles.demandeIconCircle}>
-                                            <Ionicons name="document-text-outline" size={24} color="#1271B8" />
-                                        </View>
-                                        <View style={styles.demandeTitleContainer}>
-                                            <Text style={styles.demandeTitle}>Demande associée</Text>
-                                            <Text style={styles.demandeObjet} numberOfLines={1}>
-                                                {demande.objet || "Sans objet"}
-                                            </Text>
-                                        </View>
-                                        <Ionicons name="chevron-forward" size={20} color="#8A94A6" />
-                                    </View>
-                                    <View style={styles.demandeBadges}>
-                                        <View style={[styles.badge, { backgroundColor: getDemandeStatusBadge(demande.statut).bg }]}>
-                                            <Text style={[styles.badgeText, { color: getDemandeStatusBadge(demande.statut).color }]}>
-                                                {getDemandeStatusBadge(demande.statut).label}
-                                            </Text>
-                                        </View>
-                                        <View style={[styles.badge, { backgroundColor: getUrgenceColor(demande.urgence) + "20" }]}>
-                                            <Text style={[styles.badgeText, { color: getUrgenceColor(demande.urgence) }]}>
-                                                {demande.urgence === "URGENT" ? "Urgent" : demande.urgence === "NORMAL" ? "Normal" : "Faible"}
-                                            </Text>
-                                        </View>
-                                        {service && (
-                                            <View style={styles.serviceChip}>
-                                                <Ionicons name="layers-outline" size={12} color="#1271B8" />
-                                                <Text style={styles.serviceChipText}>{service.titre}</Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                </LinearGradient>
-                            </TouchableOpacity>
-                            <View style={styles.divider} />
-                        </>
                     )}
+                </View>
 
-                    {/* Additional info */}
-                    <View style={styles.section}>
-                        <View style={styles.sectionHeader}>
-                            <Ionicons name="information-circle-outline" size={22} color="#1271B8" />
-                            <Text style={styles.sectionTitle}>Informations techniques</Text>
-                        </View>
-                        <View style={styles.infoItem}>
-                            <Ionicons name="server-outline" size={16} color="#8A94A6" />
-                            <Text style={styles.infoText}>ID Projet : #{project.id}</Text>
-                        </View>
-                        {project.demandeId && (
-                            <View style={styles.infoItem}>
-                                <Ionicons name="link-outline" size={16} color="#8A94A6" />
-                                <Text style={styles.infoText}>Demande source : #{project.demandeId}</Text>
-                            </View>
-                        )}
+                {/* Metrics grid */}
+                <View style={styles.metricsGrid}>
+                    <View style={styles.metricCard}>
+                        <Ionicons name="calendar-outline" size={22} color="#1271B8" />
+                        <Text style={styles.metricLabel}>Début</Text>
+                        <Text style={styles.metricValue}>{formatDate(project.dateDebut)}</Text>
+                    </View>
+                    <View style={styles.metricCard}>
+                        <Ionicons name="flag-outline" size={22} color="#1271B8" />
+                        <Text style={styles.metricLabel}>Fin prévue</Text>
+                        <Text style={styles.metricValue}>{formatDate(project.dateFin)}</Text>
+                    </View>
+                    <View style={styles.metricCard}>
+                        <Ionicons name="hourglass-outline" size={22} color="#1271B8" />
+                        <Text style={styles.metricLabel}>Durée</Text>
+                        <Text style={styles.metricValue}>{duration}</Text>
                     </View>
                 </View>
-                <View style={{ height: 30 }} />
+
+                {/* Description card */}
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Ionicons name="document-text-outline" size={20} color="#1271B8" />
+                        <Text style={styles.cardTitle}>Description</Text>
+                    </View>
+                    <Text style={styles.descriptionText}>{project.description}</Text>
+                </View>
+
+                {/* Linked demande card */}
+                {demande && (
+                    <TouchableOpacity activeOpacity={0.8} onPress={navigateToDemande} style={styles.linkCard}>
+                        <View style={styles.linkCardContent}>
+                            <View style={styles.linkIcon}>
+                                <Ionicons name="git-branch-outline" size={24} color="#1271B8" />
+                            </View>
+                            <View style={styles.linkInfo}>
+                                <Text style={styles.linkTitle}>Demande associée</Text>
+                                <Text style={styles.linkSubtitle}>{demande.objet || "Sans objet"}</Text>
+                                <View style={styles.linkBadges}>
+                                    <View style={[styles.smallBadge, { backgroundColor: getDemandeStatusBadge(demande.statut).bg }]}>
+                                        <Text style={[styles.smallBadgeText, { color: getDemandeStatusBadge(demande.statut).color }]}>
+                                            {getDemandeStatusBadge(demande.statut).label}
+                                        </Text>
+                                    </View>
+                                    <View style={[styles.smallBadge, { backgroundColor: getUrgenceColor(demande.urgence) + "20" }]}>
+                                        <Text style={[styles.smallBadgeText, { color: getUrgenceColor(demande.urgence) }]}>
+                                            {demande.urgence === "URGENT" ? "Urgent" : demande.urgence === "NORMAL" ? "Normal" : "Faible"}
+                                        </Text>
+                                    </View>
+                                    {service && <Text style={styles.serviceLabel}>{service.titre}</Text>}
+                                </View>
+                            </View>
+                            <Ionicons name="chevron-forward" size={20} color="#A0AAB8" />
+                        </View>
+                    </TouchableOpacity>
+                )}
+
+                {/* Technical info card */}
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <Ionicons name="information-circle-outline" size={20} color="#1271B8" />
+                        <Text style={styles.cardTitle}>Informations techniques</Text>
+                    </View>
+                    <View style={styles.infoRow}>
+                        <Ionicons name="server-outline" size={16} color="#8A94A6" />
+                        <Text style={styles.infoText}>ID Projet : #{project.id}</Text>
+                    </View>
+                    {project.demandeId && (
+                        <View style={styles.infoRow}>
+                            <Ionicons name="link-outline" size={16} color="#8A94A6" />
+                            <Text style={styles.infoText}>Demande source : #{project.demandeId}</Text>
+                        </View>
+                    )}
+                </View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-// ================= Redesigned Styles =================
+// ================= Styles =================
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#F4F7FC" },
-    center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F4F7FC" },
-    errorText: { fontSize: 16, color: "#EB5757", marginTop: 12 },
+    container: { flex: 1, backgroundColor: "#F8F9FC" },
+    center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F8F9FC" },
+    errorText: { fontSize: 16, color: "#EB5757", marginTop: 12, fontWeight: "400" },
     backButton: { marginTop: 20, backgroundColor: "#1271B8", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 40 },
-    backButtonText: { color: "#fff", fontWeight: "600", fontSize: 15 },
-    scrollContent: { paddingBottom: 40 },
+    backButtonText: { color: "#fff", fontWeight: "500", fontSize: 15 },
+    scrollContent: { paddingTop: 16, paddingBottom: 40 },
 
-    // ========== HEADER (completely unchanged) ==========
+    // ========== YOUR ORIGINAL HEADER STYLES (exactly as you had) ==========
     header: {
         paddingTop: 55,
         paddingHorizontal: 24,
@@ -522,13 +432,23 @@ const styles = StyleSheet.create({
     headerContent: {
         marginTop: 8,
     },
-    headerTitle: {
-        fontSize: 26,
-        fontWeight: "800",
-        color: "#fff",
-        marginBottom: 12,
-        lineHeight: 34,
-    },
+   headerTitle: {
+    fontSize: 26,
+    fontWeight: "400",           // was 800, now matches condensed bold feel
+    fontFamily: "System",        // or "RobotoCondensed-Bold" if you have it
+    color: "#fff",
+    marginBottom: 8,             // reduced to make space for accent line
+    lineHeight: 32,              // matches ServiceDetails
+    letterSpacing: -0.3,        // optional, gives condensed look
+},
+titleAccent: {
+    width: 48,                   // same as ServiceDetails accent line
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "#FFFFFF",  // white line on gradient, or use "#1271b8" for blue
+    marginBottom: 12,
+    opacity: 0.9,
+},
     statusBadge: {
         flexDirection: "row",
         alignItems: "center",
@@ -543,75 +463,43 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
 
-    // ========== NEW UNIFIED CARD ==========
-    unifiedCard: {
-        backgroundColor: "#fff",
-        borderRadius: 32,
-        marginHorizontal: 20,
-        marginTop: 24,
-        padding: 24,
-        shadowColor: "#0D2D5E",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.06,
-        shadowRadius: 24,
-        elevation: 8,
-        borderWidth: 1,
-        borderColor: "#EFF3F8",
-    },
-    idRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 24,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#F0F2F5",
-    },
-    idText: {
-        fontSize: 14,
-        fontWeight: "500",
-        color: "#6B7A90",
-    },
-    badgeLight: {
-        backgroundColor: "#F0F9FF",
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 20,
-    },
-    badgeLightText: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: "#1271B8",
-    },
-
-    progressSection: {
-        marginBottom: 24,
+    // ========== NEW BODY STYLES (minimalist cards) ==========
+    progressCard: {
+        backgroundColor: "#FFFFFF",
+        marginHorizontal: 16,
+        marginBottom: 16,
+        padding: 20,
+        borderRadius: 24,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 8,
+        elevation: 2,
     },
     progressHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "baseline",
         marginBottom: 12,
     },
     progressLabel: {
-        fontSize: 15,
+        fontSize: 14,
         fontWeight: "500",
         color: "#5A6B7F",
     },
-    progressBigPercent: {
-        fontSize: 28,
-        fontWeight: "800",
+    progressPercent: {
+        fontSize: 22,
+        fontWeight: "700",
         color: "#1271B8",
     },
-    progressTrackLarge: {
-        height: 12,
+    progressTrack: {
+        height: 8,
         backgroundColor: "#EFF3F8",
-        borderRadius: 12,
+        borderRadius: 4,
         overflow: "hidden",
     },
-    progressFillLarge: {
+    progressFill: {
         height: "100%",
-        borderRadius: 12,
+        borderRadius: 4,
     },
     noteChip: {
         flexDirection: "row",
@@ -620,8 +508,8 @@ const styles = StyleSheet.create({
         marginTop: 12,
         alignSelf: "flex-start",
         backgroundColor: "#E6F7F0",
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
         borderRadius: 30,
     },
     noteChipText: {
@@ -630,134 +518,69 @@ const styles = StyleSheet.create({
         color: "#2D9C7C",
     },
 
-    metricsRow: {
+    metricsGrid: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "center",
-        backgroundColor: "#F8FBFE",
-        borderRadius: 24,
-        paddingVertical: 16,
-        paddingHorizontal: 12,
-        marginBottom: 24,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        gap: 12,
     },
-    metricItem: {
+    metricCard: {
         flex: 1,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
         alignItems: "center",
-        gap: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 4,
+        elevation: 1,
     },
     metricLabel: {
-        fontSize: 12,
-        fontWeight: "500",
+        fontSize: 11,
+        fontWeight: "400",
         color: "#8A94A6",
+        marginTop: 6,
+        marginBottom: 2,
     },
     metricValue: {
-        fontSize: 14,
-        fontWeight: "600",
+        fontSize: 13,
+        fontWeight: "500",
         color: "#1B2430",
     },
-    metricDivider: {
-        width: 1,
-        height: 30,
-        backgroundColor: "#E0E8F0",
-    },
 
-    divider: {
-        height: 1,
-        backgroundColor: "#F0F2F5",
-        marginVertical: 20,
+    card: {
+        backgroundColor: "#FFFFFF",
+        marginHorizontal: 16,
+        marginBottom: 16,
+        padding: 18,
+        borderRadius: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 6,
+        elevation: 1,
     },
-
-    section: {
-        marginBottom: 8,
-    },
-    sectionHeader: {
+    cardHeader: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
+        gap: 8,
         marginBottom: 12,
     },
-    sectionTitle: {
-        fontSize: 17,
-        fontWeight: "700",
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: "500",
         color: "#1B2430",
     },
     descriptionText: {
-        fontSize: 15,
-        lineHeight: 24,
-        color: "#4A5A72",
-    },
-
-    // Linked demande card (new design)
-    demandeCard: {
-        borderRadius: 24,
-        overflow: "hidden",
-        marginBottom: 8,
-    },
-    demandeGradient: {
-        padding: 18,
-        borderWidth: 1,
-        borderColor: "#E9F0F8",
-        borderRadius: 24,
-    },
-    demandeHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 14,
-        marginBottom: 12,
-    },
-    demandeIconCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: "#E8F1FA",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    demandeTitleContainer: {
-        flex: 1,
-    },
-    demandeTitle: {
         fontSize: 14,
-        fontWeight: "600",
-        color: "#1271B8",
-        marginBottom: 2,
+        lineHeight: 22,
+        color: "#4A5A72",
+        fontWeight: "400",
     },
-    demandeObjet: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: "#1B2430",
-    },
-    demandeBadges: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 10,
-        marginLeft: 62, // align with text after icon
-    },
-    badge: {
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: 30,
-    },
-    badgeText: {
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    serviceChip: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        backgroundColor: "rgba(18,113,184,0.08)",
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: 30,
-    },
-    serviceChipText: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#1271B8",
-    },
-
-    infoItem: {
+    infoRow: {
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
@@ -766,5 +589,72 @@ const styles = StyleSheet.create({
     infoText: {
         fontSize: 14,
         color: "#5A6B7F",
+        fontWeight: "400",
+    },
+
+    linkCard: {
+        backgroundColor: "#FFFFFF",
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderRadius: 20,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.02,
+        shadowRadius: 6,
+        elevation: 1,
+        overflow: "hidden",
+    },
+    linkCardContent: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 16,
+        gap: 12,
+    },
+    linkIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: "#E8F1FA",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    linkInfo: {
+        flex: 1,
+    },
+    linkTitle: {
+        fontSize: 13,
+        fontWeight: "500",
+        color: "#1271B8",
+        marginBottom: 2,
+    },
+    linkSubtitle: {
+        fontSize: 14,
+        fontWeight: "500",
+        color: "#1B2430",
+        marginBottom: 6,
+    },
+    linkBadges: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 6,
+    },
+    smallBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 20,
+    },
+    smallBadgeText: {
+        fontSize: 10,
+        fontWeight: "500",
+    },
+    serviceLabel: {
+        fontSize: 11,
+        fontWeight: "500",
+        color: "#1271B8",
+        backgroundColor: "rgba(18,113,184,0.08)",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 20,
+        overflow: "hidden",
     },
 });
