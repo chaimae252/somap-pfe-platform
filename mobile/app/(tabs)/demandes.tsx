@@ -20,6 +20,7 @@ import api from "@/services/api";
 import { LinearGradient } from "expo-linear-gradient";
 import NotificationButton from "@/components/ui/NotificationButton";
 import { getHomeStats } from "@/services/homeService";
+import { getNotifications } from "@/services/notificationService";
 import { useAuthStore } from "@/store/authStore";
 
 type Demande = {
@@ -114,7 +115,17 @@ export default function HomeScreen() {
         try {
             if (!user?.id) return;
             const data = await getHomeStats(user.id);
-            setStats(data);
+            const notificationsData = await getNotifications(user.id);
+            const unreadNotifications = notificationsData.filter((notification: any) =>
+                notification.lu === 0 ||
+                notification.lu === "0" ||
+                notification.lu === false
+            ).length;
+
+            setStats({
+                ...data,
+                notifications: unreadNotifications,
+            });
         } catch (err) {
             console.log("Stats error:", err);
         }
@@ -153,6 +164,7 @@ export default function HomeScreen() {
 
     useFocusEffect(
         useCallback(() => {
+            fetchStats();
             fetchServices();
             fetchDemandes();
         }, [])

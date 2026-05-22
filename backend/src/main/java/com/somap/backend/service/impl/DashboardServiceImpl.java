@@ -32,7 +32,7 @@ public class DashboardServiceImpl implements DashboardService {
         );
 
         dto.setNotifications(
-                notificationRepository.countByUtilisateurId(clientId)
+                notificationRepository.countByUtilisateurIdAndLuFalse(clientId)
         );
 
         return dto;

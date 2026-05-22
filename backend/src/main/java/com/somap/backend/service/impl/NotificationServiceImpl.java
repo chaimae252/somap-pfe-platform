@@ -35,6 +35,9 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setLu(false);
         notification.setUtilisateur(user);
 
+        // 🔥 THIS WAS MISSING
+        notification.setType(dto.getType());
+
         Notification saved = notificationRepository.save(notification);
 
         return mapToDTO(saved);
@@ -108,6 +111,9 @@ public class NotificationServiceImpl implements NotificationService {
         dto.setDateEnvoi(n.getDateEnvoi());
         dto.setLu(n.isLu());
         dto.setUtilisateurId(n.getUtilisateur().getId());
+
+        // 💥 ADD THIS
+        dto.setType(n.getType());
 
         return dto;
     }

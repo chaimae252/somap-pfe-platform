@@ -16,6 +16,7 @@ import { router } from "expo-router";
 import { getAllServices } from "../../services/serviceService";
 import { getHomeStats } from "../../services/homeService";
 import { getCurrentProject } from "../../services/projectService";
+import { getNotifications } from "../../services/notificationService";
 import NotificationButton from "@/components/ui/NotificationButton";
 import { useFocusEffect } from "expo-router";
 
@@ -88,7 +89,17 @@ export default function HomeScreen() {
       setServices(servicesData.slice(0, 4));
 
       const statsData = await getHomeStats(user.id);
-      setStats(statsData);
+      const notificationsData = await getNotifications(user.id);
+      const unreadNotifications = notificationsData.filter((notification: any) =>
+          notification.lu === 0 ||
+          notification.lu === "0" ||
+          notification.lu === false
+      ).length;
+
+      setStats({
+        ...statsData,
+        notifications: unreadNotifications,
+      });
 
       const projectData = await getCurrentProject(user.id);
       setProject(projectData);

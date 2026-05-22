@@ -1,5 +1,6 @@
 package com.somap.backend.dto;
 
+import com.somap.backend.enums.NotificationType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -17,5 +18,8 @@ public class NotificationDTO {
     private LocalDateTime dateEnvoi;
 
     private boolean lu;
+
+    private NotificationType type;
+
     private Long utilisateurId ;
 }

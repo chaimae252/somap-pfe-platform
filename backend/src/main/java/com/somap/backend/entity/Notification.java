@@ -1,4 +1,5 @@
 package com.somap.backend.entity;
+import com.somap.backend.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,6 +24,9 @@ public class Notification {
     private LocalDateTime dateEnvoi;
 
     private boolean lu;
+
+    @Enumerated(EnumType.STRING)
+    private NotificationType type;
 
     @ManyToOne
     @JoinColumn(name = "utilisateur_id")

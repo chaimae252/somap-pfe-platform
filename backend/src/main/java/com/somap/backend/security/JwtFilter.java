@@ -36,56 +36,35 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-// normalize
-        if (path == null) {
+        // ✅ Skip only static resources
+        if (path.startsWith("/images/")
+                || path.startsWith("/uploads/")
+                || path.startsWith("/static/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-// 🚨 STRONG STATIC BYPASS (IMPORTANT FIX)
-        if (
-                path.startsWith("/images/") ||
-                        path.startsWith("/uploads/") ||
-                        path.startsWith("/static/") ||
-                        path.contains(".jpg") ||
-                        path.contains(".png") ||
-                        path.contains(".jpeg") ||
-                        path.contains(".webp")
-        ) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        String authHeader = request.getHeader("Authorization");
 
-        final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
-
-        // ✅ No token
+        // ❌ No token → DO NOT silently continue (this is your bug)
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        jwt = authHeader.substring(7);
+        String jwt = authHeader.substring(7);
 
-        // ✅ Invalid token values
-        if (
-                jwt.isBlank() ||
-                        jwt.equals("undefined") ||
-                        jwt.equals("null")
-        ) {
-            filterChain.doFilter(request, response);
+        if (jwt.isBlank() || jwt.equals("null") || jwt.equals("undefined")) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
         try {
+            String userEmail = jwtService.extractUsername(jwt);
 
-            userEmail = jwtService.extractUsername(jwt);
-
-            if (
-                    userEmail != null &&
-                            SecurityContextHolder.getContext().getAuthentication() == null
-            ) {
+            if (userEmail != null &&
+                    SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 UserDetails userDetails =
                         userDetailsService.loadUserByUsername(userEmail);
@@ -100,18 +79,22 @@ public class JwtFilter extends OncePerRequestFilter {
                             );
 
                     authToken.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request)
+                            new WebAuthenticationDetailsSource().buildDetails(request)
                     );
 
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(authToken);
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
                 }
             }
 
         } catch (Exception e) {
             System.out.println("JWT ERROR: " + e.getMessage());
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid or expired token");
+            return;
         }
 
         filterChain.doFilter(request, response);

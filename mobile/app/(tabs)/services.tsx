@@ -15,9 +15,9 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-
 import { getHomeStats } from "../../services/homeService";
 import { getAllServices } from "../../services/serviceService";
+import { getNotifications } from "../../services/notificationService";
 import { useAuthStore } from "../../store/authStore";
 import Theme from "../../constants/theme";
 import NotificationButton from "@/components/ui/NotificationButton";
@@ -79,7 +79,17 @@ export default function ServicesScreen() {
             try {
                 if (!user?.id) return;
                 const data = await getHomeStats(user.id);
-                setStats(data);
+                const notificationsData = await getNotifications(user.id);
+                const unreadNotifications = notificationsData.filter((notification: any) =>
+                    notification.lu === 0 ||
+                    notification.lu === "0" ||
+                    notification.lu === false
+                ).length;
+
+                setStats({
+                    ...data,
+                    notifications: unreadNotifications,
+                });
             } catch (err) {
                 console.log("Stats error:", err);
             }
