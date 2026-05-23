@@ -109,9 +109,9 @@ export default function SplashScreenn() {
     return (
         <View style={styles.container}>
             <StatusBar
-                translucent
-                backgroundColor="transparent"
-                barStyle="dark-content"
+                translucent={false}
+                backgroundColor="#0d2d5e"
+                barStyle="light-content"
             />
 
             {/* Background */}
@@ -137,20 +137,6 @@ export default function SplashScreenn() {
             <View style={[styles.decorRing, styles.ringBR2]} />
 
             <View style={styles.diamond} />
-
-            {/* Brand stripe */}
-            <LinearGradient
-                colors={[
-                    "transparent",
-                    Colors.navy,
-                    Colors.cyan,
-                    Colors.green,
-                    "transparent",
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.brandStripe}
-            />
 
             {/* Main content */}
             <View style={styles.content}>
@@ -189,11 +175,25 @@ export default function SplashScreenn() {
                         },
                     ]}
                 >
+                    {/* Brand stripe sits behind the gap between logo and title, not through the text. */}
+                    <LinearGradient
+                        colors={[
+                            "transparent",
+                            Colors.navy,
+                            Colors.cyan,
+                            Colors.green,
+                            "transparent",
+                        ]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.brandStripe}
+                    />
+
                     <View style={styles.titleRow}>
                         <Text
                             style={[
                                 styles.titleText,
-                                { color: Colors.green, fontSize: 44 },
+                                { color: Colors.green },
                             ]}
                         >
                             S
@@ -358,34 +358,37 @@ const styles = StyleSheet.create({
 
     brandStripe: {
         position: "absolute",
-        top: height * 0.55,
-        left: 0,
-        right: 0,
+        top: -14,
+        left: -24,
+        right: -24,
         height: 3,
-        opacity: 0.65,
+        opacity: 0.55,
     },
 
     content: {
         flex: 1,
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         width: "100%",
+        paddingTop: Math.max(40, height * 0.08),
     },
 
     logoWrap: {
         alignItems: "center",
-        marginBottom: 8, // was 28 → reduce gap
+        marginBottom: Math.max(18, height * 0.025),
     },
 
     logo: {
-        width: 160,
-        height: 160,
-        resizeMode: "contain", // 👈 this makes it float on top
-        top: -90,               // 👈 controls how high it sits
+        width: Math.min(150, width * 0.38),
+        height: Math.min(150, width * 0.38),
+        resizeMode: "contain",
+        marginTop: -72,
     },
 
     titleBlock: {
         alignItems: "center",
+        width: "100%",
+        marginTop: 4,
     },
 
     titleRow: {
@@ -393,12 +396,13 @@ const styles = StyleSheet.create({
         alignItems: "flex-end",
         flexWrap: "wrap",
         justifyContent: "center",
+        maxWidth: Math.min(340, width - 36),
     },
 
     titleText: {
-        fontSize: 36,
+        fontSize: Math.min(34, width * 0.085),
         fontWeight: "700",
-        lineHeight: 40,
+        lineHeight: Math.min(40, width * 0.1),
         letterSpacing: 1,
     },
 
@@ -465,6 +469,7 @@ const styles = StyleSheet.create({
     bottomSection: {
         alignItems: "center",
         gap: 12,
+        paddingBottom: 4,
     },
 
     loadingLabel: {
@@ -493,9 +498,9 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
     },
     iconMain: {
-        width: 180,
-        height: 180,
+        width: Math.min(172, width * 0.44),
+        height: Math.min(172, width * 0.44),
         resizeMode: "contain",
-        marginBottom: -108,
+        marginBottom: -96,
     },
 });

@@ -42,7 +42,7 @@ type ImageAttachment = {
 };
 
 // Base URL for image prefix (same as in EditDemandeScreen)
-const BASE_URL = "http://192.168.1.119:8080"; // replace with your actual base URL
+const BASE_URL = "http://10.0.2.2:8080"; // replace with your actual base URL
 
 const getImageUrl = (url?: string | null) => {
   if (!url) return null;
@@ -53,10 +53,10 @@ const getImageUrl = (url?: string | null) => {
 
 const getUrgenceInfo = (urgence: string) => {
   switch (urgence) {
-    case "URGENT": return { label: "Urgent", color: "#EB5757", bg: "#FEF1F1", icon: "warning" };
-    case "NORMAL": return { label: "Normal", color: "#F2C94C", bg: "#FFF8E7", icon: "time" };
-    case "FAIBLE": return { label: "Faible", color: "#49C69A", bg: "#E6F7F0", icon: "checkmark-circle" };
-    default: return { label: urgence, color: "#8A94A6", bg: "#F0F2F5", icon: "help" };
+    case "URGENT": return { label: "Urgent", color: "#EB5757", bg: "#FEF1F1", icon: "warning-outline" };
+    case "NORMAL": return { label: "Normal", color: "#F2C94C", bg: "#FFF8E7", icon: "time-outline" };
+    case "FAIBLE": return { label: "Faible", color: "#49C69A", bg: "#E6F7F0", icon: "checkmark-circle-outline" };
+    default: return { label: urgence, color: "#8A94A6", bg: "#F0F2F5", icon: "help-outline" };
   }
 };
 
@@ -66,6 +66,15 @@ const getStatusInfo = (statut: string) => {
     case "VALIDEE": return { label: "Validée", color: "#49C69A", bg: "#E6F7F0" };
     case "REJETEE": return { label: "Rejetée", color: "#EB5757", bg: "#FEF1F1" };
     default: return { label: statut, color: "#8A94A6", bg: "#F0F2F5" };
+  }
+};
+
+const getStatusIcon = (statut: string) => {
+  switch (statut) {
+    case "EN_ATTENTE": return "time-outline";
+    case "VALIDEE": return "checkmark-circle-outline";
+    case "REJETEE": return "close-circle-outline";
+    default: return "help-outline";
   }
 };
 
@@ -218,7 +227,7 @@ export default function DemandeDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
       {/* Header */}
       <LinearGradient
@@ -230,19 +239,19 @@ export default function DemandeDetailScreen() {
         <View style={styles.blob1} />
         <View style={styles.blob2} />
 
-        <View style={styles.headerTop}>
+        <View style={styles.headerTopRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButtonHeader}>
             <Ionicons name="arrow-back" size={28} color="#fff" />
           </TouchableOpacity>
           <View style={styles.headerActions}>
-            <TouchableOpacity onPress={handleDownload} style={styles.iconButton} disabled={processing}>
-              <Ionicons name="download-outline" size={24} color="#fff" />
+            <TouchableOpacity onPress={handleDownload} style={styles.actionButton} disabled={processing}>
+              <Ionicons name="download-outline" size={22} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handlePrint} style={styles.iconButton} disabled={processing}>
-              <Ionicons name="print-outline" size={24} color="#fff" />
+            <TouchableOpacity onPress={handlePrint} style={styles.actionButton} disabled={processing}>
+              <Ionicons name="print-outline" size={22} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push(`/demande/edit/${demande.id}`)} style={styles.iconButton}>
-              <Ionicons name="pencil-outline" size={24} color="#fff" />
+            <TouchableOpacity onPress={() => router.push(`/demande/edit/${demande.id}`)} style={styles.actionButton}>
+              <Ionicons name="pencil-outline" size={22} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
@@ -254,6 +263,7 @@ export default function DemandeDetailScreen() {
             <Text style={[styles.badgeText, { color: urgence.color }]}>{urgence.label}</Text>
           </View>
           <View style={[styles.badgeRow, { backgroundColor: status.bg }]}>
+            <Ionicons name={getStatusIcon(demande.statut) as any} size={14} color={status.color} />
             <Text style={[styles.badgeText, { color: status.color }]}>{status.label}</Text>
           </View>
         </View>
@@ -265,7 +275,7 @@ export default function DemandeDetailScreen() {
           {service && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                <Ionicons name="layers-outline" size={22} color="#1271B8" />
+                <Ionicons name="git-branch-outline" size={20} color="#1271B8" />
                 <Text style={styles.sectionTitle}>Service concerné</Text>
               </View>
               <Text style={styles.serviceName}>{service.titre}</Text>
@@ -278,7 +288,7 @@ export default function DemandeDetailScreen() {
           {/* Description */}
           <View style={styles.cardSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="document-text-outline" size={22} color="#1271B8" />
+              <Ionicons name="document-text-outline" size={20} color="#1271B8" />
               <Text style={styles.sectionTitle}>Description</Text>
             </View>
             <Text style={styles.description}>{demande.description}</Text>
@@ -290,7 +300,7 @@ export default function DemandeDetailScreen() {
               <View style={styles.divider} />
               <View style={styles.cardSection}>
                 <View style={styles.sectionHeader}>
-                  <Ionicons name="images-outline" size={22} color="#1271B8" />
+                  <Ionicons name="images-outline" size={20} color="#1271B8" />
                   <Text style={styles.sectionTitle}>Pièces jointes ({images.length})</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
@@ -321,7 +331,7 @@ export default function DemandeDetailScreen() {
           {/* Informations */}
           <View style={styles.cardSection}>
             <View style={styles.sectionHeader}>
-              <Ionicons name="information-circle-outline" size={22} color="#1271B8" />
+              <Ionicons name="information-circle-outline" size={20} color="#1271B8" />
               <Text style={styles.sectionTitle}>Informations</Text>
             </View>
             <View style={styles.infoRow}>
@@ -329,7 +339,7 @@ export default function DemandeDetailScreen() {
               <Text style={styles.infoText}>Créée le {formatDate(demande.dateCreation)}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Ionicons name="pricetag-outline" size={18} color="#6B7A90" />
+              <Ionicons name="server-outline" size={16} color="#8A94A6" />
               <Text style={styles.infoText}>N° Demande : #{demande.id}</Text>
             </View>
           </View>
@@ -365,7 +375,7 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    paddingTop: 50,
+    paddingTop: 30,
     paddingHorizontal: 20,
     paddingBottom: 30,
     borderBottomLeftRadius: 32,
@@ -390,15 +400,29 @@ const styles = StyleSheet.create({
     borderRadius: 55,
     backgroundColor: "rgba(73,198,154,0.10)",
   },
-  headerTop: {
+  headerTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  backButtonHeader: { padding: 4 },
-  headerActions: { flexDirection: "row", gap: 16 },
-  iconButton: { padding: 4 },
+  backButtonHeader: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerActions: { flexDirection: "row", gap: 12 },
+  actionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   headerTitle: { fontSize: 24, fontWeight: "400", color: "#fff", marginBottom: 12 },
   statusBadgeHeader: { flexDirection: "row", gap: 12, alignSelf: "flex-start" },
   badgeRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 40 },

@@ -290,8 +290,8 @@ export default function NotificationsScreen() {
     };
 
     return (
-        <SafeAreaView style={styles.root} edges={["top"]}>
-            <StatusBar barStyle="light-content" />
+        <SafeAreaView style={styles.root} edges={[]}>
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
             {/* ── HEADER ──────────────────────────────────────────── */}
             <LinearGradient

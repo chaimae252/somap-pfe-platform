@@ -76,7 +76,8 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
                 "http://localhost:19006",
-                "http://192.168.1.119:8081" // your React Native app origin
+                "http://192.168.1.119:8081",
+                "http://192.168.137.1:8080"// your React Native app origin
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

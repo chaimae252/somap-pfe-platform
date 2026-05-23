@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-    Alert,
     Image,
     Modal,
     Pressable,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const normalize = (url?: string | null) => {
     if (!url) return null;
@@ -36,6 +36,76 @@ const formatDate = (value?: string) => {
     });
 };
 
+function DeleteConfirmDialog({
+    visible,
+    title,
+    message,
+    onCancel,
+    onConfirm,
+}: {
+    visible: boolean;
+    title: string;
+    message: string;
+    onCancel: () => void;
+    onConfirm: () => void;
+}) {
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            onRequestClose={onCancel}
+        >
+            <Pressable style={styles.confirmBackdrop} onPress={onCancel}>
+                <Pressable style={styles.confirmCard} onPress={(event) => event.stopPropagation()}>
+                    <LinearGradient
+                        colors={["#FFFFFF", "#F8FBFF"] as const}
+                        style={styles.confirmGradient}
+                    >
+                        <View style={styles.confirmIconWrap}>
+                            <LinearGradient
+                                colors={["#FFE8E8", "#FFF5F2"] as const}
+                                style={styles.confirmIconBg}
+                            >
+                                <Ionicons name="trash-outline" size={24} color="#D9534F" />
+                            </LinearGradient>
+                        </View>
+
+                        <Text style={styles.confirmTitle}>{title}</Text>
+                        <Text style={styles.confirmMessage}>{message}</Text>
+
+                        <View style={styles.confirmActions}>
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                activeOpacity={0.8}
+                                onPress={onCancel}
+                            >
+                                <Text style={styles.cancelButtonText}>Annuler</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.confirmDeleteButton}
+                                activeOpacity={0.86}
+                                onPress={onConfirm}
+                            >
+                                <LinearGradient
+                                    colors={["#EB5757", "#C0392B"] as const}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.confirmDeleteGradient}
+                                >
+                                    <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+                                    <Text style={styles.confirmDeleteText}>Supprimer</Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+                        </View>
+                    </LinearGradient>
+                </Pressable>
+            </Pressable>
+        </Modal>
+    );
+}
+
 function ReplyCard({
     item,
     onReply,
@@ -49,19 +119,16 @@ function ReplyCard({
     const canManage = Number(item.clientId || item.client?.id) === Number(currentClientId);
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(item.contenu || "");
+    const [deleteVisible, setDeleteVisible] = useState(false);
 
     const handleDelete = () => {
-        Alert.alert("Supprimer", "Supprimer cette reponse ?", [
-            { text: "Annuler", style: "cancel" },
-            {
-                text: "Supprimer",
-                style: "destructive",
-                onPress: () => {
-                    onEditingChange?.(false);
-                    onDelete?.(item.id);
-                },
-            },
-        ]);
+        setDeleteVisible(true);
+    };
+
+    const confirmDelete = () => {
+        setDeleteVisible(false);
+        onEditingChange?.(false);
+        onDelete?.(item.id);
     };
 
     const handleSave = async () => {
@@ -168,6 +235,14 @@ function ReplyCard({
                     </>
                 )}
             </View>
+
+            <DeleteConfirmDialog
+                visible={deleteVisible}
+                title="Supprimer la réponse ?"
+                message="Cette action retirera définitivement cette réponse de la discussion."
+                onCancel={() => setDeleteVisible(false)}
+                onConfirm={confirmDelete}
+            />
         </View>
     );
 }
@@ -186,20 +261,17 @@ export default function CommentCard({
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(item.contenu || "");
+    const [deleteVisible, setDeleteVisible] = useState(false);
     const canManage = Number(item.clientId || item.client?.id) === Number(currentClientId);
 
     const handleDelete = () => {
-        Alert.alert("Supprimer", "Supprimer ce commentaire ?", [
-            { text: "Annuler", style: "cancel" },
-            {
-                text: "Supprimer",
-                style: "destructive",
-                onPress: () => {
-                    onEditingChange?.(false);
-                    onDelete?.(item.id);
-                },
-            },
-        ]);
+        setDeleteVisible(true);
+    };
+
+    const confirmDelete = () => {
+        setDeleteVisible(false);
+        onEditingChange?.(false);
+        onDelete?.(item.id);
     };
 
     const handleSave = async () => {
@@ -373,6 +445,14 @@ export default function CommentCard({
                     )}
                 </Pressable>
             </Modal>
+
+            <DeleteConfirmDialog
+                visible={deleteVisible}
+                title="Supprimer le commentaire ?"
+                message="Cette action supprimera le commentaire et ses réponses de façon définitive."
+                onCancel={() => setDeleteVisible(false)}
+                onConfirm={confirmDelete}
+            />
         </View>
     );
 }
@@ -564,6 +644,116 @@ const styles = StyleSheet.create({
         width: "100%",
         height: "82%",
         borderRadius: 16,
+    },
+    confirmBackdrop: {
+        flex: 1,
+        backgroundColor: "rgba(7, 20, 35, 0.48)",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 22,
+    },
+    confirmCard: {
+        width: "100%",
+        maxWidth: 360,
+        borderRadius: 24,
+        overflow: "hidden",
+        shadowColor: "#0d2d5e",
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.22,
+        shadowRadius: 28,
+        elevation: 12,
+    },
+    confirmGradient: {
+        paddingHorizontal: 20,
+        paddingTop: 22,
+        paddingBottom: 18,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "rgba(221,233,245,0.9)",
+        borderRadius: 24,
+    },
+    confirmIconWrap: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: "#FFFFFF",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 14,
+        shadowColor: "#EB5757",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.16,
+        shadowRadius: 14,
+        elevation: 5,
+    },
+    confirmIconBg: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        alignItems: "center",
+        justifyContent: "center",
+        borderWidth: 1,
+        borderColor: "rgba(217,83,79,0.16)",
+    },
+    confirmTitle: {
+        color: "#1a2e4a",
+        fontSize: 18,
+        fontWeight: "900",
+        textAlign: "center",
+        marginBottom: 7,
+    },
+    confirmMessage: {
+        color: "#6B7A90",
+        fontSize: 13,
+        lineHeight: 20,
+        textAlign: "center",
+        paddingHorizontal: 6,
+        marginBottom: 18,
+    },
+    confirmActions: {
+        width: "100%",
+        flexDirection: "row",
+        gap: 10,
+    },
+    cancelButton: {
+        flex: 1,
+        minHeight: 46,
+        borderRadius: 15,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#F4F7FB",
+        borderWidth: 1,
+        borderColor: "#DDE9F5",
+    },
+    cancelButtonText: {
+        color: "#5F7187",
+        fontSize: 14,
+        fontWeight: "900",
+    },
+    confirmDeleteButton: {
+        flex: 1,
+        minHeight: 46,
+        borderRadius: 15,
+        overflow: "hidden",
+        shadowColor: "#C0392B",
+        shadowOffset: { width: 0, height: 7 },
+        shadowOpacity: 0.22,
+        shadowRadius: 12,
+        elevation: 4,
+    },
+    confirmDeleteGradient: {
+        flex: 1,
+        minHeight: 46,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 7,
+        paddingHorizontal: 12,
+    },
+    confirmDeleteText: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "900",
     },
 });
 

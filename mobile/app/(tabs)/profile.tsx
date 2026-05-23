@@ -14,6 +14,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { getHomeStats } from '../../services/homeService';
 import { updateClient } from '../../services/clientService';
 import { changePassword } from '../../services/authService';
+import api from '../../services/api';
 import * as Haptics from 'expo-haptics';
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
@@ -278,32 +279,22 @@ export default function ProfileScreen() {
     setSending(true);
 
     try {
-      const API_URL = 'http://192.168.1.119:8080/api/contact';
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: contactForm.name,
-          email: contactForm.email,
-          subject: contactForm.subject,
-          message: contactForm.message,
-          userId: user?.id,
-        }),
+      await api.post('/contact', {
+        name: contactForm.name.trim(),
+        email: contactForm.email.trim(),
+        subject: contactForm.subject.trim(),
+        message: contactForm.message.trim(),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Erreur réseau');
-      }
 
       setToast({ visible: true, message: "Message envoyé avec succès !", type: "success" });
       setContactForm({ ...contactForm, subject: '', message: '' });
     } catch (error: any) {
-      console.log('Contact error:', error);
-      setToast({ visible: true, message: "Erreur lors de l'envoi. Vérifiez votre connexion ou réessayez.", type: "error" });
+      console.log('Contact error:', error?.response?.data || error.message);
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data ||
+        "Erreur lors de l'envoi. Vérifiez votre connexion ou réessayez.";
+      setToast({ visible: true, message, type: "error" });
     } finally {
       setSending(false);
     }
@@ -317,7 +308,7 @@ export default function ProfileScreen() {
 
   return (
     <LinearGradient colors={['#f0f4fa', '#ffffff']} style={styles.gradientContainer}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           style={styles.container}
@@ -362,7 +353,7 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Projets</Text>
             </TouchableOpacity>
             <View style={styles.statDivider} />
-            <TouchableOpacity style={styles.statItem} onPress={() => navigateTo('/(tabs)/notifications')} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.statItem} onPress={() => navigateTo('/notifications')} activeOpacity={0.7}>
               <View style={styles.statIconBg}><Ionicons name="notifications-outline" size={24} color={BLUE} /></View>
               <AnimatedCounter value={stats.notifications} />
               <Text style={styles.statLabel}>Notifications</Text>

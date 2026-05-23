@@ -19,6 +19,7 @@ import { getHomeStats } from "../../services/homeService";
 import { getAllServices } from "../../services/serviceService";
 import { getNotifications } from "../../services/notificationService";
 import { useAuthStore } from "../../store/authStore";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Theme from "../../constants/theme";
 import NotificationButton from "@/components/ui/NotificationButton";
 
@@ -65,6 +66,7 @@ const getSafeServiceImage = (images?: { imageUrl: string | null }[]) => {
 
 export default function ServicesScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     const [search, setSearch] = useState("");
     const [services, setServices] = useState<Service[]>([]);
@@ -171,7 +173,11 @@ export default function ServicesScreen() {
                     </Text>
 
                     <View style={styles.footer}>
-                        <TouchableOpacity style={styles.detailsButton}>
+                        <TouchableOpacity
+                            style={styles.detailsButton}
+                            onPress={() => router.push(`/service/${item.id}` as any)}
+                            activeOpacity={0.75}
+                        >
                             <Text style={styles.detailsText}>Voir détails</Text>
                             <Ionicons name="arrow-forward" size={16} color={colors.blue} />
                         </TouchableOpacity>
@@ -193,7 +199,7 @@ export default function ServicesScreen() {
     /* ---------------- UI ---------------- */
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
             <LinearGradient
                 colors={["#0d2d5e", "#1271b8", "#2D9C7C"]}
@@ -232,7 +238,7 @@ export default function ServicesScreen() {
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderItem}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 120 + insets.bottom }]}
             />
         </SafeAreaView>
     );

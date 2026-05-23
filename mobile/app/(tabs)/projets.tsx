@@ -19,6 +19,7 @@ import NotificationButton from "@/components/ui/NotificationButton";
 import { getHomeStats } from "@/services/homeService";
 import { useAuthStore } from "@/store/authStore";
 import { getClientProjects } from "@/services/projectService";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // ================= Types =================
 type Project = {
@@ -120,6 +121,7 @@ const Toast = ({ visible, message, type, onHide }: {
 // ================= Main Component =================
 export default function ProjectsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
@@ -247,7 +249,7 @@ export default function ProjectsScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
             {/* HEADER with gradient */}
             <LinearGradient
@@ -299,7 +301,7 @@ export default function ProjectsScreen() {
                 data={projects}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderProject}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 110 + insets.bottom }]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1271B8" />}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>

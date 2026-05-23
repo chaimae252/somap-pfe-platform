@@ -268,7 +268,7 @@ export default function CreateDemandeScreen() {
             }
 
             setToast({visible: true, message: "Demande envoyée avec succès !", type: "success"});
-            setTimeout(() => router.replace("/home"), 2500);
+            setTimeout(() => router.replace("/(tabs)/home"), 2500);
         } catch (error: any) {
             console.error("Submit error:", error);
             let message = "Une erreur est survenue lors de l'envoi.";
@@ -338,7 +338,7 @@ export default function CreateDemandeScreen() {
 
     return (
         <View style={{flex: 1, backgroundColor: "#F4F7FB"}}>
-            <StatusBar barStyle="light-content"/>
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false}/>
 
             <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 120}}>
 

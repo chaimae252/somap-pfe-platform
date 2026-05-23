@@ -200,7 +200,7 @@ export default function HomeScreen() {
             paddingBottom: 120 + insets.bottom,
           }}
       >
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
         {/* ─── HEADER ─────────────────────────────────────── */}
         <LinearGradient

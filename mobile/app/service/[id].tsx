@@ -16,6 +16,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Theme from "../../constants/theme";
 import { getServiceById } from "../../services/serviceService";
 import CommentsSheet from "../../components/comments/CommentsSheet";
@@ -45,6 +46,7 @@ export default function ServiceDetails() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const { user } = useAuthStore();
+    const insets = useSafeAreaInsets();
 
     const [service, setService] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function ServiceDetails() {
     }
     return (
         <SafeAreaView style={styles.safe}>
-            <StatusBar barStyle="dark-content" backgroundColor="#F4F7FB" />
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
             <TouchableOpacity
                 style={styles.fabBack}
@@ -113,7 +115,7 @@ export default function ServiceDetails() {
                 <Ionicons name="arrow-back" size={20} color="#1a2e4a" />
             </TouchableOpacity>
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 130 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 130 + insets.bottom }}>
 
                 {/* ── HERO + AUTO LOOP GALLERY ── */}
                 <View style={styles.heroContainer}>
@@ -168,7 +170,7 @@ export default function ServiceDetails() {
             </ScrollView>
 
             {/* ── CTA ── */}
-            <View style={styles.bottomBar}>
+            <View style={[styles.bottomBar, { paddingBottom: 14 + insets.bottom }]}>
                 <TouchableOpacity
                     style={styles.ctaSecondary}
                     onPress={() => setCommentsVisible(true)}

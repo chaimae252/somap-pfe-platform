@@ -32,7 +32,7 @@ const Onboarding1: React.FC<Onboarding1Props> = ({
                                                  }) => {
   return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.bgScreen} />
+        <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
         <View style={styles.screen}>
           {/* Background blobs */}

@@ -216,7 +216,7 @@ export default function LoginScreen() {
                                         style={styles.icon}
                                     />
                                     <TextInput
-                                        placeholder="Mot de passe (min 6 caractères)"
+                                        placeholder="Mot de passe"
                                         placeholderTextColor="#8e9aaf"
                                         secureTextEntry={!showPassword}   // 👈 dynamic
                                         value={password}

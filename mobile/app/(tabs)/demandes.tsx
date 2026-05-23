@@ -22,6 +22,7 @@ import NotificationButton from "@/components/ui/NotificationButton";
 import { getHomeStats } from "@/services/homeService";
 import { getNotifications } from "@/services/notificationService";
 import { useAuthStore } from "@/store/authStore";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Demande = {
     id: number;
@@ -93,6 +94,7 @@ const Toast = ({ visible, message, type, onHide }: {
 
 export default function HomeScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
     const [demandes, setDemandes] = useState<Demande[]>([]);
     const [services, setServices] = useState<Service[]>([]);
@@ -284,7 +286,7 @@ export default function HomeScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
             {/* HEADER — matches ServicesScreen style */}
             <LinearGradient
@@ -321,7 +323,7 @@ export default function HomeScreen() {
                 data={demandes}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={renderDemande}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 110 + insets.bottom }]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>

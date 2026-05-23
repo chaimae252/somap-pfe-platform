@@ -16,7 +16,7 @@ import {useRouter, useLocalSearchParams, useFocusEffect} from "expo-router";
 import {Ionicons} from "@expo/vector-icons";
 import {LinearGradient} from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
-import api from "@/services/api";
+import api, {API_ORIGIN} from "@/services/api";
 import {getAllServices} from "@/services/serviceService";
 import {SafeAreaView} from "react-native-safe-area-context";
 
@@ -117,8 +117,6 @@ export default function EditDemandeScreen() {
     const [services, setServices] = useState<any[]>([]);
     const [servicesLoading, setServicesLoading] = useState(true);
 
-   // const BASE_URL = "http://10.0.2.2:8080";
-    const BASE_URL = "http://192.168.1.119:8080";
     const getImageUrl = (url?: string | null) => {
         if (!url) return null;
 
@@ -126,7 +124,7 @@ export default function EditDemandeScreen() {
 
         if (clean.startsWith("http")) return clean;
 
-        return `${BASE_URL}${clean}`;
+        return `${API_ORIGIN}${clean}`;
     };
 
     useEffect(() => {
@@ -148,7 +146,7 @@ export default function EditDemandeScreen() {
     const normalize = (url?: string | null) => {
         if (!url) return null;
         if (url.startsWith("http")) return url;
-        if (url.startsWith("/")) return `http://10.0.2.2:8080${url}`;
+        if (url.startsWith("/")) return `${API_ORIGIN}${url}`;
         return null;
     };
 
@@ -200,8 +198,6 @@ export default function EditDemandeScreen() {
         }).start();
     };
 
-    // const BASE_URL = "http://192.168.1.119:8080";
-
     const fetchDemande = async () => {
         try {
             const response = await api.get(`/demandes/${id}`);
@@ -220,7 +216,7 @@ export default function EditDemandeScreen() {
                 .filter((img: any) => img.demandeId === Number(id) && img.imageUrl)
                 .map((img: any) => ({
                     ...img,
-                    imageUrl: img.imageUrl.startsWith("http") ? img.imageUrl : `${BASE_URL}${img.imageUrl}`,
+                    imageUrl: getImageUrl(img.imageUrl) ?? img.imageUrl,
                 }));
             setExistingImages(filtered);
         } catch (error) {

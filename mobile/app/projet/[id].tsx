@@ -226,7 +226,7 @@ export default function ProjectDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
 
             {/* === YOUR ORIGINAL HEADER (kept exactly) === */}
             <LinearGradient
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
 
     // ========== YOUR ORIGINAL HEADER STYLES (exactly as you had) ==========
     header: {
-        paddingTop: 55,
+        paddingTop: 30,
         paddingHorizontal: 24,
         paddingBottom: 32,
         borderBottomLeftRadius: 32,

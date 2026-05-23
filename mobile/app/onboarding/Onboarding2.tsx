@@ -95,7 +95,7 @@ const Onboarding2: React.FC<Onboarding2Props> = ({
 }) => {
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.bgScreen} />
+      <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false} />
       <View style={styles.screen}>
         <View style={[styles.blob, {
           width: 220,
