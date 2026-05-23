@@ -301,7 +301,7 @@ export default function CreateDemandeScreen() {
 
         // backend relative path
         if (url.startsWith("/")) {
-            return `http://10.0.2.2:8080${url}`;
+            return `http://192.168.1.119:8080${url}`;
         }
 
         return null;

@@ -42,23 +42,25 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [adresse, setAdresse] = useState(""); // ✅ NEW STATE
+  const [adresse, setAdresse] = useState("");
   const [password, setPassword] = useState("");
   const [agree, setAgree] = useState(false);
 
   const [focusedInput, setFocusedInput] = useState("");
+
+  // State for password visibility toggle
+  const [showPassword, setShowPassword] = useState(false);
 
   const [touched, setTouched] = useState({
     name: false,
     email: false,
     phone: false,
     password: false,
-    adresse: false, // ✅ ADDED
+    adresse: false,
   });
 
   const [pressed, setPressed] = useState(false);
 
-  // ✅ MESSAGE STATE
   const [message, setMessage] = useState({
     type: "",
     text: "",
@@ -68,7 +70,6 @@ export default function RegisterScreen() {
   const isEmailValid = validateEmail(email);
   const isPhoneValid = validatePhone(phone);
   const isPasswordValid = validateRegisterPassword(password);
-  // Adresse is optional – no validation required (or you can add a simple non-empty check if needed)
 
   const markTouched = (field: keyof typeof touched) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -79,7 +80,6 @@ export default function RegisterScreen() {
     const passwordValid = validateRegisterPassword(password);
     const nameValid = validateName(fullName);
     const phoneValid = validatePhone(phone);
-    // Adresse optional – no validation needed
 
     if (!emailValid || !passwordValid || !nameValid || !phoneValid) {
       setMessage({
@@ -103,7 +103,7 @@ export default function RegisterScreen() {
         email,
         motDePasse: password,
         telephone: phone,
-        adresse: adresse, // ✅ SEND ADRESSE
+        adresse: adresse,
       });
 
       const token = data?.token;
@@ -114,7 +114,7 @@ export default function RegisterScreen() {
         email: data?.email || email,
         role: data?.role,
         telephone: phone,
-        adresse: adresse, // ✅ STORE ADRESSE
+        adresse: adresse,
       };
 
       if (token) {
@@ -151,7 +151,6 @@ export default function RegisterScreen() {
           <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
             <View style={styles.container}>
 
-              {/* MESSAGE */}
               {message.text !== "" && (
                 <View
                   style={[
@@ -167,7 +166,6 @@ export default function RegisterScreen() {
                 </View>
               )}
 
-              {/* BACK BUTTON */}
               <TouchableOpacity
                 style={styles.backButton}
                 onPress={() => router.replace("/login")}
@@ -175,7 +173,6 @@ export default function RegisterScreen() {
                 <MaterialIcons name="arrow-back-ios" size={20} color="#1564c0" />
               </TouchableOpacity>
 
-              {/* HEADER */}
               <View style={styles.header}>
                 <Image
                   source={require("@/assets/images/logomob.png")}
@@ -184,7 +181,6 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              {/* CARD */}
               <View style={styles.card}>
                 <View style={styles.cardHeader}>
                   <Image
@@ -256,7 +252,7 @@ export default function RegisterScreen() {
                   {!isPhoneValid && touched.phone ? "Numéro invalide" : " "}
                 </Text>
 
-                {/* ADRESSE - NEW FIELD */}
+                {/* ADRESSE */}
                 <View style={[
                   styles.inputContainer,
                   focusedInput === "adresse" && styles.inputFocused,
@@ -275,7 +271,7 @@ export default function RegisterScreen() {
                   {/* Optional field – no error */}
                 </Text>
 
-                {/* PASSWORD */}
+                {/* PASSWORD with visibility toggle */}
                 <View style={[
                   styles.inputContainer,
                   focusedInput === "password" && styles.inputFocused,
@@ -284,13 +280,20 @@ export default function RegisterScreen() {
                   <MaterialIcons name="lock" size={22} color="#8e9aaf" style={styles.icon} />
                   <TextInput
                     placeholder="Mot de passe"
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     value={password}
                     onChangeText={setPassword}
                     onFocus={() => setFocusedInput("password")}
                     onBlur={() => { setFocusedInput(""); markTouched("password"); }}
                     style={styles.textInput}
                   />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <MaterialIcons 
+                      name={showPassword ? "visibility" : "visibility-off"} 
+                      size={22} 
+                      color="#8e9aaf" 
+                    />
+                  </TouchableOpacity>
                 </View>
                 <Text style={styles.error}>
                   {!isPasswordValid && touched.password ? "Mot de passe trop court" : " "}
@@ -312,7 +315,6 @@ export default function RegisterScreen() {
                   <Text style={styles.buttonText}>S’inscrire</Text>
                 </TouchableOpacity>
 
-                {/* BOTTOM TEXT */}
                 <View style={styles.bottomRow}>
                   <Text style={styles.bottomText}>Déjà membre ? </Text>
                   <TouchableOpacity onPress={() => router.replace("/login")}>
@@ -329,7 +331,6 @@ export default function RegisterScreen() {
   );
 }
 
-/* ================= STYLES ================= */
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#eef3fb" },
   keyboardView: { flex: 1 },

@@ -20,11 +20,15 @@ import * as Haptics from 'expo-haptics';
 const { colors, fonts, spacing, radius, shadows } = Theme;
 const { width } = Dimensions.get('window');
 
-// Colors (blue & subtle green accent)
+// Colors
 const BLUE = colors.blue;          // '#1B6CA8'
 const BLUE_LIGHT = 'rgba(27,108,168,0.1)';
-const GREEN_ACCENT = '#2D9C7C';    // kept for some highlight
+const GREEN_ACCENT = '#2D9C7C';    
 const GREEN_LIGHT = 'rgba(45,156,124,0.1)';
+const RED_DELETE = '#E53E3E';
+const RED_LIGHT = 'rgba(229,62,62,0.1)';
+const ORANGE_LOGOUT = '#F59E0B';      // New distinct color for logout
+const ORANGE_LIGHT = 'rgba(245,158,11,0.1)';
 
 type ToastType = "success" | "error";
 
@@ -126,6 +130,12 @@ export default function ProfileScreen() {
     telephone: user?.telephone || '',
     adresse: user?.adresse || '',
   });
+
+  // Delete account state
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -300,6 +310,36 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!deleteReason.trim()) {
+      setToast({ visible: true, message: "Veuillez indiquer la raison de la suppression", type: "error" });
+      return;
+    }
+    if (!deleteConfirmed) {
+      setToast({ visible: true, message: "Vous devez confirmer la suppression", type: "error" });
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setDeleting(true);
+
+    try {
+      await api.delete(`/clients/${user!.id}`, { data: { reason: deleteReason } });
+      setToast({ visible: true, message: "Votre compte a été supprimé définitivement", type: "success" });
+      
+      setDeleteModalVisible(false);
+      setTimeout(async () => {
+        await logout();
+        router.replace('/(auth)/login');
+      }, 1000);
+    } catch (error: any) {
+      console.log('Delete account error:', error?.response?.data || error.message);
+      const errorMsg = error?.response?.data?.message || error?.response?.data || "Impossible de supprimer le compte. Réessayez plus tard.";
+      setToast({ visible: true, message: errorMsg, type: "error" });
+      setDeleting(false);
+    }
+  };
+
   if (!user) return null;
 
   const SOCIETY_PHONE = "+212 5XX XXX XXX";
@@ -422,19 +462,20 @@ export default function ProfileScreen() {
                   </View>
                 </View>
                 <View style={styles.editButtonsContainer}>
-                  <TouchableOpacity onPress={() => setIsEditingInfo(false)} style={styles.cancelEditButton}>
-                    <Text style={styles.cancelEditText}>Annuler</Text>
+                  <TouchableOpacity onPress={() => setIsEditingInfo(false)} style={styles.secondaryButton}>
+                    <Text style={styles.secondaryButtonText}>Annuler</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={handleSaveEdit} disabled={loading} style={[styles.saveEditButton, { backgroundColor: GREEN_ACCENT }]}>
-                    {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.saveEditText}>Enregistrer</Text>}
+                  <TouchableOpacity onPress={handleSaveEdit} disabled={loading} style={styles.primaryButton}>
+                    <LinearGradient colors={[GREEN_ACCENT, "#49C69A"]} style={styles.primaryButtonGradient}>
+                      {loading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.primaryButtonText}>Enregistrer</Text>}
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
               </>
             )}
           </View>
 
-        
-          {/* === ELEGANT COLLAPSIBLE FORM (BLUE THEME) === */}
+          {/* Elegant Collapsible Form */}
           <View style={styles.formCard}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -512,17 +553,17 @@ export default function ProfileScreen() {
                 </View>
 
                 <TouchableOpacity
-                  style={styles.sendButton}
+                  style={styles.primaryButton}
                   onPress={submitContactForm}
                   disabled={sending}
                 >
-                  <LinearGradient colors={[BLUE, '#3B82F6']} style={styles.sendButtonGradient}>
+                  <LinearGradient colors={[BLUE, '#3B82F6']} style={styles.primaryButtonGradient}>
                     {sending ? (
                       <ActivityIndicator color="#fff" size="small" />
                     ) : (
                       <>
                         <Ionicons name="send-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
-                        <Text style={styles.sendButtonText}>Envoyer le message</Text>
+                        <Text style={styles.primaryButtonText}>Envoyer le message</Text>
                       </>
                     )}
                   </LinearGradient>
@@ -531,7 +572,7 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          {/* === DIRECT CONTACT CARD (BLUE) === */}
+          {/* Direct Contact Card */}
           <View style={styles.contactCard}>
             <View style={styles.contactCardHeader}>
               <LinearGradient colors={[BLUE, '#3B82F6']} style={styles.contactIconBg}>
@@ -572,10 +613,11 @@ export default function ProfileScreen() {
               </View>
             </View>
             <Text style={styles.contactHint}>
-  Appuyez sur le téléphone ou l&apos;email pour nous contacter directement.
-</Text>
+              Appuyez sur le téléphone ou l&apos;email pour nous contacter directement.
+            </Text>
           </View>
-            {/* Account Actions */}
+
+          {/* Account Actions */}
           <View style={styles.actionsCard}>
             <Text style={styles.cardTitle}>Paramètres du compte</Text>
             <TouchableOpacity style={styles.actionRow} onPress={() => setPasswordModalVisible(true)}>
@@ -585,15 +627,25 @@ export default function ProfileScreen() {
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionRow, styles.logoutRow]} onPress={handleLogoutPress}>
+
+            {/* Delete Account Row - RED */}
+            <TouchableOpacity style={[styles.actionRow, styles.deleteRow]} onPress={() => setDeleteModalVisible(true)}>
               <LinearGradient colors={['rgba(229,62,62,0.05)', 'transparent']} style={styles.actionGradient}>
-                <View style={[styles.actionIcon, styles.logoutIcon]}><Ionicons name="log-out-outline" size={22} color="#E53E3E" /></View>
+                <View style={[styles.actionIcon, styles.deleteIcon]}><Ionicons name="trash-outline" size={22} color={RED_DELETE} /></View>
+                <Text style={[styles.actionText, styles.deleteText]}>Supprimer mon compte</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Logout Row - ORANGE */}
+            <TouchableOpacity style={[styles.actionRow, styles.logoutRow]} onPress={handleLogoutPress}>
+              <LinearGradient colors={['rgba(245,158,11,0.05)', 'transparent']} style={styles.actionGradient}>
+                <View style={[styles.actionIcon, styles.logoutIcon]}><Ionicons name="log-out-outline" size={22} color={ORANGE_LOGOUT} /></View>
                 <Text style={[styles.actionText, styles.logoutText]}>Se déconnecter</Text>
                 <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
               </LinearGradient>
             </TouchableOpacity>
           </View>
-
 
           <Text style={styles.versionText}>Version 1.0.0</Text>
         </ScrollView>
@@ -670,23 +722,23 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              <View style={styles.modalButtonRow}>
+              <View style={styles.modalButtonsRow}>
                 <TouchableOpacity
-                  style={styles.modalCancelBtn}
+                  style={styles.secondaryButton}
                   onPress={() => {
                     setPasswordModalVisible(false);
                     setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
                   }}
                 >
-                  <Text style={styles.modalCancelText}>Annuler</Text>
+                  <Text style={styles.secondaryButtonText}>Annuler</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.modalConfirmBtn}
+                  style={styles.primaryButton}
                   onPress={handleChangePassword}
                   disabled={passwordLoading}
                 >
-                  <LinearGradient colors={[GREEN_ACCENT, "#49C69A"]} style={styles.modalConfirmGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                    {passwordLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.modalConfirmText}>Modifier</Text>}
+                  <LinearGradient colors={[BLUE, "#3B82F6"]} style={styles.primaryButtonGradient}>
+                    {passwordLoading ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.primaryButtonText}>Modifier</Text>}
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -695,7 +747,7 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Logout Modal */}
+      {/* Logout Modal - ORANGE accent */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -704,20 +756,20 @@ export default function ProfileScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <LinearGradient colors={["#fff", "#f8f9fc"] as const} style={styles.modalGradient}>
-              <View style={styles.modalIconCircle}>
-                <Ionicons name="log-out-outline" size={40} color="#E53E3E" />
+            <LinearGradient colors={["#fff", "#fef9e8"] as const} style={styles.modalGradient}>
+              <View style={[styles.modalIconCircle, { backgroundColor: ORANGE_LIGHT }]}>
+                <Ionicons name="log-out-outline" size={40} color={ORANGE_LOGOUT} />
               </View>
               <Text style={styles.modalTitle}>Déconnexion</Text>
               <Text style={styles.modalMessage}>
                 Êtes-vous sûr de vouloir vous déconnecter ?
               </Text>
-              <View style={styles.modalButtons}>
-                <TouchableOpacity style={styles.cancelModalButton} onPress={() => setLogoutModalVisible(false)}>
-                  <Text style={styles.cancelModalText}>Annuler</Text>
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => setLogoutModalVisible(false)}>
+                  <Text style={styles.secondaryButtonText}>Annuler</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.confirmModalButton}
+                  style={styles.primaryButton}
                   onPress={async () => {
                     try {
                       setLogoutModalVisible(false);
@@ -729,8 +781,114 @@ export default function ProfileScreen() {
                     }
                   }}
                 >
-                  <LinearGradient colors={["#E53E3E", "#C0392B"] as const} style={styles.confirmGradient}>
-                    <Text style={styles.confirmModalText}>Se déconnecter</Text>
+                  <LinearGradient colors={[ORANGE_LOGOUT, "#D97706"] as const} style={styles.primaryButtonGradient}>
+                    <Text style={styles.primaryButtonText}>Se déconnecter</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Account Modal - RED accent (unchanged) */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={deleteModalVisible}
+        onRequestClose={() => !deleting && setDeleteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.deleteModalContainer}>
+            <LinearGradient
+              colors={["#ffffff", "#fff5f5"] as const}
+              style={styles.deleteModalGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
+              <View style={styles.deleteIconWrapper}>
+                <LinearGradient
+                  colors={[RED_DELETE, "#C0392B"] as const}
+                  style={styles.deleteIconGradient}
+                >
+                  <Ionicons name="trash-outline" size={36} color="#fff" />
+                </LinearGradient>
+                <View style={styles.warningBadge}>
+                  <Text style={styles.warningBadgeText}>⚠️</Text>
+                </View>
+              </View>
+
+              <Text style={styles.deleteModalTitle}>Supprimer définitivement mon compte</Text>
+              
+              <Text style={styles.deleteModalWarning}>
+                Cette action est <Text style={{ fontWeight: 'bold' }}>IRRÉVERSIBLE</Text>. 
+                Toutes vos données (demandes, projets, messages, historique) seront effacées.
+              </Text>
+
+              <Text style={styles.deleteModalLabel}>Raison de la suppression *</Text>
+              <TextInput
+                style={styles.deleteReasonInput}
+                placeholder="Décrivez votre raison (obligatoire)"
+                placeholderTextColor="#9CA3AF"
+                value={deleteReason}
+                onChangeText={setDeleteReason}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                maxLength={200}
+              />
+              {deleteReason.length > 0 && (
+                <Text style={styles.charCounter}>{deleteReason.length}/200</Text>
+              )}
+
+              <TouchableOpacity
+                style={styles.checkboxContainer}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setDeleteConfirmed(!deleteConfirmed);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, deleteConfirmed && styles.checkboxChecked]}>
+                  {deleteConfirmed && (
+                    <Ionicons name="checkmark" size={16} color="#fff" />
+                  )}
+                </View>
+                <Text style={styles.checkboxLabel}>
+                  Je comprends que cette action est définitive et supprime toutes mes données.
+                </Text>
+              </TouchableOpacity>
+
+              <View style={styles.deleteModalButtons}>
+                <TouchableOpacity
+                  style={styles.deleteCancelButton}
+                  onPress={() => {
+                    setDeleteModalVisible(false);
+                    setDeleteReason('');
+                    setDeleteConfirmed(false);
+                  }}
+                  disabled={deleting}
+                >
+                  <Text style={styles.deleteCancelText}>Annuler</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.deleteConfirmButton,
+                    (!deleteReason.trim() || !deleteConfirmed || deleting) && styles.disabledButton
+                  ]}
+                  onPress={handleDeleteAccount}
+                  disabled={deleting || !deleteReason.trim() || !deleteConfirmed}
+                >
+                  <LinearGradient
+                    colors={[RED_DELETE, "#C0392B"] as const}
+                    style={styles.deleteConfirmGradient}
+                  >
+                    {deleting ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.deleteConfirmText}>Supprimer définitivement</Text>
+                    )}
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -826,10 +984,6 @@ const styles = StyleSheet.create({
   infoCardTitle: { fontSize: 14, fontFamily: fonts.condensedBold, color: colors.textPrimary, letterSpacing: 0.5 },
   editIconButton: { padding: 4 },
   editButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.borderLight },
-  cancelEditButton: { flex: 1, backgroundColor: '#f0f0f0', paddingVertical: 10, borderRadius: radius.pill, alignItems: 'center' },
-  cancelEditText: { fontSize: 14, fontFamily: fonts.bodyMedium, color: colors.textSecondary },
-  saveEditButton: { flex: 1, backgroundColor: GREEN_ACCENT, paddingVertical: 10, borderRadius: radius.pill, alignItems: 'center' },
-  saveEditText: { fontSize: 14, fontFamily: fonts.bodyMedium, color: '#fff' },
   editInfoForm: { marginTop: spacing.sm },
   editField: { marginBottom: spacing.md },
   editLabel: { fontSize: 12, fontFamily: fonts.bodyMedium, color: colors.textSecondary, marginBottom: 4 },
@@ -855,9 +1009,12 @@ const styles = StyleSheet.create({
   actionGradient: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: spacing.lg },
   actionIcon: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bgBadge, alignItems: 'center', justifyContent: 'center' },
   actionText: { flex: 1, fontSize: 15, fontFamily: fonts.bodyMedium, color: colors.textPrimary },
+  deleteRow: { borderTopWidth: 1, borderTopColor: colors.borderLight },
+  deleteIcon: { backgroundColor: RED_LIGHT },
+  deleteText: { color: RED_DELETE },
   logoutRow: { borderTopWidth: 1, borderTopColor: colors.borderLight },
-  logoutIcon: { backgroundColor: 'rgba(229,62,62,0.1)' },
-  logoutText: { color: '#E53E3E' },
+  logoutIcon: { backgroundColor: ORANGE_LIGHT },
+  logoutText: { color: ORANGE_LOGOUT },
   versionText: { textAlign: 'center', fontSize: 11, fontFamily: fonts.body, color: colors.textMuted, marginTop: spacing.xl, marginBottom: spacing.md },
   toastContainer: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 1000 },
   toastGradient: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 20, borderRadius: 60, ...shadows.md },
@@ -865,15 +1022,10 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContainer: { width: width * 0.85, borderRadius: 32, overflow: 'hidden', ...shadows.lg },
   modalGradient: { padding: 24, alignItems: 'center' },
-  modalIconCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(18,113,184,0.1)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  modalTitle: { fontSize: 22, fontWeight: '800', color: '#1B2430', marginBottom: 12, fontFamily: fonts.condensedBold },
-  modalMessage: { fontSize: 16, color: '#6B7A90', textAlign: 'center', marginBottom: 24, lineHeight: 22, fontFamily: fonts.body },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, width: '100%' },
-  cancelModalButton: { flex: 1, backgroundColor: '#F0F2F5', paddingVertical: 12, borderRadius: 40, alignItems: 'center' },
-  cancelModalText: { fontSize: 16, fontWeight: '600', color: '#6B7A90' },
-  confirmModalButton: { flex: 1, borderRadius: 40, overflow: 'hidden' },
-  confirmGradient: { paddingVertical: 12, alignItems: 'center' },
-  confirmModalText: { fontSize: 16, fontWeight: '600', color: '#fff', fontFamily: fonts.bodySemiBold },
+  modalIconCircle: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  modalTitle: { fontSize: 22, fontWeight: '800', color: '#1B2430', marginBottom: 12, fontFamily: fonts.condensedBold, textAlign: 'center' },
+  modalMessage: { fontSize: 15, color: '#6B7A90', textAlign: 'center', marginBottom: 24, lineHeight: 22, fontFamily: fonts.body },
+  modalButtonsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, width: '100%', marginTop: 8 },
   modalInner: { padding: 24, alignItems: 'center' },
   modalHeader: { alignItems: 'center', marginBottom: 24 },
   modalIconWrapper: { marginBottom: 16 },
@@ -883,16 +1035,8 @@ const styles = StyleSheet.create({
   inputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.borderLight, borderRadius: radius.md, marginBottom: 12, paddingHorizontal: 14, backgroundColor: '#fff' },
   inputIcon: { marginRight: 10 },
   modalInput: { flex: 1, paddingVertical: 12, fontSize: 14, fontFamily: fonts.body, color: '#1B2430' },
-  modalButtonRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, width: '100%' },
-  modalCancelBtn: { flex: 1, backgroundColor: '#F0F2F5', paddingVertical: 12, borderRadius: 40, alignItems: 'center' },
-  modalCancelText: { fontSize: 16, fontWeight: '600', color: '#6B7A90' },
-  modalConfirmBtn: { flex: 1, borderRadius: 40, overflow: 'hidden' },
-  modalConfirmGradient: { paddingVertical: 12, alignItems: 'center' },
-  modalConfirmText: { fontSize: 16, fontWeight: '600', color: '#fff', fontFamily: fonts.bodySemiBold },
   forgotLinkContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginBottom: 16, marginTop: 4, paddingVertical: 4, paddingHorizontal: 8, alignSelf: 'flex-end' },
   forgotLinkText: { fontSize: 12, fontFamily: fonts.bodyMedium, letterSpacing: 0.3 },
-
-  // Contact Card (direct)
   contactCard: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
@@ -912,8 +1056,6 @@ const styles = StyleSheet.create({
   contactLabel: { fontSize: 12, fontFamily: fonts.body, color: colors.textMuted },
   contactValue: { fontSize: 14, fontFamily: fonts.bodyMedium, color: colors.textPrimary, marginTop: 2 },
   contactHint: { fontSize: 11, fontFamily: fonts.body, color: colors.textMuted, textAlign: 'center', marginTop: spacing.md, fontStyle: 'italic' },
-
-  // Elegant Form Card
   formCard: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.lg,
@@ -1002,24 +1144,191 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
   },
-  sendButton: {
-    borderRadius: radius.pill,
+  // Unified button styles
+  primaryButton: {
+    flex: 1,
+    borderRadius: 40,
     overflow: 'hidden',
-    marginTop: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
+    ...shadows.sm,
   },
-  sendButtonGradient: {
-    flexDirection: 'row',
+  primaryButtonGradient: {
+    width: '100%',
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
+    flexDirection: 'row',
   },
-  sendButtonText: {
-    color: '#fff',
+  primaryButtonText: {
     fontSize: 16,
     fontFamily: fonts.bodySemiBold,
-    marginLeft: 8,
+    color: '#fff',
+    textAlign: 'center',
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: '#F0F2F5',
+    paddingVertical: 12,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+    color: '#6B7A90',
+  },
+  disabledButton: {
+    opacity: 0.6,
+  },
+  // Delete Account Modal specific styles
+  deleteModalContainer: {
+    width: width * 0.9,
+    maxWidth: 400,
+    borderRadius: 28,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  deleteModalGradient: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  deleteIconWrapper: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  deleteIconGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.sm,
+  },
+  warningBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -10,
+    backgroundColor: '#FFE5B4',
+    borderRadius: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1.5,
+    borderColor: '#F59E0B',
+  },
+  warningBadgeText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  deleteModalTitle: {
+    fontSize: 22,
+    fontFamily: fonts.condensedBold,
+    color: '#1B2430',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  deleteModalWarning: {
+    fontSize: 14,
+    fontFamily: fonts.body,
+    color: RED_DELETE,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    width: '100%',
+  },
+  deleteModalLabel: {
+    fontSize: 14,
+    fontFamily: fonts.bodySemiBold,
+    color: colors.textPrimary,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  deleteReasonInput: {
+    width: '100%',
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: fonts.body,
+    backgroundColor: '#fff',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 4,
+  },
+  charCounter: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    alignSelf: 'flex-end',
+    marginBottom: 16,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: RED_DELETE,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  checkboxChecked: {
+    backgroundColor: RED_DELETE,
+    borderColor: RED_DELETE,
+  },
+  checkboxLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: fonts.body,
+    color: colors.textPrimary,
+    lineHeight: 18,
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    width: '100%',
+  },
+  deleteCancelButton: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 14,
+    borderRadius: 40,
+    alignItems: 'center',
+  },
+  deleteCancelText: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+    color: '#4B5563',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    borderRadius: 40,
+    overflow: 'hidden',
+  },
+  deleteConfirmGradient: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  deleteConfirmText: {
+    fontSize: 16,
+    fontFamily: fonts.bodySemiBold,
+    color: '#fff',
+    textAlign: 'center',
   },
 });

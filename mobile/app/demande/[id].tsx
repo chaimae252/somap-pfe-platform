@@ -42,7 +42,7 @@ type ImageAttachment = {
 };
 
 // Base URL for image prefix (same as in EditDemandeScreen)
-const BASE_URL = "http://10.0.2.2:8080"; // replace with your actual base URL
+const BASE_URL = "http://192.168.1.119:8080"; // replace with your actual base URL
 
 const getImageUrl = (url?: string | null) => {
   if (!url) return null;
