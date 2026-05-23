@@ -345,8 +345,8 @@ export default function EditDemandeScreen() {
     }
 
     return (
-        <SafeAreaView style={{flex: 1, backgroundColor: "#F4F7FB"}}>
-            <StatusBar barStyle="light-content"/>
+        <SafeAreaView style={{flex: 1, backgroundColor: "#F4F7FB"}} edges={[]}>
+            <StatusBar barStyle="light-content" backgroundColor="#0d2d5e" translucent={false}/>
 
             <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 120}}>
 
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
 
     // ── HEADER — matches ServicesScreen, HomeScreen & CreateDemandeScreen ─────
     header: {
-        paddingTop: 20,
+        paddingTop: 30,
         paddingHorizontal: 20,
         paddingBottom: 35,
         borderBottomLeftRadius: 32,
@@ -609,14 +609,18 @@ const styles = StyleSheet.create({
     },
     headerTop: {
         flexDirection: "row",
-        alignItems: "flex-start",
+        alignItems: "center",
         zIndex: 2,
-        gap: 8,
+        gap: 12,
     },
     backButton: {
-        padding: 4,
-        marginTop: 20,
-        marginRight: 4,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: "rgba(255,255,255,0.2)",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 2,
     },
     headerTextBlock: {flex: 1},
     headerLabel: {
@@ -628,9 +632,10 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         color: "#fff",
-        fontSize: 30,
+        fontSize: 26,
         fontWeight: "800",
         letterSpacing: 0.4,
+        lineHeight: 32,
     },
     headerSubtitle: {
         color: "rgba(255,255,255,0.82)",

@@ -32,6 +32,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { register } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
+import { ALLOW_SCREEN_RECORDING_DEMO } from "@/constants/demo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegisterScreen() {
@@ -280,7 +281,7 @@ export default function RegisterScreen() {
                   <MaterialIcons name="lock" size={22} color="#8e9aaf" style={styles.icon} />
                   <TextInput
                     placeholder="Mot de passe"
-                    secureTextEntry={!showPassword}
+                    secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO && !showPassword}
                     value={password}
                     onChangeText={setPassword}
                     onFocus={() => setFocusedInput("password")}

@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.bgScreen,
         overflow: 'hidden',
+        paddingBottom: 10,
     },
     blob: {
         position: 'absolute',
@@ -189,8 +190,7 @@ const styles = StyleSheet.create({
     dashZone: {
         paddingHorizontal: Theme.spacing.xl,
         paddingTop: 10,
-        flex: 1,
-        justifyContent: 'flex-start',
+        marginBottom: 14,
     },
     heroCard: {
         backgroundColor: 'rgba(255,255,255,0.95)',
@@ -244,8 +244,8 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: Theme.spacing.xxl,
-        paddingTop: 10,
-        marginTop: 10,
+        paddingTop: 0,
+        marginTop: 0,
         alignItems: 'center',
     },
     title: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: Colors.textSecondary,
         lineHeight: 23,
-        marginBottom: 20,
+        marginBottom: 18,
         textAlign: 'center',
         opacity: 0.9,
     },

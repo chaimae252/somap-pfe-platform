@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { resetPassword } from "@/services/authService";
+import { ALLOW_SCREEN_RECORDING_DEMO } from "@/constants/demo";
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -126,7 +127,7 @@ const email =
                     styles.input,
                     !isNewValid && touched.new && styles.inputError,
                   ]}
-                  secureTextEntry
+                  secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO}
                   value={newPassword}
                   onChangeText={setNewPassword}
                   onBlur={() => markTouched("new")}
@@ -143,7 +144,7 @@ const email =
                     styles.input,
                     !isConfirmValid && touched.confirm && styles.inputError,
                   ]}
-                  secureTextEntry
+                  secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   onBlur={() => markTouched("confirm")}

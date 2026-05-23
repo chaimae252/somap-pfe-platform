@@ -15,6 +15,7 @@ import { getHomeStats } from '../../services/homeService';
 import { updateClient } from '../../services/clientService';
 import { changePassword } from '../../services/authService';
 import api from '../../services/api';
+import { ALLOW_SCREEN_RECORDING_DEMO } from '../../constants/demo';
 import * as Haptics from 'expo-haptics';
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
@@ -680,7 +681,7 @@ export default function ProfileScreen() {
                     style={styles.modalInput}
                     placeholder="Mot de passe actuel"
                     placeholderTextColor="#8A94A6"
-                    secureTextEntry
+                    secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO}
                     value={passwordForm.currentPassword}
                     onChangeText={(text) => setPasswordForm({ ...passwordForm, currentPassword: text })}
                   />
@@ -704,7 +705,7 @@ export default function ProfileScreen() {
                     style={styles.modalInput}
                     placeholder="Nouveau mot de passe (min. 6 caractères)"
                     placeholderTextColor="#8A94A6"
-                    secureTextEntry
+                    secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO}
                     value={passwordForm.newPassword}
                     onChangeText={(text) => setPasswordForm({ ...passwordForm, newPassword: text })}
                   />
@@ -715,7 +716,7 @@ export default function ProfileScreen() {
                     style={styles.modalInput}
                     placeholder="Confirmer le nouveau mot de passe"
                     placeholderTextColor="#8A94A6"
-                    secureTextEntry
+                    secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO}
                     value={passwordForm.confirmPassword}
                     onChangeText={(text) => setPasswordForm({ ...passwordForm, confirmPassword: text })}
                   />

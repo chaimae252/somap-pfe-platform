@@ -11,11 +11,12 @@ import {
 import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { API_ORIGIN } from "../../services/api";
 
 const normalize = (url?: string | null) => {
     if (!url) return null;
     if (url.startsWith("http")) return url;
-    return `http://192.168.1.119:8080${url}`;
+    return `${API_ORIGIN}${url}`;
 };
 
 const getClientName = (item: any) =>

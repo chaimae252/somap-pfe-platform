@@ -24,6 +24,7 @@ import {MaterialIcons} from "@expo/vector-icons";
 import {useRouter} from "expo-router";
 import {getClientById} from "@/services/clientService";
 import axios from "axios";
+import { ALLOW_SCREEN_RECORDING_DEMO } from "@/constants/demo";
 
 export default function LoginScreen() {
 
@@ -218,7 +219,7 @@ export default function LoginScreen() {
                                     <TextInput
                                         placeholder="Mot de passe"
                                         placeholderTextColor="#8e9aaf"
-                                        secureTextEntry={!showPassword}   // 👈 dynamic
+                                        secureTextEntry={!ALLOW_SCREEN_RECORDING_DEMO && !showPassword}   // 👈 dynamic
                                         value={password}
                                         onChangeText={setPassword}
                                         onFocus={() => setFocusedInput("password")}

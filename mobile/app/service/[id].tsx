@@ -30,7 +30,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const normalize = (url?: string | null) => {
     if (!url) return "https://via.placeholder.com/400";
     if (url.startsWith("http")) return url;
-    return `http://192.168.1.119:8080${url}`;
+    return `http://192.168.137.1:8080${url}`;
 };
 
 const getSafeImages = (images?: { imageUrl: string | null }[]) => {

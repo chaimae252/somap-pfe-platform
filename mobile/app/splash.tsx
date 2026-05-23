@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
 
     brandStripe: {
         position: "absolute",
-        top: -14,
+        top: -18,
         left: -24,
         right: -24,
         height: 3,
@@ -368,27 +368,27 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         alignItems: "center",
-        justifyContent: "flex-start",
+        justifyContent: "center",
         width: "100%",
-        paddingTop: Math.max(40, height * 0.08),
+        paddingBottom: Math.max(72, height * 0.1),
     },
 
     logoWrap: {
         alignItems: "center",
-        marginBottom: Math.max(18, height * 0.025),
+        marginBottom: 28,
     },
 
     logo: {
         width: Math.min(150, width * 0.38),
         height: Math.min(150, width * 0.38),
         resizeMode: "contain",
-        marginTop: -72,
+        marginTop: -64,
     },
 
     titleBlock: {
         alignItems: "center",
         width: "100%",
-        marginTop: 4,
+        marginTop: 0,
     },
 
     titleRow: {
@@ -501,6 +501,6 @@ const styles = StyleSheet.create({
         width: Math.min(172, width * 0.44),
         height: Math.min(172, width * 0.44),
         resizeMode: "contain",
-        marginBottom: -96,
+        marginBottom: -88,
     },
 });
