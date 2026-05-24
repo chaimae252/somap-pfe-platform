@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import api from "@/services/api";
+import api, { API_ORIGIN } from "@/services/api";
 import { Alert } from "react-native";
 
 type Demande = {
@@ -41,14 +41,11 @@ type ImageAttachment = {
   imageUrl: string;     // consistent with edit screen
 };
 
-// Base URL for image prefix (same as in EditDemandeScreen)
-const BASE_URL = "http://192.168.137.1:8080"; // replace with your actual base URL
-
 const getImageUrl = (url?: string | null) => {
   if (!url) return null;
   const clean = url.trim();
   if (clean.startsWith("http")) return clean;
-  return `${BASE_URL}${clean}`;
+  return `${API_ORIGIN}${clean}`;
 };
 
 const getUrgenceInfo = (urgence: string) => {

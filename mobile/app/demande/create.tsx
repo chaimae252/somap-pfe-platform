@@ -18,7 +18,7 @@ import {useRouter} from "expo-router";
 import {MaterialIcons} from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import api from "@/services/api";
+import api, { API_ORIGIN } from "@/services/api";
 import {getAllServices} from "../../services/serviceService";
 import { useLocalSearchParams } from "expo-router";
 
@@ -301,7 +301,7 @@ export default function CreateDemandeScreen() {
 
         // backend relative path
         if (url.startsWith("/")) {
-            return `http://192.168.137.1:8080${url}`;
+            return `${API_ORIGIN}${url}`;
         }
 
         return null;

@@ -18,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { getHomeStats } from "../../services/homeService";
 import { getAllServices } from "../../services/serviceService";
 import { getNotifications } from "../../services/notificationService";
+import { API_ORIGIN } from "../../services/api";
 import { useAuthStore } from "../../store/authStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Theme from "../../constants/theme";
@@ -39,7 +40,7 @@ type Service = {
 const normalize = (url?: string | null) => {
     if (!url) return "https://via.placeholder.com/400";
     if (url.startsWith("http")) return url;
-    return `http://192.168.137.1:8080${url}`;
+    return `${API_ORIGIN}${url}`;
 };
 
 const getSafeServiceImage = (images?: { imageUrl: string | null }[]) => {

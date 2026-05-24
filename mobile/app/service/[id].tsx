@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Theme from "../../constants/theme";
+import { API_ORIGIN } from "../../services/api";
 import { getServiceById } from "../../services/serviceService";
 import CommentsSheet from "../../components/comments/CommentsSheet";
 import { useAuthStore } from "../../store/authStore";
@@ -30,7 +31,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const normalize = (url?: string | null) => {
     if (!url) return "https://via.placeholder.com/400";
     if (url.startsWith("http")) return url;
-    return `http://192.168.137.1:8080${url}`;
+    return `${API_ORIGIN}${url}`;
 };
 
 const getSafeImages = (images?: { imageUrl: string | null }[]) => {
