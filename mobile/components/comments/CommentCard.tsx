@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     Modal,
     Pressable,
@@ -43,12 +44,14 @@ function DeleteConfirmDialog({
     message,
     onCancel,
     onConfirm,
+    loading = false,
 }: {
     visible: boolean;
     title: string;
     message: string;
     onCancel: () => void;
     onConfirm: () => void;
+    loading?: boolean;
 }) {
     return (
         <Modal
@@ -77,17 +80,19 @@ function DeleteConfirmDialog({
 
                         <View style={styles.confirmActions}>
                             <TouchableOpacity
-                                style={styles.cancelButton}
+                                style={[styles.cancelButton, loading && styles.disabledButton]}
                                 activeOpacity={0.8}
                                 onPress={onCancel}
+                                disabled={loading}
                             >
                                 <Text style={styles.cancelButtonText}>Annuler</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={styles.confirmDeleteButton}
+                                style={[styles.confirmDeleteButton, loading && styles.disabledButton]}
                                 activeOpacity={0.86}
                                 onPress={onConfirm}
+                                disabled={loading}
                             >
                                 <LinearGradient
                                     colors={["#EB5757", "#C0392B"] as const}
@@ -95,8 +100,14 @@ function DeleteConfirmDialog({
                                     end={{ x: 1, y: 0 }}
                                     style={styles.confirmDeleteGradient}
                                 >
-                                    <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
-                                    <Text style={styles.confirmDeleteText}>Supprimer</Text>
+                                    {loading ? (
+                                        <ActivityIndicator size="small" color="#FFFFFF" />
+                                    ) : (
+                                        <>
+                                            <Ionicons name="trash-outline" size={16} color="#FFFFFF" />
+                                            <Text style={styles.confirmDeleteText}>Supprimer</Text>
+                                        </>
+                                    )}
                                 </LinearGradient>
                             </TouchableOpacity>
                         </View>
@@ -121,23 +132,35 @@ function ReplyCard({
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(item.contenu || "");
     const [deleteVisible, setDeleteVisible] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = () => {
         setDeleteVisible(true);
     };
 
-    const confirmDelete = () => {
-        setDeleteVisible(false);
-        onEditingChange?.(false);
-        onDelete?.(item.id);
+    const confirmDelete = async () => {
+        try {
+            setIsDeleting(true);
+            await onDelete?.(item.id);
+            setDeleteVisible(false);
+            onEditingChange?.(false);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleSave = async () => {
         const content = editText.trim();
-        if (!content) return;
-        await onEdit?.(item.id, content);
-        setIsEditing(false);
-        onEditingChange?.(false);
+        if (!content || isSaving) return;
+        try {
+            setIsSaving(true);
+            await onEdit?.(item.id, content);
+            setIsEditing(false);
+            onEditingChange?.(false);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -192,12 +215,23 @@ function ReplyCard({
             <View style={styles.actionsRow}>
                 {isEditing ? (
                     <>
-                        <TouchableOpacity style={styles.replyButton} onPress={handleSave}>
-                            <Ionicons name="checkmark-outline" size={13} color="#1271b8" />
-                            <Text style={styles.replyText}>Enregistrer</Text>
+                        <TouchableOpacity
+                            style={[styles.replyButton, isSaving && styles.disabledButton]}
+                            onPress={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator size="small" color="#1271b8" />
+                            ) : (
+                                <>
+                                    <Ionicons name="checkmark-outline" size={13} color="#1271b8" />
+                                    <Text style={styles.replyText}>Enregistrer</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.ghostButton}
+                            style={[styles.ghostButton, isSaving && styles.disabledButton]}
+                            disabled={isSaving}
                             onPress={() => {
                                 setEditText(item.contenu || "");
                                 setIsEditing(false);
@@ -243,6 +277,7 @@ function ReplyCard({
                 message="Cette action retirera définitivement cette réponse de la discussion."
                 onCancel={() => setDeleteVisible(false)}
                 onConfirm={confirmDelete}
+                loading={isDeleting}
             />
         </View>
     );
@@ -263,24 +298,36 @@ export default function CommentCard({
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(item.contenu || "");
     const [deleteVisible, setDeleteVisible] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const canManage = Number(item.clientId || item.client?.id) === Number(currentClientId);
 
     const handleDelete = () => {
         setDeleteVisible(true);
     };
 
-    const confirmDelete = () => {
-        setDeleteVisible(false);
-        onEditingChange?.(false);
-        onDelete?.(item.id);
+    const confirmDelete = async () => {
+        try {
+            setIsDeleting(true);
+            await onDelete?.(item.id);
+            setDeleteVisible(false);
+            onEditingChange?.(false);
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleSave = async () => {
         const content = editText.trim();
-        if (!content) return;
-        await onEdit?.(item.id, content);
-        setIsEditing(false);
-        onEditingChange?.(false);
+        if (!content || isSaving) return;
+        try {
+            setIsSaving(true);
+            await onEdit?.(item.id, content);
+            setIsEditing(false);
+            onEditingChange?.(false);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -333,12 +380,23 @@ export default function CommentCard({
             <View style={styles.actionsRow}>
                 {isEditing ? (
                     <>
-                        <TouchableOpacity style={styles.replyButton} onPress={handleSave}>
-                            <Ionicons name="checkmark-outline" size={15} color="#1271b8" />
-                            <Text style={styles.replyText}>Enregistrer</Text>
+                        <TouchableOpacity
+                            style={[styles.replyButton, isSaving && styles.disabledButton]}
+                            onPress={handleSave}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator size="small" color="#1271b8" />
+                            ) : (
+                                <>
+                                    <Ionicons name="checkmark-outline" size={15} color="#1271b8" />
+                                    <Text style={styles.replyText}>Enregistrer</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={styles.ghostButton}
+                            style={[styles.ghostButton, isSaving && styles.disabledButton]}
+                            disabled={isSaving}
                             onPress={() => {
                                 setEditText(item.contenu || "");
                                 setIsEditing(false);
@@ -453,6 +511,7 @@ export default function CommentCard({
                 message="Cette action supprimera le commentaire et ses réponses de façon définitive."
                 onCancel={() => setDeleteVisible(false)}
                 onConfirm={confirmDelete}
+                loading={isDeleting}
             />
         </View>
     );
@@ -755,6 +814,9 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontSize: 14,
         fontWeight: "900",
+    },
+    disabledButton: {
+        opacity: 0.62,
     },
 });
 

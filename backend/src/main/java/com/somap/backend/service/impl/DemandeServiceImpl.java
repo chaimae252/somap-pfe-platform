@@ -5,10 +5,12 @@ import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Service;
 import com.somap.backend.enums.DemandeStatus;
+import com.somap.backend.enums.NotificationType;
 import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.service.DemandeService;
+import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 
 
@@ -23,6 +25,7 @@ public class DemandeServiceImpl implements DemandeService {
     private final DemandeRepository demandeRepository;
     private final ClientRepository clientRepository;
     private final ServiceRepository serviceRepository;
+    private final NotificationService notificationService;
 
     // 🔥 CREATE DEMANDE
     @Override
@@ -43,6 +46,31 @@ public class DemandeServiceImpl implements DemandeService {
         demande.setService(service);
         demande.setUrgence(dto.getUrgence());
         Demande saved = demandeRepository.save(demande);
+
+        try {
+            notificationService.notifyUser(
+                    client.getId(),
+                    "Demande envoyée",
+                    "Votre demande \"" + saved.getObjet() + "\" a bien été reçue.",
+                    NotificationType.DEMANDE,
+                    "DEMANDE",
+                    saved.getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Notification demande client error: " + e.getMessage());
+        }
+
+        try {
+            notificationService.notifyAdmins(
+                    "Nouvelle demande reçue",
+                    client.getNom() + " a créé une nouvelle demande : " + saved.getObjet(),
+                    NotificationType.DEMANDE,
+                    "DEMANDE",
+                    saved.getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Notification demande admin error: " + e.getMessage());
+        }
 
         return mapToDTO(saved);
     }
@@ -69,27 +97,61 @@ public class DemandeServiceImpl implements DemandeService {
     // 🔄 UPDATE STATUS
     @Override
     public DemandeDTO updateDemandeStatus(Long id, String status) {
+        System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus START id=" + id + " rawStatus=" + status);
 
         Demande demande = demandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande not found"));
 
-        demande.setStatut(DemandeStatus.valueOf(status));
+        DemandeStatus oldStatus = demande.getStatut();
+        DemandeStatus newStatus = DemandeStatus.valueOf(status);
+        Long clientId = demande.getClient() != null ? demande.getClient().getId() : null;
+
+        System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus loaded id=" + id
+                + " oldStatus=" + oldStatus
+                + " newStatus=" + newStatus
+                + " clientId=" + clientId
+                + " objet=" + demande.getObjet());
+
+        demande.setStatut(newStatus);
 
         Demande updated = demandeRepository.save(demande);
+        System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus saved id=" + updated.getId()
+                + " savedStatus=" + updated.getStatut());
+
+        notifyClientAboutStatusChange(updated, oldStatus, newStatus);
 
         return mapToDTO(updated);
     }
     @Override
 public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
+    System.out.println("[NOTIF DEBUG] DemandeService.updateDemande START id=" + id
+            + " dtoStatus=" + dto.getStatut());
     Demande demande = demandeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Demande not found"));
+
+    DemandeStatus oldStatus = demande.getStatut();
+    Long clientId = demande.getClient() != null ? demande.getClient().getId() : null;
+
+    System.out.println("[NOTIF DEBUG] DemandeService.updateDemande loaded id=" + id
+            + " oldStatus=" + oldStatus
+            + " dtoStatus=" + dto.getStatut()
+            + " clientId=" + clientId
+            + " objet=" + demande.getObjet());
 
     demande.setObjet(dto.getObjet());
     demande.setDescription(dto.getDescription());
     demande.setUrgence(dto.getUrgence());
-    // (status is usually updated separately, but you can add it if needed)
+
+    if (dto.getStatut() != null) {
+        demande.setStatut(dto.getStatut());
+    }
 
     Demande updated = demandeRepository.save(demande);
+    System.out.println("[NOTIF DEBUG] DemandeService.updateDemande saved id=" + updated.getId()
+            + " savedStatus=" + updated.getStatut());
+
+    notifyClientAboutStatusChange(updated, oldStatus, updated.getStatut());
+
     return mapToDTO(updated);
 }
     // ❌ DELETE
@@ -124,4 +186,49 @@ public List<DemandeDTO> getDemandesByClient(Long clientId) {
             .map(this::mapToDTO)
             .collect(Collectors.toList());
 }
+
+    private String getStatusLabel(DemandeStatus status) {
+        return switch (status) {
+            case EN_ATTENTE -> "en attente";
+            case VALIDEE -> "validée";
+            case REJETEE -> "rejetée";
+        };
+    }
+
+    private void notifyClientAboutStatusChange(
+            Demande demande,
+            DemandeStatus oldStatus,
+            DemandeStatus newStatus
+    ) {
+        Long clientId = demande.getClient() != null ? demande.getClient().getId() : null;
+        System.out.println("[NOTIF DEBUG] notifyClientAboutStatusChange demandeId=" + demande.getId()
+                + " oldStatus=" + oldStatus
+                + " newStatus=" + newStatus
+                + " clientId=" + clientId);
+
+        if (oldStatus == newStatus || demande.getClient() == null) {
+            System.out.println("[NOTIF DEBUG] notifyClientAboutStatusChange SKIP demandeId=" + demande.getId()
+                    + " sameStatus=" + (oldStatus == newStatus)
+                    + " hasClient=" + (demande.getClient() != null));
+            return;
+        }
+
+        try {
+            var notification = notificationService.notifyUser(
+                    demande.getClient().getId(),
+                    "Statut de votre demande mis à jour",
+                    "Votre demande \"" + demande.getObjet() + "\" est maintenant " + getStatusLabel(newStatus) + ".",
+                    NotificationType.DEMANDE,
+                    "DEMANDE",
+                    demande.getId()
+            );
+            System.out.println("[NOTIF DEBUG] notifyClientAboutStatusChange CREATED notificationId="
+                    + notification.getId()
+                    + " userId=" + notification.getUtilisateurId()
+                    + " demandeId=" + demande.getId());
+        } catch (Exception e) {
+            System.out.println("Notification demande status error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

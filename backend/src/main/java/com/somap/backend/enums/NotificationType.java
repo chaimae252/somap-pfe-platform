@@ -4,5 +4,7 @@ public enum NotificationType {
 
     DEMANDE,
     PROJET,
-    SYSTEME
+    COMMENTAIRE,
+    SYSTEME,
+    ADMIN_MESSAGE
 }

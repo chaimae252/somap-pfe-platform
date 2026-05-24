@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     Keyboard,
     Text,
@@ -25,6 +26,7 @@ export default function AddCommentInput({ onSend, onSendError, replyTo, onCancel
     const [text, setText] = useState("");
     const [images, setImages] = useState<SelectedImage[]>([]);
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
         const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -44,6 +46,8 @@ export default function AddCommentInput({ onSend, onSendError, replyTo, onCancel
     }, []);
 
     const pickImage = async () => {
+        if (isSending) return;
+
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") return;
 
@@ -64,14 +68,17 @@ export default function AddCommentInput({ onSend, onSendError, replyTo, onCancel
     };
 
     const handleSend = async () => {
-        if (!text.trim() && images.length === 0) return;
+        if (isSending || (!text.trim() && images.length === 0)) return;
 
         try {
+            setIsSending(true);
             await onSend(text, images);
             setText("");
             setImages([]);
         } catch (e) {
             onSendError?.(e);
+        } finally {
+            setIsSending(false);
         }
     };
 
@@ -108,7 +115,11 @@ export default function AddCommentInput({ onSend, onSendError, replyTo, onCancel
             )}
 
             <View style={styles.container}>
-                <TouchableOpacity style={styles.imageBtn} onPress={pickImage}>
+                <TouchableOpacity
+                    style={[styles.imageBtn, isSending && styles.disabledButton]}
+                    onPress={pickImage}
+                    disabled={isSending}
+                >
                     <Ionicons name="image-outline" size={20} color="#1271b8" />
                     {images.length > 0 && (
                         <Text style={styles.imageCount}>{images.length}</Text>
@@ -127,10 +138,19 @@ export default function AddCommentInput({ onSend, onSendError, replyTo, onCancel
                     returnKeyType="send"
                     onSubmitEditing={handleSend}
                     blurOnSubmit={false}
+                    editable={!isSending}
                 />
 
-                <TouchableOpacity style={styles.btn} onPress={handleSend}>
-                    <Ionicons name="send" size={18} color="#fff" />
+                <TouchableOpacity
+                    style={[styles.btn, isSending && styles.btnLoading]}
+                    onPress={handleSend}
+                    disabled={isSending}
+                >
+                    {isSending ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <Ionicons name="send" size={18} color="#fff" />
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -258,5 +278,11 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 4 },
         elevation: 4,
+    },
+    btnLoading: {
+        backgroundColor: "#7BC4AE",
+    },
+    disabledButton: {
+        opacity: 0.62,
     },
 });

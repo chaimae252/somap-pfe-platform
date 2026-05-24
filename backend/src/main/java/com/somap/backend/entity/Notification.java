@@ -28,6 +28,10 @@ public class Notification {
     @Enumerated(EnumType.STRING)
     private NotificationType type;
 
+    private String targetType;
+
+    private Long targetId;
+
     @ManyToOne
     @JoinColumn(name = "utilisateur_id")
     private Utilisateur utilisateur;

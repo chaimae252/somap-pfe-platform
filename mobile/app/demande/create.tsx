@@ -106,6 +106,7 @@ export default function CreateDemandeScreen() {
     const [urgence, setUrgence] = useState<Urgence>("Normal");
     const [images, setImages] = useState<SelectedImage[]>([]);
     const [loading, setLoading] = useState(false);
+    const [submitMessage, setSubmitMessage] = useState("Envoi en cours...");
     const [toast, setToast] = useState<{ visible: boolean; message: string; type: ToastType }>({
         visible: false,
         message: "",
@@ -188,6 +189,8 @@ export default function CreateDemandeScreen() {
     };
 
     const pickImages = async () => {
+        if (loading) return;
+
         const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
             setToast({visible: true, message: "Permission refusée – accès aux photos nécessaire", type: "error"});
@@ -241,8 +244,10 @@ export default function CreateDemandeScreen() {
     };
 
     const handleSubmit = async () => {
+        if (loading) return;
         if (!validateForm()) return;
         setLoading(true);
+        setSubmitMessage("Création de la demande...");
         try {
             const clientId = await AsyncStorage.getItem("userId");
             if (!clientId) throw new Error("Utilisateur non connecté");
@@ -259,7 +264,8 @@ export default function CreateDemandeScreen() {
             const demandeId = demandeResponse.data.id;
 
             if (images.length > 0) {
-                for (const img of images) {
+                for (const [index, img] of images.entries()) {
+                    setSubmitMessage(`Envoi des images ${index + 1}/${images.length}...`);
                     const formData = new FormData();
                     formData.append("file", {uri: img.uri, name: img.name, type: img.type} as any);
                     formData.append("demandeId", String(demandeId));
@@ -500,6 +506,7 @@ export default function CreateDemandeScreen() {
                             onChangeText={setObjet}
                             onFocus={() => animateIn(objetAnim)}
                             onBlur={() => animateOut(objetAnim)}
+                            editable={!loading}
                         />
                     </Animated.View>
                     {errors.objet && <Text style={styles.errorText}>L&apos;objet est requis</Text>}
@@ -530,6 +537,7 @@ export default function CreateDemandeScreen() {
                             onChangeText={setDescription}
                             onFocus={() => animateIn(descAnim)}
                             onBlur={() => animateOut(descAnim)}
+                            editable={!loading}
                         />
                     </Animated.View>
                     {errors.description && <Text style={styles.errorText}>La description est requise</Text>}
@@ -538,7 +546,11 @@ export default function CreateDemandeScreen() {
                 {/* Images */}
                 <View style={styles.section}>
                     <Label icon="cloud-upload-outline" title="Pièces jointes"/>
-                    <TouchableOpacity style={styles.uploadBox} onPress={pickImages}>
+                    <TouchableOpacity
+                        style={[styles.uploadBox, loading && styles.disabledSurface]}
+                        onPress={pickImages}
+                        disabled={loading}
+                    >
                         <Ionicons name="cloud-upload-outline" size={34} color="#1271B8"/>
                         <Text style={styles.uploadTitle}>Ajouter des images</Text>
                         <Text style={styles.uploadSubtitle}>JPG, PNG ou PDF</Text>
@@ -548,7 +560,11 @@ export default function CreateDemandeScreen() {
                             {images.map((img, idx) => (
                                 <View key={idx} style={styles.imagePreview}>
                                     <Image source={{uri: img.uri}} style={styles.previewImage}/>
-                                    <TouchableOpacity style={styles.removeImageBtn} onPress={() => removeImage(idx)}>
+                                    <TouchableOpacity
+                                        style={styles.removeImageBtn}
+                                        onPress={() => removeImage(idx)}
+                                        disabled={loading}
+                                    >
                                         <Ionicons name="close-circle" size={24} color="#EB5757"/>
                                     </TouchableOpacity>
                                 </View>
@@ -568,6 +584,7 @@ export default function CreateDemandeScreen() {
                                 <TouchableOpacity
                                     key={item.title}
                                     onPress={() => setUrgence(item.title as Urgence)}
+                                    disabled={loading}
                                     style={[styles.urgenceChip, {backgroundColor: active ? item.color : item.bg}]}
                                 >
                                     <Ionicons name={item.icon as any} size={16} color={active ? "#fff" : item.color}/>
@@ -592,6 +609,7 @@ export default function CreateDemandeScreen() {
                             <Text style={styles.submitText}>Envoyer la demande</Text>}
                         {!loading && <Ionicons name="arrow-forward" size={20} color="#fff"/>}
                     </LinearGradient>
+                    {loading && <Text style={styles.submitHint}>{submitMessage}</Text>}
                 </TouchableOpacity>
             </ScrollView>
 
@@ -738,6 +756,16 @@ const styles = StyleSheet.create({
         marginTop: 10
     },
     submitText: {color: "#fff", fontSize: 16, fontWeight: "700"},
+    submitHint: {
+        marginTop: 10,
+        color: "#6B7A90",
+        fontSize: 12,
+        fontWeight: "700",
+        textAlign: "center",
+    },
+    disabledSurface: {
+        opacity: 0.62,
+    },
     serviceCardHorizontal: {
         width: 200,
         marginRight: 12,

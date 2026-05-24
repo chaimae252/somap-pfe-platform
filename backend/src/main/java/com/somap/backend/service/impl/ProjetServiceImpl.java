@@ -4,11 +4,12 @@ import com.somap.backend.dto.ProjetDTO;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Projet;
+import com.somap.backend.enums.NotificationType;
 import com.somap.backend.exception.ResourceNotFoundException;
-import com.somap.backend.mapper.ProjetMapper;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.repository.ProjetRepository;
+import com.somap.backend.service.NotificationService;
 import com.somap.backend.service.ProjetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class ProjetServiceImpl implements ProjetService {
     private final ProjetRepository projetRepository;
     private final ClientRepository clientRepository;
     private final DemandeRepository demandeRepository;
+    private final NotificationService notificationService;
 
 
     @Override
@@ -48,6 +50,19 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setDemande(demande);
 
         Projet savedProjet = projetRepository.save(projet);
+
+        try {
+            notificationService.notifyUser(
+                    client.getId(),
+                    "Nouveau projet créé",
+                    "Votre projet \"" + savedProjet.getTitre() + "\" a été créé.",
+                    NotificationType.PROJET,
+                    "PROJET",
+                    savedProjet.getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Notification projet create error: " + e.getMessage());
+        }
 
         return mapToDTO(savedProjet);
     }
@@ -86,6 +101,8 @@ public class ProjetServiceImpl implements ProjetService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Demande introuvable"));
 
+        var oldStatus = projet.getStatut();
+
         projet.setTitre(projetDTO.getTitre());
         projet.setDescription(projetDTO.getDescription());
         projet.setStatut(projetDTO.getStatut());
@@ -95,6 +112,23 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setDemande(demande);
 
         Projet updatedProjet = projetRepository.save(projet);
+
+        try {
+            String message = oldStatus != projet.getStatut()
+                    ? "Le statut de votre projet \"" + updatedProjet.getTitre() + "\" a été mis à jour."
+                    : "Votre projet \"" + updatedProjet.getTitre() + "\" a été mis à jour.";
+
+            notificationService.notifyUser(
+                    client.getId(),
+                    "Mise à jour de projet",
+                    message,
+                    NotificationType.PROJET,
+                    "PROJET",
+                    updatedProjet.getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Notification projet update error: " + e.getMessage());
+        }
 
         return mapToDTO(updatedProjet);
     }

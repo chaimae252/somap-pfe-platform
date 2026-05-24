@@ -5,10 +5,12 @@ import com.somap.backend.dto.ImageDTO;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Commentaire;
 import com.somap.backend.entity.Image;
+import com.somap.backend.enums.NotificationType;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.CommentaireRepository;
 import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.service.CommentaireService;
+import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -22,6 +24,7 @@ public class CommentaireServiceImpl implements CommentaireService {
     private final CommentaireRepository commentaireRepository;
     private final ClientRepository clientRepository;
     private final ServiceRepository serviceRepository;
+    private final NotificationService notificationService;
 
     @Override
     public CommentaireDTO createCommentaire(CommentaireDTO dto) {
@@ -41,14 +44,32 @@ public class CommentaireServiceImpl implements CommentaireService {
         );
 
         // ✅ FIX: parent comment handling
+        Commentaire parent = null;
         if (dto.getParentId() != null) {
-            Commentaire parent = commentaireRepository.findById(dto.getParentId())
+            parent = commentaireRepository.findById(dto.getParentId())
                     .orElseThrow(() -> new RuntimeException("Commentaire parent introuvable"));
 
             commentaire.setParent(parent);
         }
 
         Commentaire saved = commentaireRepository.save(commentaire);
+
+        if (parent != null && parent.getClient() != null
+                && !parent.getClient().getId().equals(client.getId())) {
+            try {
+                notificationService.notifyUser(
+                        parent.getClient().getId(),
+                        "Nouvelle réponse à votre commentaire",
+                        client.getNom() + " a répondu à votre commentaire sur " + service.getTitre() + ".",
+                        NotificationType.COMMENTAIRE,
+                        "SERVICE",
+                        service.getId()
+                );
+            } catch (Exception e) {
+                System.out.println("Notification commentaire reply error: " + e.getMessage());
+            }
+        }
+
         return mapToDTO(saved);
     }
 

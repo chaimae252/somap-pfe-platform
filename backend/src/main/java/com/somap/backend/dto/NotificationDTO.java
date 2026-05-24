@@ -22,4 +22,8 @@ public class NotificationDTO {
     private NotificationType type;
 
     private Long utilisateurId ;
+
+    private String targetType;
+
+    private Long targetId;
 }

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState, useEffect, forwardRef } from "react";
 import {
+    ActivityIndicator,
     View,
     Text,
     StyleSheet,
@@ -43,13 +44,17 @@ export default forwardRef(function CommentsSheet(
     const [comments, setComments] = useState<any[]>([]);
     const [replyTo, setReplyTo] = useState<any>(null);
     const [isEditingComment, setIsEditingComment] = useState(false);
+    const [commentsLoading, setCommentsLoading] = useState(true);
 
     const loadComments = useCallback(async () => {
         try {
+            setCommentsLoading(true);
             const data = await getCommentairesByService(serviceId);
             setComments(data);
         } catch (e) {
             console.log("ERROR COMMENTS:", e);
+        } finally {
+            setCommentsLoading(false);
         }
     }, [serviceId]);
 
@@ -187,15 +192,22 @@ export default forwardRef(function CommentsSheet(
                     ]}
                     keyboardShouldPersistTaps="handled"
                     ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <View style={styles.emptyIcon}>
-                                <Ionicons name="chatbox-outline" size={24} color="#5BAF97" />
+                        commentsLoading ? (
+                            <View style={styles.emptyState}>
+                                <ActivityIndicator size="small" color="#1271b8" />
+                                <Text style={styles.loadingText}>Chargement des commentaires...</Text>
                             </View>
-                            <Text style={styles.emptyTitle}>Aucun commentaire</Text>
-                            <Text style={styles.emptyText}>
-                                Soyez le premier a lancer la discussion.
-                            </Text>
-                        </View>
+                        ) : (
+                            <View style={styles.emptyState}>
+                                <View style={styles.emptyIcon}>
+                                    <Ionicons name="chatbox-outline" size={24} color="#5BAF97" />
+                                </View>
+                                <Text style={styles.emptyTitle}>Aucun commentaire</Text>
+                                <Text style={styles.emptyText}>
+                                    Soyez le premier a lancer la discussion.
+                                </Text>
+                            </View>
+                        )
                     }
                 />
 
@@ -306,5 +318,11 @@ const styles = StyleSheet.create({
         fontSize: 13,
         lineHeight: 19,
         textAlign: "center",
+    },
+    loadingText: {
+        marginTop: 10,
+        color: "#7a8fa6",
+        fontSize: 13,
+        fontWeight: "700",
     },
 });

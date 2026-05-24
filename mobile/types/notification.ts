@@ -1,7 +1,9 @@
 export type NotificationType =
     | "DEMANDE"
     | "PROJET"
-    | "SYSTEME";
+    | "COMMENTAIRE"
+    | "SYSTEME"
+    | "ADMIN_MESSAGE";
 
 export interface Notification {
     id: number;
@@ -10,4 +12,6 @@ export interface Notification {
     date_envoi: string;
     lu: boolean;
     type: NotificationType;
+    targetType?: string;
+    targetId?: number;
 }

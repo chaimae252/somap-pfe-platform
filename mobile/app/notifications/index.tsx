@@ -20,7 +20,7 @@ const { colors, fonts, spacing, radius, shadows } = Theme;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Category = "Toutes" | "Non lues" | "Demandes" | "Projets" | "Système";
+type Category = "Toutes" | "Non lues" | "Demandes" | "Projets" | "Commentaires" | "Système";
 
 type Notification = {
     id: string;
@@ -37,7 +37,7 @@ type Notification = {
     category: Exclude<Category, "Toutes" | "Non lues">;
 };
 
-const FILTERS: Category[] = ["Toutes", "Non lues", "Demandes", "Projets", "Système"];
+const FILTERS: Category[] = ["Toutes", "Non lues", "Demandes", "Projets", "Commentaires", "Système"];
 
 // ─── Type config ──────────────────────────────────────────────────────────────
 // Matching is done case-insensitively + trimmed so "demande", "DEMANDE",
@@ -74,8 +74,20 @@ function getTypeConfig(rawType: string) {
         };
     }
 
+    if (type === "COMMENTAIRE") {
+        return {
+            icon: "chatbubble-ellipses" as keyof typeof Ionicons.glyphMap,
+            accentColor: "#5BAF97",
+            accentBg: "rgba(91,175,151,0.16)",
+            tagColor: "#2F7D68",
+            tagBg: "rgba(91,175,151,0.16)",
+            category: "Commentaires" as Exclude<Category, "Toutes" | "Non lues">,
+            tagLabel: "Commentaire",
+        };
+    }
+
     // SYSTEME
-    if (type === "SYSTEME") {
+    if (type === "SYSTEME" || type === "ADMIN_MESSAGE") {
         return {
             icon: "notifications" as keyof typeof Ionicons.glyphMap,
             accentColor: "#f59e0b",
@@ -83,7 +95,7 @@ function getTypeConfig(rawType: string) {
             tagColor: "#854f0b",
             tagBg: "rgba(245,158,11,0.14)",
             category: "Système" as Exclude<Category, "Toutes" | "Non lues">,
-            tagLabel: "Système",
+            tagLabel: type === "ADMIN_MESSAGE" ? "Admin" : "Système",
         };
     }
 
