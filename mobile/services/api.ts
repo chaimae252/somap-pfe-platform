@@ -2,7 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ipconfig Chaimae: http://10.0.2.2:8080/api // // Manal http:// 192.168.1.119:8080/api
-export const API_ORIGIN = "http://192.168.137.1:8080";
+export const API_ORIGIN = "https://somap-pfe-platform-production.up.railway.app";
 
 const api = axios.create({
     baseURL: `${API_ORIGIN}/api`,
