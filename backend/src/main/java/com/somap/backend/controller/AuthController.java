@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.somap.backend.dto.AdminRegisterDTO;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -29,7 +29,15 @@ public class AuthController {
                 authService.registerClient(dto)
         );
     }
+    @PostMapping("/register-admin")
+public ResponseEntity<AuthResponseDTO> registerAdmin(
+        @RequestBody AdminRegisterDTO dto
+) {
 
+    return ResponseEntity.ok(
+            authService.registerAdmin(dto)
+    );
+}
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(
             @RequestBody LoginRequestDTO loginRequestDTO

@@ -19,12 +19,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import com.somap.backend.service.EmailService;
-
+import com.somap.backend.dto.AdminRegisterDTO;
+import com.somap.backend.entity.Admin;
+import com.somap.backend.repository.AdminRepository;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final ClientRepository clientRepository;
+    private final AdminRepository adminRepository;
     private final UtilisateurRepository utilisateurRepository;
 
     private final AuthenticationManager authenticationManager;
@@ -58,7 +61,40 @@ public class AuthServiceImpl implements AuthService {
 
         return response;
     }
+    @Override
+@Transactional
+public AuthResponseDTO registerAdmin(AdminRegisterDTO dto) {
 
+    // Check if email already exists
+    if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
+        throw new RuntimeException("Email déjà utilisé");
+    }
+
+    Admin admin = new Admin();
+
+    admin.setNom(dto.getNom());
+    admin.setEmail(dto.getEmail());
+
+    admin.setMotDePasse(
+            passwordEncoder.encode(dto.getMotDePasse())
+    );
+
+    admin.setRole(Role.ADMIN);
+
+    adminRepository.save(admin);
+
+    String token = jwtService.generateToken(admin);
+
+    AuthResponseDTO response = new AuthResponseDTO();
+
+    response.setToken(token);
+    response.setId(admin.getId());
+    response.setNom(admin.getNom());
+    response.setEmail(admin.getEmail());
+    response.setRole("ADMIN");
+
+    return response;
+}
     @Override
     public LoginResponseDTO login(LoginRequestDTO dto) {
 
