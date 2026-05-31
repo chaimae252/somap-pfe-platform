@@ -49,7 +49,9 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/uploads/**")
                         .permitAll()
-
+                         .requestMatchers("/api/dashboard/monthly").permitAll()
+                        .requestMatchers("/api/dashboard/status").permitAll()
+                        .requestMatchers("/api/dashboard/stats/**").permitAll()
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/contact").authenticated()
                         .requestMatchers("/api/contact/admin/**").hasRole("ADMIN")

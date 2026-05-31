@@ -1,12 +1,15 @@
 import { Routes, Route } from "react-router-dom";
 import AdminEntry from "../pages/AdminEntry";
-
+import Login from "../pages/Login";
+import RegisterAdmin from "../pages/RegisterAdmin";
+import Dashboard from "../pages/Dashboard";
 export default function AppRoutes() {
-    return (
-        <Routes>
-            <Route path="/" element={<AdminEntry />} />
-            <Route path="/login" element={<div>Login page</div>} />
-            <Route path="/register" element={<div>Register admin</div>} />
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route path="/" element={<AdminEntry />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<RegisterAdmin />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+    </Routes>
+  );
 }
