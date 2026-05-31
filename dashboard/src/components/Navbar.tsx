@@ -1,4 +1,10 @@
 import type { CSSProperties } from "react";
+import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo2.png";
 
@@ -6,13 +12,12 @@ const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
 
 const navItems = [
-    { label: "Dashboard", icon: "📊", path: "/dashboard", group: "Principal" },
-    { label: "Clients", icon: "👥", path: "/clients", group: "Principal" },
-    { label: "Demandes", icon: "📋", path: "/demandes", group: "Principal", badge: 4 },
-    { label: "Projets", icon: "💼", path: "/projets", group: "Gestion" },
-    { label: "Services", icon: "🔧", path: "/services", group: "Gestion" },
-
-    { label: "Déconnexion", icon: "🚪", path: "/login", group: "Compte" },
+    { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/dashboard", group: "Principal" },
+    { label: "Clients", icon: GroupsOutlinedIcon, path: "/clients", group: "Principal" },
+    { label: "Demandes", icon: AssignmentOutlinedIcon, path: "/demandes", group: "Principal", badge: 4 },
+    { label: "Projets", icon: WorkOutlineOutlinedIcon, path: "/projets", group: "Gestion" },
+    { label: "Services", icon: BuildOutlinedIcon, path: "/services", group: "Gestion" },
+    { label: "Déconnexion", icon: LogoutOutlinedIcon, path: "/login", group: "Compte" },
 ];
 
 const groups = ["Principal", "Gestion", "Compte"];
@@ -30,12 +35,10 @@ export default function Navbar() {
 
     return (
         <aside style={styles.sidebar}>
-            {/* Logo */}
             <div style={styles.logoRow}>
                 <img src={logo} alt="SOMAP & SERVICE" style={styles.logo} />
             </div>
 
-            {/* Nav groups */}
             <nav style={styles.nav}>
                 {groups.map((group) => (
                     <div key={group} style={styles.section}>
@@ -44,6 +47,8 @@ export default function Navbar() {
                             .filter((item) => item.group === group)
                             .map((item) => {
                                 const active = pathname === item.path;
+                                const Icon = item.icon;
+
                                 return (
                                     <button
                                         key={item.label}
@@ -54,10 +59,12 @@ export default function Navbar() {
                                         }
                                         style={{
                                             ...styles.navItem,
-                                            ...(pathname === item.path ? styles.navItemActive : {}),
+                                            ...(active ? styles.navItemActive : {}),
                                         }}
                                     >
-                                        <span style={styles.navIcon}>{item.icon}</span>
+                                        <span style={styles.navIcon}>
+                                            <Icon sx={{ fontSize: 19 }} />
+                                        </span>
                                         <span style={styles.navLabel}>{item.label}</span>
                                         {item.badge ? (
                                             <span style={styles.badge}>{item.badge}</span>
@@ -71,7 +78,6 @@ export default function Navbar() {
                 ))}
             </nav>
 
-            {/* Footer user row */}
             <div style={styles.footer}>
                 <div style={styles.userRow} onClick={() => navigate("/profile")}>
                     <div style={styles.avatar}>AD</div>
@@ -116,7 +122,6 @@ const styles: Record<string, CSSProperties> = {
         objectFit: "contain",
         filter: "drop-shadow(0 1px 4px rgba(18,113,184,0.10))",
     },
-
     nav: { flex: 1, overflowY: "hidden", padding: "8px 0" },
     section: { padding: "10px 10px 4px" },
     sectionLabel: {
@@ -142,7 +147,7 @@ const styles: Record<string, CSSProperties> = {
         fontWeight: 500,
         color: "#5a6e82",
         marginBottom: 2,
-        textAlign: "left" as const,
+        textAlign: "left",
         transition: "background 0.15s, color 0.15s",
         fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
@@ -151,7 +156,15 @@ const styles: Record<string, CSSProperties> = {
         color: SOMAP_BLUE,
         fontWeight: 600,
     },
-    navIcon: { fontSize: 16, flexShrink: 0 },
+    navIcon: {
+        width: 24,
+        height: 24,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        color: "currentColor",
+    },
     navLabel: { flex: 1 },
     badge: {
         marginLeft: "auto",
@@ -171,7 +184,6 @@ const styles: Record<string, CSSProperties> = {
         backgroundColor: SOMAP_GREEN,
         flexShrink: 0,
     },
-
     footer: {
         borderTop: "1px solid rgba(0,0,0,0.06)",
         padding: "12px 10px",
