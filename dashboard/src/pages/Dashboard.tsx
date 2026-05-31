@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/api';
 import { 
   Users, 
   FolderKanban, 
@@ -11,7 +10,6 @@ import {
   Activity,
   ChevronRight,
   Plus,
-  Eye,
   BarChart3,
   PieChart as PieChartIcon,
   Calendar,
@@ -29,13 +27,53 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  AreaChart,
-  Area
+  Cell
 } from 'recharts';
 
+type MonthlyDataPoint = {
+  name: string;
+  demandes: number;
+  projets: number;
+};
+
+type StatusDataPoint = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type DashboardStatsResponse = {
+  clients: number;
+  projets: number;
+  demandes: number;
+  services: number;
+};
+
+type MonthlyApiItem = {
+  month: string;
+  demandes: number;
+  projets: number;
+};
+
+type StatusApiItem = {
+  name: string;
+  value: number;
+};
+
+type TooltipPayloadItem = {
+  color?: string;
+  name?: string;
+  value?: number | string;
+};
+
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+  label?: string;
+};
+
 // ---------- Fallback data (empty) ----------
-const fallbackMonthlyData = [
+const fallbackMonthlyData: MonthlyDataPoint[] = [
   { name: 'Jan', demandes: 0, projets: 0 },
   { name: 'Fév', demandes: 0, projets: 0 },
   { name: 'Mar', demandes: 0, projets: 0 },
@@ -50,7 +88,7 @@ const fallbackMonthlyData = [
   { name: 'Déc', demandes: 0, projets: 0 },
 ];
 
-const fallbackStatusData = [
+const fallbackStatusData: StatusDataPoint[] = [
   { name: 'En attente', value: 0, color: '#f6b718' },
   { name: 'Approuvé', value: 0, color: '#4875bd' },
   { name: 'Rejeté', value: 0, color: '#ad2324' },
@@ -147,12 +185,12 @@ const QuickActionCard = ({ title, description, icon, onClick, color }: {
   );
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-xl border border-[#dddee0] bg-white p-4 shadow-xl backdrop-blur-sm">
         <p className="font-black text-[#193d71]">{label}</p>
-        {payload.map((p: any, idx: number) => (
+        {payload.map((p, idx) => (
           <p key={idx} className="mt-1 text-sm font-medium" style={{ color: p.color }}>
             {p.name}: {p.value}
           </p>
@@ -182,7 +220,7 @@ const Dashboard = () => {
         const clientId = localStorage.getItem("userId");
         
         const statsRes = await fetch(`http://localhost:8080/api/dashboard/stats/${clientId}`);
-        const statsData = await statsRes.json();
+        const statsData: DashboardStatsResponse = await statsRes.json();
         setStats({
           clients: statsData.clients,
           projets: statsData.projets,
@@ -191,9 +229,9 @@ const Dashboard = () => {
         });
         
         const monthlyRes = await fetch(`http://localhost:8080/api/dashboard/monthly`);
-        const monthly = await monthlyRes.json();
+        const monthly: MonthlyApiItem[] = await monthlyRes.json();
         if (monthly && monthly.length > 0) {
-          const transformedMonthly = monthly.map((item: any) => ({
+          const transformedMonthly = monthly.map((item) => ({
             name: item.month,
             demandes: item.demandes,
             projets: item.projets
@@ -202,7 +240,7 @@ const Dashboard = () => {
         }
         
         const statusRes = await fetch(`http://localhost:8080/api/dashboard/status`);
-        const status = await statusRes.json();
+        const status: StatusApiItem[] = await statusRes.json();
         if (status && status.length > 0) {
           const statusMapping: { [key: string]: { name: string; color: string } } = {
             'EN_ATTENTE': { name: 'En attente', color: '#f6b718' },
@@ -211,7 +249,7 @@ const Dashboard = () => {
             'EN_COURS': { name: 'En cours', color: '#193d71' },
           };
           
-          const transformedStatus = status.map((item: any) => {
+          const transformedStatus = status.map((item) => {
             const mapping = statusMapping[item.name] || { name: item.name, color: '#6b7280' };
             return {
               name: mapping.name,

@@ -1,6 +1,6 @@
 import Navbar from "../components/Navbar";
 
-export default function Projets() {
+export default function Profile() {
     return (
         <div style={{ display: "flex", minHeight: "100vh" }}>
             <Navbar />
@@ -12,7 +12,7 @@ export default function Projets() {
                     backgroundColor: "#f8fafc",
                 }}
             >
-                <h1>Projets</h1>
+                <h1>Profile</h1>
             </main>
         </div>
     );

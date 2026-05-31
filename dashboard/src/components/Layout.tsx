@@ -1,6 +1,10 @@
-import Navbar from "../components/Navbar";
+import Navbar from "./Navbar";
 
-export default function Projets() {
+interface LayoutProps {
+    children: React.ReactNode;
+}
+
+export default function Layout({ children }: LayoutProps) {
     return (
         <div style={{ display: "flex", minHeight: "100vh" }}>
             <Navbar />
@@ -9,10 +13,10 @@ export default function Projets() {
                 style={{
                     flex: 1,
                     padding: "24px",
-                    backgroundColor: "#f8fafc",
+                    background: "#f8fafc",
                 }}
             >
-                <h1>Projets</h1>
+                {children}
             </main>
         </div>
     );
