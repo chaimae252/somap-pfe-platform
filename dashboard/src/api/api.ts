@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const API_ORIGIN = "https://somap-pfe-platform-production.up.railway.app";
+export const API_ORIGIN = import.meta.env.VITE_API_ORIGIN ?? "http://localhost:8080";
 
 const api = axios.create({
     baseURL: `${API_ORIGIN}/api`,

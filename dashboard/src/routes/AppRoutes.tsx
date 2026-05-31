@@ -7,14 +7,15 @@ import Demandes from "../pages/Demandes";
 import Projets from "../pages/Projets";
 import Services from "../pages/Services";
 import Profile from "../pages/Profile";
+import RegisterAdmin from "../pages/RegisterAdmin";
+import Login from "../pages/Login";
 
 export default function AppRoutes() {
     return (
         <Routes>
             <Route path="/" element={<AdminEntry />} />
-            <Route path="/login" element={<div>Login page</div>} />
-            <Route path="/register" element={<div>Register admin</div>} />
-
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<RegisterAdmin />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/demandes" element={<Demandes />} />

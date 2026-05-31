@@ -25,9 +25,19 @@ const groups = ["Principal", "Gestion", "Compte"];
 export default function Navbar() {
     const navigate = useNavigate();
     const { pathname } = useLocation();
+    const adminName = localStorage.getItem("userName")?.trim() || "Admin";
+    const adminInitials = adminName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
 
     const handleLogout = () => {
         localStorage.removeItem("token");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userId");
         sessionStorage.clear();
 
         navigate("/login");
@@ -80,9 +90,9 @@ export default function Navbar() {
 
             <div style={styles.footer}>
                 <div style={styles.userRow} onClick={() => navigate("/profile")}>
-                    <div style={styles.avatar}>AD</div>
+                    <div style={styles.avatar}>{adminInitials || "AD"}</div>
                     <div style={styles.userInfo}>
-                        <span style={styles.userName}>Admin</span>
+                        <span style={styles.userName}>{adminName}</span>
                         <span style={styles.userRole}>Administrateur</span>
                     </div>
                     <span style={styles.chevron}>›</span>

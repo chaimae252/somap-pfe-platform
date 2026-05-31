@@ -1,572 +1,560 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Users, 
-  FolderKanban, 
-  ClipboardList, 
-  Settings, 
-  TrendingUp, 
-  TrendingDown,
-  Activity,
-  ChevronRight,
-  Plus,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Calendar,
-  ArrowUpRight,
-  Sparkles
-} from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
+import type { CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import TrendingUpOutlinedIcon from "@mui/icons-material/TrendingUpOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import Layout from "../components/Layout";
+import api from "../api/api";
 
-type MonthlyDataPoint = {
-  name: string;
-  demandes: number;
-  projets: number;
+const SOMAP_BLUE = "#1271b8";
+const SOMAP_GREEN = "#7EC933";
+const TEXT = "#1a2e4a";
+const MUTED = "#6b7f95";
+
+type DashboardStats = {
+    clients: number;
+    demandes: number;
+    projets: number;
+    services: number;
+    notifications?: number;
 };
 
-type StatusDataPoint = {
-  name: string;
-  value: number;
-  color: string;
+type MonthlyStat = {
+    month: string;
+    demandes: number;
+    projets: number;
 };
 
-type DashboardStatsResponse = {
-  clients: number;
-  projets: number;
-  demandes: number;
-  services: number;
+type StatusStat = {
+    name: string;
+    value: number;
+    color?: string | null;
 };
 
-type MonthlyApiItem = {
-  month: string;
-  demandes: number;
-  projets: number;
-};
-
-type StatusApiItem = {
-  name: string;
-  value: number;
-};
-
-type TooltipPayloadItem = {
-  color?: string;
-  name?: string;
-  value?: number | string;
-};
-
-type CustomTooltipProps = {
-  active?: boolean;
-  payload?: TooltipPayloadItem[];
-  label?: string;
-};
-
-// ---------- Fallback data (empty) ----------
-const fallbackMonthlyData: MonthlyDataPoint[] = [
-  { name: 'Jan', demandes: 0, projets: 0 },
-  { name: 'Fév', demandes: 0, projets: 0 },
-  { name: 'Mar', demandes: 0, projets: 0 },
-  { name: 'Avr', demandes: 0, projets: 0 },
-  { name: 'Mai', demandes: 0, projets: 0 },
-  { name: 'Juin', demandes: 0, projets: 0 },
-  { name: 'Juil', demandes: 0, projets: 0 },
-  { name: 'Aoû', demandes: 0, projets: 0 },
-  { name: 'Sep', demandes: 0, projets: 0 },
-  { name: 'Oct', demandes: 0, projets: 0 },
-  { name: 'Nov', demandes: 0, projets: 0 },
-  { name: 'Déc', demandes: 0, projets: 0 },
-];
-
-const fallbackStatusData: StatusDataPoint[] = [
-  { name: 'En attente', value: 0, color: '#f6b718' },
-  { name: 'Approuvé', value: 0, color: '#4875bd' },
-  { name: 'Rejeté', value: 0, color: '#ad2324' },
-  { name: 'En cours', value: 0, color: '#193d71' },
-];
-
-const recentActivities = [
-  { id: 1, client: 'TechCorp', type: 'Demande', status: 'En attente', date: '2025-05-25' },
-  { id: 2, client: 'DesignStudio', type: 'Projet', status: 'Approuvé', date: '2025-05-24' },
-  { id: 3, client: 'StartupX', type: 'Service', status: 'En cours', date: '2025-05-23' },
-  { id: 4, client: 'AgencyY', type: 'Demande', status: 'Approuvé', date: '2025-05-22' },
-  { id: 5, client: 'InnovateLabs', type: 'Projet', status: 'Rejeté', date: '2025-05-21' },
-];
-
-// ---------- StatCard with custom color schemes ----------
-const StatCard = ({ title, value, icon, trend, trendValue, colorScheme }: { 
-  title: string; 
-  value: number; 
-  icon: React.ReactNode; 
-  trend: 'up' | 'down';
-  trendValue: string;
-  colorScheme: 'navy' | 'blue' | 'gold' | 'red';
-}) => {
-  const schemes = {
-    navy: { bg: '#ffffff', accent: '#2e7d32', trendBg: '#2e7d32', trendText: '#ffffff', iconBg: '#dddee0', iconColor: '#2e7d32' },
-    blue: { bg: '#ffffff', accent: '#4875bd', trendBg: '#4875bd', trendText: '#ffffff', iconBg: '#dddee0', iconColor: '#4875bd' },
-    gold: { bg: '#ffffff', accent: '#f6b718', trendBg: '#f6b718', trendText: '#193d71', iconBg: '#dddee0', iconColor: '#f6b718' },
-    red: { bg: '#ffffff', accent: '#ad2324', trendBg: '#ad2324', trendText: '#ffffff', iconBg: '#dddee0', iconColor: '#ad2324' },
-  };
-  const scheme = schemes[colorScheme];
-
-  return (
-    <div className="group relative overflow-hidden rounded-2xl shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl" style={{ backgroundColor: scheme.bg }}>
-      <div className="absolute -right-12 -top-12 h-24 w-24 rotate-45 transition-all duration-300 group-hover:scale-150" style={{ backgroundColor: `${scheme.accent}20` }} />
-      <div className="absolute -bottom-16 -left-16 h-32 w-32 rounded-full blur-2xl" style={{ backgroundColor: `${scheme.accent}10` }} />
-      
-      <div className="relative p-6">
-        <div className="mb-4 flex items-start justify-between">
-          <div className="rounded-xl p-3 transition-all duration-300 group-hover:scale-110" style={{ backgroundColor: scheme.iconBg, color: scheme.iconColor }}>
-            {icon}
-          </div>
-          <div className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold`} style={{ backgroundColor: `${scheme.accent}20`, color: scheme.accent }}>
-            {trend === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            <span>{trendValue}</span>
-          </div>
-        </div>
-        <p className="text-sm font-medium uppercase tracking-wider text-gray-500">{title}</p>
-        <h3 className="mt-2 text-4xl font-black" style={{ color: scheme.accent }}>{value.toLocaleString()}</h3>
-        <div className="mt-4 h-0.5 w-12 transition-all duration-300 group-hover:w-full" style={{ backgroundColor: scheme.accent }} />
-      </div>
-    </div>
-  );
-};
-
-// Elegant QuickActionCard - with new 'green' color
-const QuickActionCard = ({ title, description, icon, onClick, color }: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  color: 'blue' | 'yellow' | 'red' | 'green';
-}) => {
-  const colorConfig = {
-    blue: { bg: '#4875bd', hover: '#193d71', text: 'white', light: '#4875bd15', gradientFrom: '#4875bd', gradientTo: '#4875bd' },
-    yellow: { bg: '#f6b718', hover: '#d49a0c', text: '#193d71', light: '#f6b71815', gradientFrom: '#f6b718', gradientTo: '#f6b718' },
-    red: { bg: '#ad2324', hover: '#8a1b1c', text: 'white', light: '#ad232415', gradientFrom: '#ad2324', gradientTo: '#ad2324' },
-    green: { bg: '#2e7d32', hover: '#1b5e20', text: 'white', light: '#2e7d3215', gradientFrom: '#2e7d32', gradientTo: '#2e7d32' },
-  };
-  const config = colorConfig[color];
-
-  return (
-    <div 
-      onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl bg-white p-5 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-      style={{ borderTop: `3px solid ${config.bg}` }}
-    >
-      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: `linear-gradient(135deg, ${config.gradientFrom}, ${config.gradientTo})` }} />
-      
-      <div className="relative flex flex-col items-center text-center">
-        <div 
-          className="rounded-2xl p-3 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md"
-          style={{ backgroundColor: config.light, color: config.bg }}
-        >
-          {icon}
-        </div>
-        <h3 className="mt-3 font-bold text-[#193d71] group-hover:text-[#4875bd]">{title}</h3>
-        <p className="mt-1 text-xs text-gray-500">{description}</p>
-        <div className="mt-3 flex items-center text-xs font-semibold opacity-0 transition-all group-hover:opacity-100">
-          <span style={{ color: config.bg }}>Démarrer</span>
-          <ArrowUpRight size={14} className="ml-1" style={{ color: config.bg }} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-xl border border-[#dddee0] bg-white p-4 shadow-xl backdrop-blur-sm">
-        <p className="font-black text-[#193d71]">{label}</p>
-        {payload.map((p, idx) => (
-          <p key={idx} className="mt-1 text-sm font-medium" style={{ color: p.color }}>
-            {p.name}: {p.value}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-// ---------- Main Dashboard Component ----------
-const Dashboard = () => {
-  const navigate = useNavigate();
-  const [stats, setStats] = useState({
+const emptyStats: DashboardStats = {
     clients: 0,
-    projets: 0,
     demandes: 0,
+    projets: 0,
     services: 0,
-  });
-  const [monthlyData, setMonthlyData] = useState(fallbackMonthlyData);
-  const [statusData, setStatusData] = useState(fallbackStatusData);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const clientId = localStorage.getItem("userId");
-        
-        const statsRes = await fetch(`http://localhost:8080/api/dashboard/stats/${clientId}`);
-        const statsData: DashboardStatsResponse = await statsRes.json();
-        setStats({
-          clients: statsData.clients,
-          projets: statsData.projets,
-          demandes: statsData.demandes,
-          services: statsData.services,
-        });
-        
-        const monthlyRes = await fetch(`http://localhost:8080/api/dashboard/monthly`);
-        const monthly: MonthlyApiItem[] = await monthlyRes.json();
-        if (monthly && monthly.length > 0) {
-          const transformedMonthly = monthly.map((item) => ({
-            name: item.month,
-            demandes: item.demandes,
-            projets: item.projets
-          }));
-          setMonthlyData(transformedMonthly);
-        }
-        
-        const statusRes = await fetch(`http://localhost:8080/api/dashboard/status`);
-        const status: StatusApiItem[] = await statusRes.json();
-        if (status && status.length > 0) {
-          const statusMapping: { [key: string]: { name: string; color: string } } = {
-            'EN_ATTENTE': { name: 'En attente', color: '#f6b718' },
-            'VALIDEE': { name: 'Approuvé', color: '#4875bd' },
-            'REJETEE': { name: 'Rejeté', color: '#ad2324' },
-            'EN_COURS': { name: 'En cours', color: '#193d71' },
-          };
-          
-          const transformedStatus = status.map((item) => {
-            const mapping = statusMapping[item.name] || { name: item.name, color: '#6b7280' };
-            return {
-              name: mapping.name,
-              value: item.value,
-              color: mapping.color
-            };
-          });
-          setStatusData(transformedStatus);
-        }
-        
-      } catch (error) {
-        console.error("Erreur dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchStats();
-  }, []);
-
-  // Navigation handlers for quick action cards
-  const handleNewClient = () => navigate('/clients/new');
-  const handleNewProject = () => navigate('/projets/new');
-  const handleViewDemandes = () => navigate('/demandes');
-
-  // Navigation handler for "Nouveau rapport" button
-  const handleNewReport = () => navigate('/rapports/new');
-
-  // Navigation handlers for activities table
-  const handleViewAllActivities = () => navigate('/activites');
-  const handleViewActivityDetails = (activityId: number, type: string) => {
-    if (type === 'Demande') {
-      navigate(`/demandes/${activityId}`);
-    } else if (type === 'Projet') {
-      navigate(`/projets/${activityId}`);
-    } else if (type === 'Service') {
-      navigate(`/services/${activityId}`);
-    } else {
-      navigate(`/activite/${activityId}`);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="space-y-4 text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-[#4875bd] border-t-transparent"></div>
-          <p className="text-gray-500">Chargement du tableau de bord...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: '#dddee0' }}>
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          {/* Page Header */}
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-            <div>
-              <div className="flex items-center gap-2">
-                <Sparkles size={28} className="text-[#f6b718]" />
-                <h1 className="text-4xl font-black tracking-tight text-[#193d71]">Tableau de bord</h1>
-              </div>
-              <div className="mt-2 h-1 w-24 rounded-full bg-[#f6b718]" />
-              <div className="mt-1 h-0.5 w-16 rounded-full bg-[#4875bd]" />
-              <p className="mt-4 text-gray-600">
-                Bienvenue ! Voici un aperçu de votre activité récente.
-              </p>
-            </div>
-            <button 
-              onClick={handleNewReport}
-              className="group flex items-center gap-2 rounded-full bg-[#193d71] px-6 py-3 font-bold text-white shadow-lg transition-all duration-300 hover:bg-[#4875bd] hover:shadow-xl"
-            >
-              <Plus size={18} className="transition-transform group-hover:rotate-90" /> 
-              Nouveau rapport
-            </button>
-          </div>
-
-          {/* Stats Cards Grid */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Clients"
-              value={stats.clients}
-              icon={<Users size={24} />}
-              trend="up"
-              trendValue="+12%"
-              colorScheme="navy"
-            />
-            <StatCard
-              title="Projets"
-              value={stats.projets}
-              icon={<FolderKanban size={24} />}
-              trend="up"
-              trendValue="+8%"
-              colorScheme="blue"
-            />
-            <StatCard
-              title="Demandes"
-              value={stats.demandes}
-              icon={<ClipboardList size={24} />}
-              trend="up"
-              trendValue="+23%"
-              colorScheme="gold"
-            />
-            <StatCard
-              title="Services"
-              value={stats.services}
-              icon={<Settings size={24} />}
-              trend="up"
-              trendValue="+5%"
-              colorScheme="red"
-            />
-          </div>
-
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Bar Chart */}
-            <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
-              <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#f6b718]/5 blur-2xl" />
-              <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-[#4875bd]/5 blur-2xl" />
-              
-              <div className="relative mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-black text-[#193d71]">Activité mensuelle</h2>
-                  <p className="text-sm text-gray-500">Demandes vs Projets</p>
-                </div>
-                <div className="rounded-2xl bg-[#dddee0] p-3 text-[#4875bd]">
-                  <BarChart3 size={20} />
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#dddee0" />
-                  <XAxis dataKey="name" tickLine={false} axisLine={{ stroke: '#dddee0' }} />
-                  <YAxis tickLine={false} axisLine={false} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f6b71810' }} />
-                  <Legend wrapperStyle={{ paddingTop: 16 }} />
-                  <Bar dataKey="demandes" fill="#4875bd" name="Demandes" radius={[8, 8, 0, 0]} barSize={40} />
-                  <Bar dataKey="projets" fill="#2e7d32" name="Projets" radius={[8, 8, 0, 0]} barSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Pie Chart */}
-            <div className="relative overflow-hidden rounded-3xl border border-white/50 bg-white p-6 shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl">
-              <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#ad2324]/5 blur-2xl" />
-              <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-[#193d71]/5 blur-2xl" />
-              
-              <div className="relative mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-black text-[#193d71]">État des demandes</h2>
-                  <p className="text-sm text-gray-500">Répartition par statut</p>
-                </div>
-                <div className="rounded-2xl bg-[#dddee0] p-3 text-[#4875bd]">
-                  <PieChartIcon size={20} />
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={4}
-                    dataKey="value"
-                    label={({ name, percent }) => {
-                      if (!name || percent === undefined) return '';
-                      return `${name} ${(percent * 100).toFixed(0)}%`;
-                    }}
-                    labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} stroke="white" strokeWidth={3} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Recent Activities & Quick Actions */}
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            {/* Activities Table */}
-            <div className="xl:col-span-2">
-              <div className="overflow-hidden rounded-3xl border border-white/50 bg-white shadow-xl transition-all duration-300 hover:shadow-2xl">
-                <div className="border-b border-[#dddee0] bg-gradient-to-r from-white to-[#dddee0]/30 px-6 py-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-black text-[#193d71]">Activités récentes</h2>
-                      <p className="text-sm text-gray-500">Dernières demandes et projets</p>
-                    </div>
-                    <button 
-                      onClick={handleViewAllActivities}
-                      className="flex items-center gap-1 rounded-full bg-[#193d71] px-4 py-2 text-sm font-bold text-white transition-all hover:bg-[#4875bd]"
-                    >
-                      Voir tout <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full">
-                    <thead className="bg-[#dddee0]/50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-[#193d71]">Client</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-[#193d71]">Type</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-[#193d71]">Statut</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-[#193d71]">Date</th>
-                        <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-[#193d71]"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#dddee0]">
-                      {recentActivities.map((activity) => (
-                        <tr key={activity.id} className="group transition-all duration-200 hover:bg-[#dddee0]/30">
-                          <td className="whitespace-nowrap px-6 py-4 font-bold text-[#193d71]">{activity.client}</td>
-                          <td className="whitespace-nowrap px-6 py-4 text-gray-600">{activity.type}</td>
-                          <td className="whitespace-nowrap px-6 py-4">
-                            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold
-                              ${activity.status === 'Approuvé' ? 'bg-[#4875bd]/20 text-[#4875bd]' : ''}
-                              ${activity.status === 'En attente' ? 'bg-[#f6b718]/20 text-[#f6b718]' : ''}
-                              ${activity.status === 'En cours' ? 'bg-[#2e7d32]/20 text-[#2e7d32]' : ''}
-                              ${activity.status === 'Rejeté' ? 'bg-[#ad2324]/20 text-[#ad2324]' : ''}
-                            `}>
-                              {activity.status}
-                            </span>
-                          </td>
-                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{activity.date}</td>
-                          <td className="whitespace-nowrap px-6 py-4 text-right">
-                            <button 
-                              onClick={() => handleViewActivityDetails(activity.id, activity.type)}
-                              className="rounded-full bg-[#dddee0] px-4 py-1.5 text-xs font-bold text-[#193d71] opacity-0 transition-all group-hover:opacity-100 hover:bg-[#f6b718] hover:text-white"
-                            >
-                              Détails
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Actions - Horizontal */}
-              <div className="rounded-3xl border border-white/50 bg-white p-6 shadow-xl">
-                <div className="mb-4 flex items-center gap-2">
-                  <Calendar size={20} className="text-[#f6b718]" />
-                  <h3 className="text-lg font-black text-[#193d71]">Actions rapides</h3>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <QuickActionCard
-                    title="Nouveau client"
-                    description="Ajouter un client"
-                    icon={<Users size={18} />}
-                    onClick={handleNewClient}
-                    color="blue"
-                  />
-                  <QuickActionCard
-                    title="Nouveau projet"
-                    description="Créer un projet"
-                    icon={<FolderKanban size={18} />}
-                    onClick={handleNewProject}
-                    color="yellow"
-                  />
-                  <QuickActionCard
-                    title="Voir demandes"
-                    description="Gérer les demandes"
-                    icon={<ClipboardList size={18} />}
-                    onClick={handleViewDemandes}
-                    color="green"
-                  />
-                </div>
-              </div>
-
-              {/* Conversion card */}
-              <div className="relative overflow-hidden rounded-3xl p-6 shadow-xl" style={{ background: 'linear-gradient(135deg, #193d71 0%, #4875bd 100%)' }}>
-                <div className="absolute -right-8 -top-8 h-32 w-32 rotate-12 bg-white/10" />
-                <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
-                
-                <div className="relative flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium uppercase tracking-wider text-white/80">Taux de conversion</p>
-                    <p className="mt-2 text-4xl font-black text-white">68%</p>
-                    <div className="mt-3 flex items-center gap-1 rounded-full bg-[#f6b718]/30 px-2 py-0.5 text-xs font-bold text-white backdrop-blur-sm">
-                      <TrendingUp size={12} /> +5% vs mois dernier
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-white/20 p-3 backdrop-blur-sm">
-                    <Activity size={28} className="text-[#f6b718]" />
-                  </div>
-                </div>
-                <div className="mt-5 h-1.5 w-full rounded-full bg-white/30">
-                  <div className="h-1.5 w-[68%] rounded-full bg-[#f6b718]" />
-                </div>
-              </div>
-
-              {/* Mini insight card */}
-              <div className="flex items-center gap-4 rounded-2xl border border-[#f6b718]/30 bg-white p-5 shadow-md">
-                <div className="rounded-xl bg-[#f6b718]/20 p-3 text-[#f6b718]">
-                  <Sparkles size={20} />
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#4875bd]">Bon à savoir</p>
-                  <p className="text-sm font-medium text-gray-600">+32% de demandes ce trimestre</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    notifications: 0,
 };
 
-export default Dashboard;
+const statusColors: Record<string, { color: string; background: string }> = {
+    EN_ATTENTE: { color: "#8a5a00", background: "#fff4d6" },
+    VALIDEE: { color: "#2f7d32", background: "rgba(126,201,51,0.16)" },
+    REJETEE: { color: "#ad2324", background: "rgba(173,35,36,0.12)" },
+};
+
+function formatNumber(value?: number) {
+    return new Intl.NumberFormat("fr-MA").format(value ?? 0);
+}
+
+function formatStatus(status: string) {
+    return status
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replace(/^\w/, (letter) => letter.toUpperCase());
+}
+
+function getStoredAdminName() {
+    const name = localStorage.getItem("userName")?.trim();
+    return name || "Admin";
+}
+
+function getErrorMessage(error: unknown) {
+    if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: string }).message === "string"
+    ) {
+        return (error as { message: string }).message;
+    }
+
+    return "Impossible de charger les statistiques.";
+}
+
+export default function Dashboard() {
+    const [adminName, setAdminName] = useState(getStoredAdminName);
+    const [stats, setStats] = useState<DashboardStats>(emptyStats);
+    const [monthly, setMonthly] = useState<MonthlyStat[]>([]);
+    const [statuses, setStatuses] = useState<StatusStat[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        setAdminName(getStoredAdminName());
+
+        const loadDashboard = async () => {
+            setLoading(true);
+            setError("");
+
+            try {
+                const [statsResponse, monthlyResponse, statusResponse] = await Promise.all([
+                    api.get<DashboardStats>("/dashboard/stats"),
+                    api.get<MonthlyStat[]>("/dashboard/monthly"),
+                    api.get<StatusStat[]>("/dashboard/status"),
+                ]);
+
+                setStats(statsResponse.data ?? emptyStats);
+                setMonthly(monthlyResponse.data ?? []);
+                setStatuses(statusResponse.data ?? []);
+            } catch (err) {
+                setStats(emptyStats);
+                setMonthly([]);
+                setStatuses([]);
+                setError(getErrorMessage(err));
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        void loadDashboard();
+    }, []);
+
+    const maxBarValue = useMemo(() => {
+        const values = monthly.flatMap((item) => [item.demandes, item.projets]);
+        return Math.max(1, ...values);
+    }, [monthly]);
+
+    const validatedDemandes = statuses.find((item) => item.name === "VALIDEE")?.value ?? 0;
+    const pendingDemandes = statuses.find((item) => item.name === "EN_ATTENTE")?.value ?? 0;
+    const conversionRate = stats.demandes > 0 ? Math.round((validatedDemandes / stats.demandes) * 100) : 0;
+
+    const statCards = [
+        {
+            label: "Clients",
+            value: stats.clients,
+            helper: "Comptes enregistres",
+            icon: GroupsOutlinedIcon,
+            color: SOMAP_GREEN,
+        },
+        {
+            label: "Demandes",
+            value: stats.demandes,
+            helper: `${formatNumber(pendingDemandes)} en attente`,
+            icon: AssignmentOutlinedIcon,
+            color: "#f6b718",
+        },
+        {
+            label: "Projets",
+            value: stats.projets,
+            helper: "Projets dans la base",
+            icon: WorkOutlineOutlinedIcon,
+            color: SOMAP_BLUE,
+        },
+        {
+            label: "Services",
+            value: stats.services,
+            helper: "Catalogue actif",
+            icon: BuildOutlinedIcon,
+            color: "#ad2324",
+        },
+        {
+            label: "Notifications",
+            value: stats.notifications ?? 0,
+            helper: "Alertes creees",
+            icon: NotificationsNoneOutlinedIcon,
+            color: "#6f42c1",
+        },
+    ];
+
+    return (
+        <Layout>
+            <div style={styles.page}>
+                <section style={styles.header}>
+                    <div>
+                        <span style={styles.eyebrow}>SOMAP & SERVICE</span>
+                        <h1 style={styles.title}>Bienvenue, {adminName}</h1>
+                        <p style={styles.subtitle}>
+                            Vue generale de l'activite clients, demandes, projets et services.
+                        </p>
+                    </div>
+
+                    <div style={styles.statusPill}>
+                        {loading ? "Chargement..." : error ? "Backend indisponible" : "Donnees a jour"}
+                    </div>
+                </section>
+
+                {error && (
+                    <section style={styles.errorBox}>
+                        <strong>Le backend ne repond pas.</strong>
+                        <span>{error}</span>
+                    </section>
+                )}
+
+                <section style={styles.statsGrid}>
+                    {statCards.map((stat) => {
+                        const Icon = stat.icon;
+
+                        return (
+                            <div key={stat.label} style={styles.statCard}>
+                                <div style={{ ...styles.statIcon, color: stat.color, background: `${stat.color}1f` }}>
+                                    <Icon sx={{ fontSize: 24 }} />
+                                </div>
+                                <div style={styles.statBody}>
+                                    <p style={styles.statLabel}>{stat.label}</p>
+                                    <strong style={{ ...styles.statValue, color: stat.color }}>
+                                        {loading ? "-" : formatNumber(stat.value)}
+                                    </strong>
+                                    <span style={styles.statHelper}>
+                                        <TrendingUpOutlinedIcon sx={{ fontSize: 14 }} />
+                                        {stat.helper}
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </section>
+
+                <section style={styles.grid}>
+                    <div style={styles.panel}>
+                        <div style={styles.panelHeader}>
+                            <div>
+                                <h2 style={styles.panelTitle}>Activite mensuelle</h2>
+                                <p style={styles.panelSubtitle}>Demandes et projets par mois</p>
+                            </div>
+                            <CalendarMonthOutlinedIcon sx={{ color: SOMAP_BLUE }} />
+                        </div>
+
+                        <div style={styles.chart}>
+                            {monthly.length > 0 ? (
+                                monthly.map((item) => (
+                                    <div key={item.month} style={styles.barGroup}>
+                                        <div style={styles.barTrack}>
+                                            <div
+                                                title={`${item.demandes} demandes`}
+                                                style={{
+                                                    ...styles.bar,
+                                                    height: `${Math.max(4, (item.demandes / maxBarValue) * 150)}px`,
+                                                }}
+                                            />
+                                            <div
+                                                title={`${item.projets} projets`}
+                                                style={{
+                                                    ...styles.projectBar,
+                                                    height: `${Math.max(4, (item.projets / maxBarValue) * 150)}px`,
+                                                }}
+                                            />
+                                        </div>
+                                        <strong style={styles.barValue}>{formatNumber(item.demandes)}</strong>
+                                        <span style={styles.barLabel}>{item.month}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={styles.emptyState}>Aucune donnee mensuelle disponible.</div>
+                            )}
+                        </div>
+
+                        <div style={styles.legend}>
+                            <span><i style={{ background: SOMAP_BLUE }} />Demandes</span>
+                            <span><i style={{ background: SOMAP_GREEN }} />Projets</span>
+                        </div>
+                    </div>
+
+                    <aside style={styles.sidePanel}>
+                        <h2 style={{ ...styles.panelTitle, color: "#fff" }}>Conversion</h2>
+                        <p style={{ ...styles.panelSubtitle, color: "rgba(255,255,255,0.72)" }}>
+                            Demandes validees sur le total
+                        </p>
+
+                        <div style={styles.conversion}>
+                            <strong>{loading ? "-" : `${conversionRate}%`}</strong>
+                            <span>{formatNumber(validatedDemandes)} demandes validees</span>
+                        </div>
+
+                        <div style={styles.progressTrack}>
+                            <div style={{ ...styles.progressFill, width: `${conversionRate}%` }} />
+                        </div>
+                    </aside>
+                </section>
+
+                <section style={styles.panel}>
+                    <div style={styles.panelHeader}>
+                        <div>
+                            <h2 style={styles.panelTitle}>Demandes par statut</h2>
+                            <p style={styles.panelSubtitle}>Repartition calculee depuis la base de donnees</p>
+                        </div>
+                    </div>
+
+                    <div style={styles.statusGrid}>
+                        {statuses.length > 0 ? (
+                            statuses.map((status) => {
+                                const tone = statusColors[status.name] ?? {
+                                    color: SOMAP_BLUE,
+                                    background: "rgba(18,113,184,0.12)",
+                                };
+
+                                return (
+                                    <div key={status.name} style={styles.statusCard}>
+                                        <span style={{ ...styles.statusBadge, ...tone }}>{formatStatus(status.name)}</span>
+                                        <strong style={styles.statusValue}>{formatNumber(status.value)}</strong>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div style={styles.emptyState}>Aucun statut de demande disponible.</div>
+                        )}
+                    </div>
+                </section>
+            </div>
+        </Layout>
+    );
+}
+
+const styles: Record<string, CSSProperties> = {
+    page: {
+        position: "relative",
+        zIndex: 1,
+        display: "flex",
+        flexDirection: "column",
+        gap: 18,
+        minWidth: 0,
+        paddingBottom: 28,
+    },
+    header: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 18,
+    },
+    eyebrow: {
+        display: "block",
+        color: SOMAP_BLUE,
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: 1.1,
+        marginBottom: 6,
+    },
+    title: {
+        margin: 0,
+        color: TEXT,
+        fontSize: 34,
+        lineHeight: 1.1,
+    },
+    subtitle: {
+        marginTop: 8,
+        color: MUTED,
+        fontSize: 14,
+    },
+    statusPill: {
+        border: "1px solid rgba(18,113,184,0.18)",
+        background: "rgba(255,255,255,0.82)",
+        color: SOMAP_BLUE,
+        height: 38,
+        padding: "0 14px",
+        borderRadius: 999,
+        fontWeight: 800,
+        display: "inline-flex",
+        alignItems: "center",
+        whiteSpace: "nowrap",
+        fontSize: 13,
+    },
+    errorBox: {
+        background: "rgba(173,35,36,0.08)",
+        border: "1px solid rgba(173,35,36,0.18)",
+        color: "#8f1f20",
+        borderRadius: 14,
+        padding: "12px 14px",
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        fontSize: 13,
+    },
+    statsGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(5, minmax(140px, 1fr))",
+        gap: 14,
+    },
+    statCard: {
+        background: "rgba(255,255,255,0.92)",
+        border: "1px solid #e5edf5",
+        borderRadius: 16,
+        padding: 16,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        boxShadow: "0 10px 28px rgba(13,45,94,0.06)",
+    },
+    statIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+    },
+    statBody: {
+        minWidth: 0,
+    },
+    statLabel: {
+        margin: 0,
+        color: MUTED,
+        fontSize: 12,
+        fontWeight: 700,
+    },
+    statValue: {
+        display: "block",
+        fontSize: 25,
+        lineHeight: 1.1,
+        marginTop: 3,
+    },
+    statHelper: {
+        marginTop: 5,
+        color: "#91a1b2",
+        fontSize: 11,
+        fontWeight: 700,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+    },
+    grid: {
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) 320px",
+        gap: 18,
+        alignItems: "stretch",
+    },
+    panel: {
+        background: "rgba(255,255,255,0.92)",
+        border: "1px solid #e5edf5",
+        borderRadius: 18,
+        padding: 18,
+        boxShadow: "0 12px 30px rgba(13,45,94,0.07)",
+        overflow: "hidden",
+    },
+    panelHeader: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 14,
+        marginBottom: 16,
+    },
+    panelTitle: {
+        margin: 0,
+        color: TEXT,
+        fontSize: 18,
+    },
+    panelSubtitle: {
+        margin: "4px 0 0",
+        color: MUTED,
+        fontSize: 12,
+    },
+    chart: {
+        minHeight: 220,
+        display: "flex",
+        alignItems: "flex-end",
+        gap: 14,
+        paddingTop: 20,
+    },
+    barGroup: {
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 6,
+        minWidth: 34,
+    },
+    barTrack: {
+        height: 160,
+        width: "100%",
+        maxWidth: 54,
+        borderRadius: 12,
+        background: "#eef4fb",
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "center",
+        gap: 4,
+        overflow: "hidden",
+        padding: "0 6px",
+    },
+    bar: {
+        width: "45%",
+        borderRadius: "999px 999px 0 0",
+        background: SOMAP_BLUE,
+    },
+    projectBar: {
+        width: "45%",
+        borderRadius: "999px 999px 0 0",
+        background: SOMAP_GREEN,
+    },
+    barValue: {
+        color: TEXT,
+        fontSize: 12,
+    },
+    barLabel: {
+        color: MUTED,
+        fontSize: 12,
+        fontWeight: 700,
+    },
+    legend: {
+        display: "flex",
+        gap: 14,
+        color: MUTED,
+        fontSize: 12,
+        fontWeight: 700,
+        marginTop: 8,
+    },
+    sidePanel: {
+        background: `linear-gradient(135deg, #0d2d5e, ${SOMAP_BLUE})`,
+        color: "#fff",
+        borderRadius: 18,
+        padding: 20,
+        boxShadow: "0 12px 30px rgba(13,45,94,0.16)",
+    },
+    conversion: {
+        marginTop: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+    },
+    progressTrack: {
+        height: 8,
+        borderRadius: 999,
+        background: "rgba(255,255,255,0.22)",
+        marginTop: 22,
+        overflow: "hidden",
+    },
+    progressFill: {
+        height: "100%",
+        background: SOMAP_GREEN,
+        borderRadius: 999,
+    },
+    statusGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3, minmax(150px, 1fr))",
+        gap: 12,
+    },
+    statusCard: {
+        border: "1px solid #edf2f7",
+        borderRadius: 14,
+        padding: 14,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    statusBadge: {
+        justifySelf: "start",
+        borderRadius: 999,
+        padding: "6px 10px",
+        fontSize: 11,
+        fontWeight: 900,
+    },
+    statusValue: {
+        color: TEXT,
+        fontSize: 22,
+    },
+    emptyState: {
+        width: "100%",
+        padding: "34px 18px",
+        color: MUTED,
+        textAlign: "center",
+        fontSize: 13,
+        fontWeight: 700,
+    },
+};
