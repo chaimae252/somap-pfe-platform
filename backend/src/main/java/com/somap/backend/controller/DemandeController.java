@@ -1,6 +1,8 @@
 package com.somap.backend.controller;
 
 import com.somap.backend.dto.DemandeDTO;
+import com.somap.backend.enums.DemandeStatus;
+import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.service.DemandeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import java.util.List;
 public class DemandeController {
 
     private final DemandeService demandeService;
+    private final DemandeRepository demandeRepository;
 
     @PostMapping
     public ResponseEntity<DemandeDTO> createDemande(
@@ -31,6 +34,11 @@ public class DemandeController {
         return ResponseEntity.ok(
                 demandeService.getAllDemandes()
         );
+    }
+
+    @GetMapping("/pending-count")
+    public ResponseEntity<Long> getPendingDemandesCount() {
+        return ResponseEntity.ok(demandeRepository.countByStatut(DemandeStatus.EN_ATTENTE));
     }
 
     @GetMapping("/{id}")

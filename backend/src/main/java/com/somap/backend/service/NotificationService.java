@@ -23,5 +23,7 @@ public interface NotificationService {
 
     List<NotificationDTO> getNotificationsByClient(Long userId);
 
+    long countUnreadByUser(Long userId);
+
     void deleteNotification(Long id);
 }

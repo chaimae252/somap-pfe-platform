@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
@@ -8,6 +9,7 @@ import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNone
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo2.png";
+import api from "../api/api";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -15,8 +17,8 @@ const SOMAP_GREEN = "#7EC933";
 const navItems = [
     { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/dashboard", group: "Principal" },
     { label: "Clients", icon: GroupsOutlinedIcon, path: "/clients", group: "Principal" },
-    { label: "Demandes", icon: AssignmentOutlinedIcon, path: "/demandes", group: "Principal", badge: 4 },
-    { label: "Notifications", icon: NotificationsNoneOutlinedIcon, path: "/notifications", group: "Principal" },
+    { label: "Demandes", icon: AssignmentOutlinedIcon, path: "/demandes", group: "Principal", badgeKey: "pendingDemandes" },
+    { label: "Notifications", icon: NotificationsNoneOutlinedIcon, path: "/notifications", group: "Principal", badgeKey: "unreadNotifications" },
     { label: "Projets", icon: WorkOutlineOutlinedIcon, path: "/projets", group: "Gestion" },
     { label: "Services", icon: BuildOutlinedIcon, path: "/services", group: "Gestion" },
     { label: "Déconnexion", icon: LogoutOutlinedIcon, path: "/login", group: "Compte" },
@@ -27,6 +29,10 @@ const groups = ["Principal", "Gestion", "Compte"];
 export default function Navbar() {
     const navigate = useNavigate();
     const { pathname } = useLocation();
+    const [badges, setBadges] = useState({
+        pendingDemandes: 0,
+        unreadNotifications: 0,
+    });
     const adminName = localStorage.getItem("userName")?.trim() || "Admin";
     const adminInitials = adminName
         .split(" ")
@@ -34,6 +40,28 @@ export default function Navbar() {
         .join("")
         .slice(0, 2)
         .toUpperCase();
+
+    useEffect(() => {
+        const loadBadges = async () => {
+            const adminId = localStorage.getItem("userId");
+
+            try {
+                const [pendingResponse, unreadResponse] = await Promise.all([
+                    api.get<number>("/demandes/pending-count"),
+                    adminId ? api.get<number>(`/notifications/unread-count/${adminId}`) : Promise.resolve({ data: 0 }),
+                ]);
+
+                setBadges({
+                    pendingDemandes: pendingResponse.data ?? 0,
+                    unreadNotifications: unreadResponse.data ?? 0,
+                });
+            } catch {
+                setBadges({ pendingDemandes: 0, unreadNotifications: 0 });
+            }
+        };
+
+        void loadBadges();
+    }, [pathname]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -60,6 +88,12 @@ export default function Navbar() {
                             .map((item) => {
                                 const active = pathname === item.path;
                                 const Icon = item.icon;
+                                const badge =
+                                    item.badgeKey === "pendingDemandes"
+                                        ? badges.pendingDemandes
+                                        : item.badgeKey === "unreadNotifications"
+                                          ? badges.unreadNotifications
+                                          : 0;
 
                                 return (
                                     <button
@@ -78,8 +112,8 @@ export default function Navbar() {
                                             <Icon sx={{ fontSize: 19 }} />
                                         </span>
                                         <span style={styles.navLabel}>{item.label}</span>
-                                        {item.badge ? (
-                                            <span style={styles.badge}>{item.badge}</span>
+                                        {badge > 0 ? (
+                                            <span style={styles.badge}>{badge}</span>
                                         ) : active ? (
                                             <span style={styles.activeDot} />
                                         ) : null}

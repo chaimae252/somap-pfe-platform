@@ -179,10 +179,6 @@ export default function Clients() {
                         <h1 style={styles.title}>Clients</h1>
                         <p style={styles.subtitle}>Suivi des comptes clients, demandes et projets associés.</p>
                     </div>
-                    <button style={styles.primaryButton}>
-                        <span style={styles.btnPlus}>+</span>
-                        Nouveau client
-                    </button>
                 </section>
 
                 {/* Stats */}
@@ -304,9 +300,10 @@ export default function Clients() {
                 <div style={styles.modalOverlay} onClick={() => setSelectedClient(null)}>
                     <section style={styles.modalCard} onClick={(event) => event.stopPropagation()}>
                         <div style={styles.modalHeader}>
-                            <div style={styles.clientCell}>
-                                <div style={styles.avatar}>{initials(selectedClient.nom ?? "")}</div>
+                            <div style={styles.modalIdentity}>
+                                <div style={styles.modalAvatar}>{initials(selectedClient.nom ?? "")}</div>
                                 <div>
+                                    <span style={styles.modalEyebrow}>Fiche client</span>
                                     <h2 style={styles.modalTitle}>{selectedClient.nom || "Client sans nom"}</h2>
                                     <p style={styles.modalSubtitle}>{selectedClient.email || "-"}</p>
                                 </div>
@@ -335,10 +332,16 @@ export default function Clients() {
 
                         <div style={styles.modalLists}>
                             <div style={styles.modalList}>
-                                <h3 style={styles.modalListTitle}>Demandes</h3>
+                                <div style={styles.modalListHeader}>
+                                    <h3 style={styles.modalListTitle}>Demandes</h3>
+                                    <span style={styles.listCountBadge}>{formatNumber(selectedClient.demandesCount)}</span>
+                                </div>
                                 {selectedClient.demandeTitres?.length ? (
                                     selectedClient.demandeTitres.map((title, index) => (
-                                        <p key={`${title}-${index}`} style={styles.modalListItem}>{title}</p>
+                                        <p key={`${title}-${index}`} style={styles.modalListItem}>
+                                            <span style={styles.listMarker}>{index + 1}</span>
+                                            {title}
+                                        </p>
                                     ))
                                 ) : (
                                     <p style={styles.modalEmpty}>Aucune demande.</p>
@@ -346,10 +349,16 @@ export default function Clients() {
                             </div>
 
                             <div style={styles.modalList}>
-                                <h3 style={styles.modalListTitle}>Projets</h3>
+                                <div style={styles.modalListHeader}>
+                                    <h3 style={styles.modalListTitle}>Projets</h3>
+                                    <span style={{ ...styles.listCountBadge, background: "rgba(126,201,51,0.16)", color: "#3f8619" }}>{formatNumber(selectedClient.projetsCount)}</span>
+                                </div>
                                 {selectedClient.projetTitres?.length ? (
                                     selectedClient.projetTitres.map((title, index) => (
-                                        <p key={`${title}-${index}`} style={styles.modalListItem}>{title}</p>
+                                        <p key={`${title}-${index}`} style={styles.modalListItem}>
+                                            <span style={{ ...styles.listMarker, background: "rgba(126,201,51,0.16)", color: "#3f8619" }}>{index + 1}</span>
+                                            {title}
+                                        </p>
                                     ))
                                 ) : (
                                     <p style={styles.modalEmpty}>Aucun projet.</p>
@@ -680,48 +689,74 @@ const styles: Record<string, React.CSSProperties> = {
         position: "fixed",
         inset: 0,
         zIndex: 20,
-        background: "rgba(10,24,44,0.38)",
+        background: "rgba(10,24,44,0.42)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
     },
     modalCard: {
-        width: "min(720px, 100%)",
+        width: "min(760px, 100%)",
         maxHeight: "82dvh",
         overflowY: "auto",
         background: "#fff",
         border: "1px solid #dfe9f3",
-        borderRadius: 18,
+        borderRadius: 16,
         boxShadow: "0 24px 70px rgba(13,45,94,0.22)",
     },
     modalHeader: {
-        padding: "18px 20px",
-        borderBottom: "1px solid #edf2f7",
+        padding: "22px 24px",
+        background: `linear-gradient(135deg, ${SOMAP_BLUE}, #0f5d98 58%, ${SOMAP_GREEN})`,
+        color: "#fff",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 14,
+        gap: 18,
     },
-    modalTitle: { margin: 0, color: TEXT, fontSize: 18, lineHeight: 1.2 },
-    modalSubtitle: { margin: "4px 0 0", color: MUTED, fontSize: 13 },
+    modalIdentity: { display: "flex", alignItems: "center", gap: 14, minWidth: 0 },
+    modalAvatar: {
+        width: 54,
+        height: 54,
+        borderRadius: 14,
+        background: "rgba(255,255,255,0.18)",
+        border: "1px solid rgba(255,255,255,0.35)",
+        color: "#fff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 800,
+        fontSize: 17,
+        flexShrink: 0,
+    },
+    modalEyebrow: {
+        display: "block",
+        fontSize: 10,
+        fontWeight: 900,
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        opacity: 0.78,
+        marginBottom: 5,
+    },
+    modalTitle: { margin: 0, color: "#fff", fontSize: 22, lineHeight: 1.15 },
+    modalSubtitle: { margin: "5px 0 0", color: "rgba(255,255,255,0.82)", fontSize: 13 },
     closeButton: {
         width: 34,
         height: 34,
         borderRadius: 8,
-        border: "1px solid #dfe9f3",
-        background: "#fff",
-        color: MUTED,
+        border: "1px solid rgba(255,255,255,0.28)",
+        background: "rgba(255,255,255,0.16)",
+        color: "#fff",
         fontSize: 22,
         lineHeight: 1,
         cursor: "pointer",
     },
     modalMeta: {
         display: "grid",
-        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
         gap: 12,
-        padding: "16px 20px",
+        padding: "18px 20px",
         borderBottom: "1px solid #edf2f7",
+        background: "#f8fbff",
     },
     modalLabel: {
         display: "block",
@@ -739,23 +774,62 @@ const styles: Record<string, React.CSSProperties> = {
     },
     modalList: {
         border: "1px solid #e5edf5",
-        borderRadius: 12,
-        padding: 14,
+        borderRadius: 14,
+        padding: 16,
         minHeight: 150,
-        background: "#fbfdff",
+        background: "linear-gradient(180deg, #fbfdff, #ffffff)",
     },
-    modalListTitle: { margin: "0 0 10px", color: TEXT, fontSize: 15 },
+    modalListHeader: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        marginBottom: 12,
+    },
+    modalListTitle: { margin: 0, color: TEXT, fontSize: 15 },
+    listCountBadge: {
+        background: "rgba(18,113,184,0.10)",
+        color: SOMAP_BLUE,
+        borderRadius: 999,
+        padding: "4px 9px",
+        fontSize: 12,
+        fontWeight: 800,
+    },
     modalListItem: {
-        margin: "0 0 8px",
-        padding: "8px 10px",
-        borderRadius: 8,
+        margin: "0 0 9px",
+        padding: "9px 10px",
+        borderRadius: 10,
         background: "#fff",
         border: "1px solid #edf2f7",
         color: TEXT,
         fontSize: 13,
         fontWeight: 600,
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
     },
-    modalEmpty: { margin: 0, color: MUTED, fontSize: 13 },
+    listMarker: {
+        width: 24,
+        height: 24,
+        borderRadius: 8,
+        background: "rgba(18,113,184,0.10)",
+        color: SOMAP_BLUE,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 11,
+        fontWeight: 900,
+        flexShrink: 0,
+    },
+    modalEmpty: {
+        margin: 0,
+        color: MUTED,
+        fontSize: 13,
+        background: "#fff",
+        border: "1px dashed #dfe9f3",
+        borderRadius: 10,
+        padding: 12,
+    },
     confirmCard: {
         width: "min(420px, 100%)",
         background: "#fff",

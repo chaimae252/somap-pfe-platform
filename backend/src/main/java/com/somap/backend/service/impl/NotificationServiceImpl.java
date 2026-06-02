@@ -166,6 +166,11 @@ public class NotificationServiceImpl implements NotificationService {
         return notifications;
     }
 
+    @Override
+    public long countUnreadByUser(Long userId) {
+        return notificationRepository.countByUtilisateurIdAndLuFalse(userId);
+    }
+
     // =========================
     // MAPPER
     // =========================

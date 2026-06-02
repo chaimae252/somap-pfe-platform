@@ -21,5 +21,7 @@ public class DemandeDTO {
     private Urgence urgence;
     private Long clientId;
     private Long serviceId;
+    private String clientNom;
+    private String serviceTitre;
 
 }

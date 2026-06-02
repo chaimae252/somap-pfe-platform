@@ -1,6 +1,7 @@
 package com.somap.backend.service.impl;
 
 import com.somap.backend.dto.DemandeDTO;
+import com.somap.backend.dto.ImageDTO;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Service;
@@ -174,8 +175,25 @@ public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
         dto.setDateCreation(demande.getDateCreation());
         dto.setStatut(demande.getStatut());
         dto.setUrgence(demande.getUrgence());
-        dto.setClientId(demande.getClient().getId());
-        dto.setServiceId(demande.getService().getId());
+        if (demande.getClient() != null) {
+            dto.setClientId(demande.getClient().getId());
+            dto.setClientNom(demande.getClient().getNom());
+        }
+        if (demande.getService() != null) {
+            dto.setServiceId(demande.getService().getId());
+            dto.setServiceTitre(demande.getService().getTitre());
+        }
+        if (demande.getImages() != null) {
+            dto.setImages(demande.getImages().stream()
+                    .map(image -> {
+                        ImageDTO imageDTO = new ImageDTO();
+                        imageDTO.setId(image.getId());
+                        imageDTO.setImageUrl(image.getImageUrl());
+                        imageDTO.setDemandeId(demande.getId());
+                        return imageDTO;
+                    })
+                    .toList());
+        }
 
         return dto;
     }
