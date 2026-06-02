@@ -4,6 +4,7 @@ import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "../assets/logo2.png";
@@ -15,6 +16,7 @@ const navItems = [
     { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/dashboard", group: "Principal" },
     { label: "Clients", icon: GroupsOutlinedIcon, path: "/clients", group: "Principal" },
     { label: "Demandes", icon: AssignmentOutlinedIcon, path: "/demandes", group: "Principal", badge: 4 },
+    { label: "Notifications", icon: NotificationsNoneOutlinedIcon, path: "/notifications", group: "Principal" },
     { label: "Projets", icon: WorkOutlineOutlinedIcon, path: "/projets", group: "Gestion" },
     { label: "Services", icon: BuildOutlinedIcon, path: "/services", group: "Gestion" },
     { label: "Déconnexion", icon: LogoutOutlinedIcon, path: "/login", group: "Compte" },
@@ -196,7 +198,7 @@ const styles: Record<string, CSSProperties> = {
     },
     footer: {
         borderTop: "1px solid rgba(0,0,0,0.06)",
-        padding: "12px 10px",
+        padding: "8px 10px 10px",
         flexShrink: 0,
     },
     userRow: {
@@ -206,6 +208,7 @@ const styles: Record<string, CSSProperties> = {
         padding: "8px 10px",
         borderRadius: 10,
         cursor: "pointer",
+        transform: "translateY(3px)",
     },
     avatar: {
         width: 30,

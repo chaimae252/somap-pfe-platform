@@ -1,21 +1,24 @@
 import type { ReactNode, CSSProperties } from "react";
+import logo from "../assets/logo2.png";
 
 type Props = {
     children: ReactNode;
     style?: CSSProperties;
+    showWatermark?: boolean;
 };
 
-export default function SomapBackground({ children, style }: Props) {
+export default function SomapBackground({ children, style, showWatermark = false }: Props) {
     return (
         <div style={{ ...styles.container, ...style }}>
             <div style={styles.orb1} />
             <div style={styles.orb2} />
+            {showWatermark && <img src={logo} alt="" aria-hidden="true" style={styles.watermark} />}
             {children}
         </div>
     );
 }
 
-const styles: any = {
+const styles: Record<string, CSSProperties> = {
     container: {
         height: "100vh",
         width: "100%",
@@ -39,5 +42,16 @@ const styles: any = {
     orb2: {
         position: "absolute", width: 240, height: 240, borderRadius: "50%",
         background: "rgba(18,113,184,0.07)", bottom: "-60px", right: "-50px", pointerEvents: "none",
+    },
+    watermark: {
+        position: "fixed",
+        right: 28,
+        bottom: 20,
+        width: 280,
+        maxWidth: "32vw",
+        opacity: 0.035,
+        pointerEvents: "none",
+        userSelect: "none",
+        zIndex: 0,
     },
 };

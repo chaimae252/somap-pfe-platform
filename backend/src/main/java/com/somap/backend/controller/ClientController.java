@@ -1,6 +1,7 @@
 package com.somap.backend.controller;
 
 import com.somap.backend.dto.ClientDTO;
+import com.somap.backend.dto.DashboardStatsDTO;
 import com.somap.backend.service.ClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,14 @@ public class ClientController {
 
         return ResponseEntity.ok(
                 clientService.getAllClients()
+        );
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<DashboardStatsDTO> getClientStats() {
+
+        return ResponseEntity.ok(
+                clientService.getStats()
         );
     }
 

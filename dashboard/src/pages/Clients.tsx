@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import Navbar from "../components/Navbar";
 import SomapBackground from "../components/SomapBackground";
+import api from "../api/api";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -21,6 +27,22 @@ interface Client {
     status: Status;
     lastActivity: string;
 }
+
+type ClientStats = {
+    clients: number;
+    demandes: number;
+    projets: number;
+    services: number;
+    notifications?: number;
+};
+
+const emptyStats: ClientStats = {
+    clients: 0,
+    demandes: 0,
+    projets: 0,
+    services: 0,
+    notifications: 0,
+};
 
 const clients: Client[] = [
     { id: "CL-001", name: "Chaimae Hakam",     company: "Atlas Metal Solutions", email: "chaimaahakam@gmail.com",       phone: "0762503231", city: "Kenitra",     demandes: 8,  projets: 2, status: "Actif",   lastActivity: "Aujourd'hui" },
@@ -44,9 +66,48 @@ function initials(name: string) {
     return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 }
 
+function formatNumber(value?: number) {
+    return new Intl.NumberFormat("fr-MA").format(value ?? 0);
+}
+
+function getErrorMessage(error: unknown) {
+    if (
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof (error as { message?: string }).message === "string"
+    ) {
+        return (error as { message: string }).message;
+    }
+
+    return "Impossible de charger les statistiques clients.";
+}
+
 export default function Clients() {
     const [search, setSearch]     = useState("");
     const [activeTab, setActiveTab] = useState<"Tous" | Status>("Tous");
+    const [stats, setStats] = useState<ClientStats>(emptyStats);
+    const [loadingStats, setLoadingStats] = useState(true);
+    const [statsError, setStatsError] = useState("");
+
+    useEffect(() => {
+        const loadStats = async () => {
+            setLoadingStats(true);
+            setStatsError("");
+
+            try {
+                const response = await api.get<ClientStats>("/clients/stats");
+                setStats(response.data ?? emptyStats);
+            } catch (err) {
+                setStats(emptyStats);
+                setStatsError(getErrorMessage(err));
+            } finally {
+                setLoadingStats(false);
+            }
+        };
+
+        void loadStats();
+    }, []);
 
     const filtered = clients.filter((c) => {
         const matchTab = activeTab === "Tous" || c.status === activeTab;
@@ -59,6 +120,44 @@ export default function Clients() {
             c.city.toLowerCase().includes(q);
         return matchTab && matchSearch;
     });
+
+    const statCards = [
+        {
+            label: "Clients",
+            value: stats.clients,
+            helper: "Comptes enregistres",
+            icon: GroupsOutlinedIcon,
+            color: SOMAP_GREEN,
+        },
+        {
+            label: "Demandes",
+            value: stats.demandes,
+            helper: "Toutes periodes",
+            icon: AssignmentOutlinedIcon,
+            color: "#f6b718",
+        },
+        {
+            label: "Projets",
+            value: stats.projets,
+            helper: "Projets lies",
+            icon: WorkOutlineOutlinedIcon,
+            color: SOMAP_BLUE,
+        },
+        {
+            label: "Services",
+            value: stats.services,
+            helper: "Catalogue actif",
+            icon: BuildOutlinedIcon,
+            color: "#ad2324",
+        },
+        {
+            label: "Notifications",
+            value: stats.notifications ?? 0,
+            helper: "Alertes et suivis",
+            icon: NotificationsNoneOutlinedIcon,
+            color: "#6f42c1",
+        },
+    ];
 
     return (
         <SomapBackground style={styles.shell}>
