@@ -12,6 +12,7 @@ import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.service.ClientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,6 +27,7 @@ public class ClientServiceImpl implements ClientService {
     private final NotificationRepository notificationRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ClientDTO> getAllClients() {
 
         List<Client> clients = clientRepository.findAll();

@@ -3,6 +3,9 @@ package com.somap.backend.mapper;
 import com.somap.backend.dto.ClientDTO;
 import com.somap.backend.entity.Client;
 
+import java.util.List;
+import java.util.Optional;
+
 public class ClientMapper {
 
     public static ClientDTO toDTO(Client client) {
@@ -18,6 +21,14 @@ public class ClientMapper {
         dto.setEmail(client.getEmail());
         dto.setTelephone(client.getTelephone());
         dto.setAdresse(client.getAdresse());
+        dto.setDemandesCount(Optional.ofNullable(client.getDemandes()).map(List::size).orElse(0));
+        dto.setProjetsCount(Optional.ofNullable(client.getProjets()).map(List::size).orElse(0));
+        dto.setDemandeTitres(Optional.ofNullable(client.getDemandes()).orElse(List.of()).stream()
+                .map(demande -> demande.getObjet() != null ? demande.getObjet() : "Demande sans titre")
+                .toList());
+        dto.setProjetTitres(Optional.ofNullable(client.getProjets()).orElse(List.of()).stream()
+                .map(projet -> projet.getTitre() != null ? projet.getTitre() : "Projet sans titre")
+                .toList());
 
         return dto;
     }
