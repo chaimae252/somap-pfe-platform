@@ -69,31 +69,51 @@ export default function Clients() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+    const [confirmDeleteClient, setConfirmDeleteClient] = useState<Client | null>(null);
+    const [deletingClientId, setDeletingClientId] = useState<number | null>(null);
+
+    const loadClientsPage = async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+            const [clientsResponse, statsResponse] = await Promise.all([
+                api.get<Client[]>("/clients"),
+                api.get<ClientStats>("/clients/stats"),
+            ]);
+
+            setClients(clientsResponse.data ?? []);
+            setStats(statsResponse.data ?? emptyStats);
+        } catch (err) {
+            setClients([]);
+            setStats(emptyStats);
+            setError(getErrorMessage(err));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const loadClientsPage = async () => {
-            setLoading(true);
-            setError("");
-
-            try {
-                const [clientsResponse, statsResponse] = await Promise.all([
-                    api.get<Client[]>("/clients"),
-                    api.get<ClientStats>("/clients/stats"),
-                ]);
-
-                setClients(clientsResponse.data ?? []);
-                setStats(statsResponse.data ?? emptyStats);
-            } catch (err) {
-                setClients([]);
-                setStats(emptyStats);
-                setError(getErrorMessage(err));
-            } finally {
-                setLoading(false);
-            }
-        };
-
         void loadClientsPage();
     }, []);
+
+    const handleDeleteClient = async () => {
+        if (!confirmDeleteClient) return;
+
+        setDeletingClientId(confirmDeleteClient.id);
+        setError("");
+
+        try {
+            await api.delete(`/clients/${confirmDeleteClient.id}`);
+            setSelectedClient((current) => current?.id === confirmDeleteClient.id ? null : current);
+            setConfirmDeleteClient(null);
+            await loadClientsPage();
+        } catch (err) {
+            setError(getErrorMessage(err));
+        } finally {
+            setDeletingClientId(null);
+        }
+    };
 
     const filtered = clients.filter((c) => {
         const q = search.toLowerCase();
@@ -262,9 +282,14 @@ export default function Clients() {
                                 <span style={styles.secondaryText}>{formatNumber(client.projetsCount)} projets</span>
                             </div>
 
-                            <button style={styles.detailsButton} onClick={() => setSelectedClient(client)}>
-                                Détails
-                            </button>
+                            <div style={styles.actionCell}>
+                                <button style={styles.detailsButton} onClick={() => setSelectedClient(client)}>
+                                    Détails
+                                </button>
+                                <button style={styles.blockButton} onClick={() => setConfirmDeleteClient(client)}>
+                                    Bloquer
+                                </button>
+                            </div>
                         </div>
                     )) : (
                         <div style={styles.emptyState}>
@@ -298,6 +323,14 @@ export default function Clients() {
                                 <span style={styles.modalLabel}>Adresse</span>
                                 <strong>{selectedClient.adresse || "-"}</strong>
                             </div>
+                            <div>
+                                <span style={styles.modalLabel}>Demandes</span>
+                                <strong>{formatNumber(selectedClient.demandesCount)} demandes</strong>
+                            </div>
+                            <div>
+                                <span style={styles.modalLabel}>Projets</span>
+                                <strong>{formatNumber(selectedClient.projetsCount)} projets</strong>
+                            </div>
                         </div>
 
                         <div style={styles.modalLists}>
@@ -322,6 +355,33 @@ export default function Clients() {
                                     <p style={styles.modalEmpty}>Aucun projet.</p>
                                 )}
                             </div>
+                        </div>
+                    </section>
+                </div>
+            )}
+
+            {confirmDeleteClient && (
+                <div style={styles.modalOverlay} onClick={() => setConfirmDeleteClient(null)}>
+                    <section style={styles.confirmCard} onClick={(event) => event.stopPropagation()}>
+                        <h2 style={styles.confirmTitle}>Bloquer ce client ?</h2>
+                        <p style={styles.confirmText}>
+                            Cette action supprimera {confirmDeleteClient.nom || "ce client"} de la liste des clients.
+                        </p>
+                        <div style={styles.confirmActions}>
+                            <button
+                                style={styles.cancelButton}
+                                onClick={() => setConfirmDeleteClient(null)}
+                                disabled={deletingClientId === confirmDeleteClient.id}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                style={styles.confirmDeleteButton}
+                                onClick={handleDeleteClient}
+                                disabled={deletingClientId === confirmDeleteClient.id}
+                            >
+                                {deletingClientId === confirmDeleteClient.id ? "Suppression..." : "Oui, bloquer"}
+                            </button>
                         </div>
                     </section>
                 </div>
@@ -560,11 +620,29 @@ const styles: Record<string, React.CSSProperties> = {
     primaryText: { margin: 0, color: TEXT, fontSize: 13, fontWeight: 600 },
     secondaryText: { margin: "3px 0 0", color: "#8b9aad", fontSize: 12 },
     activityCell: { display: "flex", flexDirection: "column" },
+    actionCell: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap",
+    },
     detailsButton: {
         justifySelf: "start",
         border: "1px solid rgba(18,113,184,0.22)",
         background: "rgba(18,113,184,0.08)",
         color: SOMAP_BLUE,
+        height: 32,
+        padding: "0 12px",
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    blockButton: {
+        border: "1px solid rgba(173,35,36,0.22)",
+        background: "rgba(173,35,36,0.08)",
+        color: "#ad2324",
         height: 32,
         padding: "0 12px",
         borderRadius: 8,
@@ -678,4 +756,44 @@ const styles: Record<string, React.CSSProperties> = {
         fontWeight: 600,
     },
     modalEmpty: { margin: 0, color: MUTED, fontSize: 13 },
+    confirmCard: {
+        width: "min(420px, 100%)",
+        background: "#fff",
+        border: "1px solid #dfe9f3",
+        borderRadius: 16,
+        padding: 20,
+        boxShadow: "0 24px 70px rgba(13,45,94,0.22)",
+    },
+    confirmTitle: { margin: 0, color: TEXT, fontSize: 18 },
+    confirmText: { margin: "10px 0 0", color: MUTED, fontSize: 13, lineHeight: 1.5 },
+    confirmActions: {
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 18,
+    },
+    cancelButton: {
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: MUTED,
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    confirmDeleteButton: {
+        border: "none",
+        background: "#ad2324",
+        color: "#fff",
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
 };

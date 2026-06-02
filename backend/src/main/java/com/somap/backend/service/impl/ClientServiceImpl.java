@@ -3,6 +3,8 @@ package com.somap.backend.service.impl;
 import com.somap.backend.dto.ClientDTO;
 import com.somap.backend.dto.DashboardStatsDTO;
 import com.somap.backend.entity.Client;
+import com.somap.backend.entity.Demande;
+import com.somap.backend.entity.Projet;
 import com.somap.backend.mapper.ClientMapper;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.DemandeRepository;
@@ -33,7 +35,7 @@ public class ClientServiceImpl implements ClientService {
         List<Client> clients = clientRepository.findAll();
 
         return clients.stream()
-                .map(ClientMapper::toDTO)
+                .map(this::toDTOWithActivity)
                 .toList();
     }
 
@@ -54,7 +56,7 @@ public class ClientServiceImpl implements ClientService {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client introuvable"));
 
-        return ClientMapper.toDTO(client);
+        return toDTOWithActivity(client);
     }
 
     @Override
@@ -70,7 +72,7 @@ public class ClientServiceImpl implements ClientService {
 
         Client updatedClient = clientRepository.save(client);
 
-        return ClientMapper.toDTO(updatedClient);
+        return toDTOWithActivity(updatedClient);
     }
 
     @Override
@@ -80,5 +82,23 @@ public class ClientServiceImpl implements ClientService {
                 .orElseThrow(() -> new RuntimeException("Client introuvable"));
 
         clientRepository.delete(client);
+    }
+
+    private ClientDTO toDTOWithActivity(Client client) {
+        ClientDTO dto = ClientMapper.toDTO(client);
+        Long clientId = client.getId();
+        List<Demande> demandes = demandeRepository.findByClientId(clientId);
+        List<Projet> projets = projetRepository.findByClientId(clientId);
+
+        dto.setDemandesCount(demandes.size());
+        dto.setProjetsCount(projets.size());
+        dto.setDemandeTitres(demandes.stream()
+                .map(demande -> demande.getObjet() != null ? demande.getObjet() : "Demande sans titre")
+                .toList());
+        dto.setProjetTitres(projets.stream()
+                .map(projet -> projet.getTitre() != null ? projet.getTitre() : "Projet sans titre")
+                .toList());
+
+        return dto;
     }
 }
