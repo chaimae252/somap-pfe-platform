@@ -60,15 +60,21 @@ public class DashboardServiceImpl implements DashboardService {
         }
 
         for (Object[] row : demandesByMonth) {
+            if (row[0] == null) continue;
             Integer month = ((Number) row[0]).intValue();
             long count = ((Number) row[1]).longValue();
-            map.get(month).setDemandes(count);
+            if (map.containsKey(month)) {
+                map.get(month).setDemandes(count);
+            }
         }
 
         for (Object[] row : projetsByMonth) {
+            if (row[0] == null) continue;
             Integer month = ((Number) row[0]).intValue();
             long count = ((Number) row[1]).longValue();
-            map.get(month).setProjets(count);
+            if (map.containsKey(month)) {
+                map.get(month).setProjets(count);
+            }
         }
 
         List<MonthlyStatsDTO> result = new ArrayList<>();
