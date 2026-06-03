@@ -2,25 +2,22 @@ package com.somap.backend.controller;
 
 import com.somap.backend.dto.ImageDTO;
 import com.somap.backend.service.ImageService;
+import com.somap.backend.service.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.nio.file.Files;
-import java.util.List;
 import java.io.IOException;
-import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
 public class ImageController {
 
     private final ImageService imageService;
+    private final CloudinaryService cloudinaryService;
 
     @PostMapping
     public ResponseEntity<ImageDTO> uploadImage(
@@ -64,15 +61,8 @@ public class ImageController {
        @RequestParam("file") MultipartFile file,
        @RequestParam(value = "demandeId", required = false) Long demandeId,
        @RequestParam(value = "commentaireId", required = false) Long commentaireId) throws IOException {
-    String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-    String uploadDir = "uploads/";
-    Path uploadPath = Paths.get(uploadDir);
-    if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
-    Path filePath = uploadPath.resolve(fileName);
-    Files.write(filePath, file.getBytes());
-
-    String fileUrl = "/uploads/" + fileName;  // serve statically later
+    String fileUrl = cloudinaryService.uploadFile(file);
 
     ImageDTO dto = new ImageDTO();
     dto.setImageUrl(fileUrl);
