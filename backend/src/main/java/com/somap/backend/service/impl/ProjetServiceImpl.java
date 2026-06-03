@@ -4,7 +4,9 @@ import com.somap.backend.dto.ProjetDTO;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Projet;
+import com.somap.backend.enums.DemandeStatus;
 import com.somap.backend.enums.NotificationType;
+import com.somap.backend.enums.ProjetStatus;
 import com.somap.backend.exception.ResourceNotFoundException;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.DemandeRepository;
@@ -39,6 +41,10 @@ public class ProjetServiceImpl implements ProjetService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Demande introuvable"));
 
+        if (projetRepository.existsByDemandeId(demande.getId())) {
+            throw new RuntimeException("Un projet existe déjà pour cette demande");
+        }
+
         Projet projet = new Projet();
 
         projet.setTitre(projetDTO.getTitre());
@@ -48,7 +54,9 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setDateFin(projetDTO.getDateFin());
         projet.setClient(client);
         projet.setDemande(demande);
+        demande.setProjet(projet);
 
+        projetRepository.syncProjetIdSequence();
         Projet savedProjet = projetRepository.save(projet);
 
         try {
@@ -69,6 +77,8 @@ public class ProjetServiceImpl implements ProjetService {
 
     @Override
     public List<ProjetDTO> getAllProjects() {
+
+        createMissingProjectsForValidatedDemandes();
 
         return projetRepository.findAll()
                 .stream()
@@ -100,6 +110,12 @@ public class ProjetServiceImpl implements ProjetService {
         Demande demande = demandeRepository.findById(projetDTO.getDemandeId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Demande introuvable"));
+
+        Long currentDemandeId = projet.getDemande() != null ? projet.getDemande().getId() : null;
+        if (!demande.getId().equals(currentDemandeId)
+                && projetRepository.existsByDemandeId(demande.getId())) {
+            throw new RuntimeException("Un projet existe déjà pour cette demande");
+        }
 
         var oldStatus = projet.getStatut();
 
@@ -143,6 +159,39 @@ public class ProjetServiceImpl implements ProjetService {
         projetRepository.delete(projet);
     }
 
+    private void createMissingProjectsForValidatedDemandes() {
+        demandeRepository.findByStatut(DemandeStatus.VALIDEE).forEach(demande -> {
+            if (demande.getClient() == null || projetRepository.existsByDemandeId(demande.getId())) {
+                return;
+            }
+
+            Projet projet = new Projet();
+            projet.setTitre(demande.getObjet());
+            projet.setDescription(demande.getDescription());
+            projet.setStatut(ProjetStatus.EN_COURS);
+            projet.setDateDebut(LocalDateTime.now());
+            projet.setClient(demande.getClient());
+            projet.setDemande(demande);
+            demande.setProjet(projet);
+
+            projetRepository.syncProjetIdSequence();
+            Projet savedProjet = projetRepository.saveAndFlush(projet);
+
+            try {
+                notificationService.notifyUser(
+                        demande.getClient().getId(),
+                        "Nouveau projet créé",
+                        "Votre demande \"" + demande.getObjet() + "\" a été validée et un projet a été créé.",
+                        NotificationType.PROJET,
+                        "PROJET",
+                        savedProjet.getId()
+                );
+            } catch (Exception e) {
+                System.out.println("Notification missing projet error: " + e.getMessage());
+            }
+        });
+    }
+
     // =========================
     // MAPPER
     // =========================
@@ -160,10 +209,18 @@ public class ProjetServiceImpl implements ProjetService {
 
         if (projet.getClient() != null) {
             dto.setClientId(projet.getClient().getId());
+            dto.setClientNom(projet.getClient().getNom());
         }
 
         if (projet.getDemande() != null) {
             dto.setDemandeId(projet.getDemande().getId());
+            dto.setDemandeObjet(projet.getDemande().getObjet());
+            if (projet.getDemande().getStatut() != null) {
+                dto.setDemandeStatut(projet.getDemande().getStatut().name());
+            }
+            if (projet.getDemande().getService() != null) {
+                dto.setServiceTitre(projet.getDemande().getService().getTitre());
+            }
         }
 
         return dto;
@@ -171,6 +228,8 @@ public class ProjetServiceImpl implements ProjetService {
 
     @Override
     public ProjetDTO getCurrentProject(Long clientId) {
+
+        createMissingProjectsForValidatedDemandes();
 
         Projet projet = projetRepository
                 .findFirstByClientIdOrderByDateDebutDesc(clientId)
@@ -182,6 +241,8 @@ public class ProjetServiceImpl implements ProjetService {
     }
     @Override
 public List<ProjetDTO> getProjectsByClient(Long clientId) {
+    createMissingProjectsForValidatedDemandes();
+
     return projetRepository.findByClientId(clientId)
             .stream()
             .map(this::mapToDTO)

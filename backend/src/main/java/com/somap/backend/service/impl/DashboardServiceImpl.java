@@ -29,6 +29,16 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public DashboardStatsDTO getStats(Long clientId) {
+        if (clientId != null) {
+            return DashboardStatsDTO.builder()
+                    .clients(clientRepository.existsById(clientId) ? 1 : 0)
+                    .demandes(demandeRepository.countByClientId(clientId))
+                    .projets(projetRepository.countByClientId(clientId))
+                    .services(serviceRepository.count())
+                    .notifications(notificationRepository.countByUtilisateurId(clientId))
+                    .build();
+        }
+
         return DashboardStatsDTO.builder()
                 .clients(clientRepository.count())
                 .demandes(demandeRepository.count())

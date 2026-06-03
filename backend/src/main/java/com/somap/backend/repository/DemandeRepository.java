@@ -10,6 +10,7 @@ import java.util.List;
 public interface DemandeRepository extends JpaRepository<Demande, Long> {
 
     List<Demande> findByClientId(Long clientId);
+    List<Demande> findByStatut(DemandeStatus statut);
     long countByClientId(Long clientId);
     long countByStatut(DemandeStatus statut);
 

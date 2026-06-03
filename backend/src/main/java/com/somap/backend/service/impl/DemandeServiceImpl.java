@@ -5,14 +5,18 @@ import com.somap.backend.dto.ImageDTO;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Service;
+import com.somap.backend.entity.Projet;
 import com.somap.backend.enums.DemandeStatus;
 import com.somap.backend.enums.NotificationType;
+import com.somap.backend.enums.ProjetStatus;
 import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.ServiceRepository;
+import com.somap.backend.repository.ProjetRepository;
 import com.somap.backend.service.DemandeService;
 import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.time.LocalDateTime;
@@ -27,6 +31,7 @@ public class DemandeServiceImpl implements DemandeService {
     private final ClientRepository clientRepository;
     private final ServiceRepository serviceRepository;
     private final NotificationService notificationService;
+    private final ProjetRepository projetRepository;
 
     // 🔥 CREATE DEMANDE
     @Override
@@ -97,6 +102,7 @@ public class DemandeServiceImpl implements DemandeService {
 
     // 🔄 UPDATE STATUS
     @Override
+    @Transactional
     public DemandeDTO updateDemandeStatus(Long id, String status) {
         System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus START id=" + id + " rawStatus=" + status);
 
@@ -119,11 +125,13 @@ public class DemandeServiceImpl implements DemandeService {
         System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus saved id=" + updated.getId()
                 + " savedStatus=" + updated.getStatut());
 
+        createProjectWhenValidated(updated, oldStatus, newStatus);
         notifyClientAboutStatusChange(updated, oldStatus, newStatus);
 
         return mapToDTO(updated);
     }
     @Override
+    @Transactional
 public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
     System.out.println("[NOTIF DEBUG] DemandeService.updateDemande START id=" + id
             + " dtoStatus=" + dto.getStatut());
@@ -151,6 +159,7 @@ public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
     System.out.println("[NOTIF DEBUG] DemandeService.updateDemande saved id=" + updated.getId()
             + " savedStatus=" + updated.getStatut());
 
+    createProjectWhenValidated(updated, oldStatus, updated.getStatut());
     notifyClientAboutStatusChange(updated, oldStatus, updated.getStatut());
 
     return mapToDTO(updated);
@@ -204,6 +213,54 @@ public List<DemandeDTO> getDemandesByClient(Long clientId) {
             .map(this::mapToDTO)
             .collect(Collectors.toList());
 }
+
+    private void createProjectWhenValidated(
+            Demande demande,
+            DemandeStatus oldStatus,
+            DemandeStatus newStatus
+    ) {
+        if (newStatus != DemandeStatus.VALIDEE) {
+            return;
+        }
+
+        if (demande.getClient() == null) {
+            System.out.println("[PROJET AUTO] Skip project creation: demande has no client, demandeId=" + demande.getId());
+            return;
+        }
+
+        if (projetRepository.existsByDemandeId(demande.getId())) {
+            System.out.println("[PROJET AUTO] Skip project creation: project already exists for demandeId=" + demande.getId());
+            return;
+        }
+
+        Projet projet = new Projet();
+        projet.setTitre(demande.getObjet());
+        projet.setDescription(demande.getDescription());
+        projet.setStatut(ProjetStatus.EN_COURS);
+        projet.setDateDebut(LocalDateTime.now());
+        projet.setClient(demande.getClient());
+        projet.setDemande(demande);
+        demande.setProjet(projet);
+
+        projetRepository.syncProjetIdSequence();
+        Projet savedProjet = projetRepository.saveAndFlush(projet);
+        System.out.println("[PROJET AUTO] Created project id=" + savedProjet.getId()
+                + " for demandeId=" + demande.getId()
+                + " clientId=" + demande.getClient().getId());
+
+        try {
+            notificationService.notifyUser(
+                    demande.getClient().getId(),
+                    "Nouveau projet créé",
+                    "Votre demande \"" + demande.getObjet() + "\" a été validée et un projet a été créé.",
+                    NotificationType.PROJET,
+                    "PROJET",
+                    savedProjet.getId()
+            );
+        } catch (Exception e) {
+            System.out.println("Notification auto projet error: " + e.getMessage());
+        }
+    }
 
     private String getStatusLabel(DemandeStatus status) {
         return switch (status) {

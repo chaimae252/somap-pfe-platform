@@ -17,5 +17,9 @@ public class ProjetDTO {
     private LocalDateTime dateFin;
 
     private Long clientId;
+    private String clientNom;
     private Long demandeId;
+    private String demandeObjet;
+    private String demandeStatut;
+    private String serviceTitre;
 }

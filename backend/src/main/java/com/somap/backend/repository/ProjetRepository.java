@@ -12,6 +12,10 @@ public interface ProjetRepository extends JpaRepository<Projet, Long> {
     List<Projet> findByClientId(Long clientId);
     Optional<Projet> findFirstByOrderByDateDebutDesc();
     long countByClientId(Long clientId);
+    boolean existsByDemandeId(Long demandeId);
+
+    @Query(value = "SELECT setval(pg_get_serial_sequence('projet', 'id'), COALESCE((SELECT MAX(id) FROM projet), 0) + 1, false)", nativeQuery = true)
+    Long syncProjetIdSequence();
     Optional<Projet> findFirstByClientIdOrderByDateDebutDesc(
             Long clientId
     );
