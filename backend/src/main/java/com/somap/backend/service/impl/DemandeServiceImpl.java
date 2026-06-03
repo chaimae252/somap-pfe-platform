@@ -120,12 +120,23 @@ public class DemandeServiceImpl implements DemandeService {
 
         demande.setStatut(newStatus);
 
-        Demande updated = demandeRepository.save(demande);
-        System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus saved id=" + updated.getId()
-                + " savedStatus=" + updated.getStatut());
-        notifyClientAboutStatusChange(updated, oldStatus, newStatus);
+Demande updated = demandeRepository.save(demande);
+System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus saved id=" + updated.getId()
+        + " savedStatus=" + updated.getStatut());
 
-        return mapToDTO(updated);
+createProjectWhenValidated(
+        updated,
+        oldStatus,
+        newStatus
+);
+
+notifyClientAboutStatusChange(
+        updated,
+        oldStatus,
+        newStatus
+);
+
+return mapToDTO(updated);
     }
     @Override
     @Transactional
@@ -153,11 +164,22 @@ public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
     }
 
     Demande updated = demandeRepository.save(demande);
-    System.out.println("[NOTIF DEBUG] DemandeService.updateDemande saved id=" + updated.getId()
-            + " savedStatus=" + updated.getStatut());
-    notifyClientAboutStatusChange(updated, oldStatus, updated.getStatut());
+System.out.println("[NOTIF DEBUG] DemandeService.updateDemande saved id=" + updated.getId()
+        + " savedStatus=" + updated.getStatut());
 
-    return mapToDTO(updated);
+createProjectWhenValidated(
+        updated,
+        oldStatus,
+        updated.getStatut()
+);
+
+notifyClientAboutStatusChange(
+        updated,
+        oldStatus,
+        updated.getStatut()
+);
+
+return mapToDTO(updated);
 }
     // ❌ DELETE
     @Override

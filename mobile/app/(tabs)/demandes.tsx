@@ -148,10 +148,15 @@ export default function HomeScreen() {
             }
             const clientId = parseInt(clientIdStr, 10);
             const response = await api.get(`/demandes/client/${clientId}`);
-            const filteredDemandes = response.data.filter(
-                (demande: Demande) => demande.clientId === clientId
-            );
-            setDemandes(filteredDemandes);
+            const filteredDemandes = response.data
+    .filter((demande: Demande) => demande.clientId === clientId)
+    .sort(
+        (a: Demande, b: Demande) =>
+            new Date(b.dateCreation).getTime() -
+            new Date(a.dateCreation).getTime()
+    );
+
+setDemandes(filteredDemandes);
         } catch (error) {
             console.error(error);
             setToast({ visible: true, message: "Erreur lors du chargement", type: "error" });
