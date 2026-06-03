@@ -10,11 +10,12 @@ import java.util.List;
 public interface DemandeRepository extends JpaRepository<Demande, Long> {
 
     List<Demande> findByClientId(Long clientId);
+    List<Demande> findByStatut(DemandeStatus statut);
     long countByClientId(Long clientId);
     long countByStatut(DemandeStatus statut);
 
     // Monthly count of demandes (all clients)
-    @Query(value = "SELECT EXTRACT(MONTH FROM date_creation) as month, COUNT(*) FROM demande GROUP BY month ORDER BY month", nativeQuery = true)
+    @Query("SELECT MONTH(d.dateCreation), COUNT(d) FROM Demande d WHERE d.dateCreation IS NOT NULL GROUP BY MONTH(d.dateCreation) ORDER BY MONTH(d.dateCreation)")
     List<Object[]> countDemandesByMonth();
 
     // Status distribution of demandes (all clients)

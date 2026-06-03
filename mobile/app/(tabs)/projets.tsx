@@ -11,15 +11,15 @@ import {
     SafeAreaView,
     StatusBar,
 } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import api from "@/services/api";
 import NotificationButton from "@/components/ui/NotificationButton";
 import { getHomeStats } from "@/services/homeService";
 import { useAuthStore } from "@/store/authStore";
 import { getClientProjects } from "@/services/projectService";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 // ================= Types =================
 type Project = {
@@ -133,11 +133,7 @@ export default function ProjectsScreen() {
         type: "success",
     });
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             if (!user?.id) return;
             const data = await getHomeStats(user.id);
@@ -145,9 +141,9 @@ export default function ProjectsScreen() {
         } catch (err) {
             console.log("Stats error:", err);
         }
-    };
+    }, [user?.id]);
 
-    const fetchProjects = async () => {
+    const fetchProjects = useCallback(async () => {
         if (!user?.id) {
             setLoading(false);
             return;
@@ -162,13 +158,14 @@ export default function ProjectsScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [user?.id]);
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchProjects();
-        }, [user?.id])
-    );
+    const refreshProjectsScreen = useCallback(() => {
+        void fetchStats();
+        void fetchProjects();
+    }, [fetchProjects, fetchStats]);
+
+    useAutoRefresh(refreshProjectsScreen, [refreshProjectsScreen]);
 
     const onRefresh = () => {
         setRefreshing(true);

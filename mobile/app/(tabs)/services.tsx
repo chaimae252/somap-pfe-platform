@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
     View,
     Text,
@@ -23,6 +23,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Theme from "../../constants/theme";
 import NotificationButton from "@/components/ui/NotificationButton";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -76,47 +77,44 @@ export default function ServicesScreen() {
 
     const { user } = useAuthStore();
 
-    /* ---------------- FETCH STATS ---------------- */
-    useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                if (!user?.id) return;
-                const data = await getHomeStats(user.id);
-                const notificationsData = await getNotifications(user.id);
-                const unreadNotifications = notificationsData.filter((notification: any) =>
-                    notification.lu === 0 ||
-                    notification.lu === "0" ||
-                    notification.lu === false
-                ).length;
+    const fetchStats = useCallback(async () => {
+        try {
+            if (!user?.id) return;
+            const data = await getHomeStats(user.id);
+            const notificationsData = await getNotifications(user.id);
+            const unreadNotifications = notificationsData.filter((notification: any) =>
+                notification.lu === 0 ||
+                notification.lu === "0" ||
+                notification.lu === false
+            ).length;
 
-                setStats({
-                    ...data,
-                    notifications: unreadNotifications,
-                });
-            } catch (err) {
-                console.log("Stats error:", err);
-            }
-        };
+            setStats({
+                ...data,
+                notifications: unreadNotifications,
+            });
+        } catch (err) {
+            console.log("Stats error:", err);
+        }
+    }, [user?.id]);
 
-        fetchStats();
-    }, [user]);
-
-    /* ---------------- FETCH SERVICES ---------------- */
-    useEffect(() => {
-        const fetchServices = async () => {
-            try {
-                setLoading(true);
-                const data = await getAllServices();
-                setServices(data);
-            } catch (error) {
-                console.log("Services error:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchServices();
+    const fetchServices = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await getAllServices();
+            setServices(data);
+        } catch (error) {
+            console.log("Services error:", error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    const refreshServicesScreen = useCallback(() => {
+        void fetchStats();
+        void fetchServices();
+    }, [fetchServices, fetchStats]);
+
+    useAutoRefresh(refreshServicesScreen, [refreshServicesScreen]);
 
     /* ---------------- FILTER ---------------- */
     const filteredServices = services.filter((item) =>

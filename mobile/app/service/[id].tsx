@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 
 import {
     View,
@@ -22,6 +22,7 @@ import { API_ORIGIN } from "../../services/api";
 import { getServiceById } from "../../services/serviceService";
 import CommentsSheet from "../../components/comments/CommentsSheet";
 import { useAuthStore } from "../../store/authStore";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -58,11 +59,7 @@ export default function ServiceDetails() {
     const fadeAnim = useRef(new Animated.Value(1)).current;
 
     /* ---------------- FETCH ---------------- */
-    useEffect(() => {
-        fetchService();
-    }, []);
-
-    const fetchService = async () => {
+    const fetchService = useCallback(async () => {
         try {
             const data = await getServiceById(id as string);
             setService(data);
@@ -75,7 +72,9 @@ export default function ServiceDetails() {
                 Animated.timing(slideAnim, { toValue: 0, duration: 420, useNativeDriver: true }),
             ]).start();
         }
-    };
+    }, [fadeAnim, id, slideAnim]);
+
+    useAutoRefresh(fetchService, [fetchService]);
 
     /* ---------------- IMAGES (MOVED UP) ---------------- */
     const serviceImages = service?.images?.filter(

@@ -1,6 +1,6 @@
 // app/projet/[id].tsx – Your original header + new minimalist body
 import api from "@/services/api";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
     View,
     Text,
@@ -13,12 +13,12 @@ import {
     RefreshControl,
     Alert,
 } from "react-native";
-import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAuthStore } from "@/store/authStore";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 // ================= Types (unchanged) =================
 type Projet = {
@@ -104,7 +104,6 @@ const getDemandeStatusBadge = (statut: string) => {
 export default function ProjectDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const { user } = useAuthStore();
     const [project, setProject] = useState<Projet | null>(null);
     const [demande, setDemande] = useState<Demande | null>(null);
     const [service, setService] = useState<Service | null>(null);
@@ -112,12 +111,14 @@ export default function ProjectDetailScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [processing, setProcessing] = useState(false);
 
-    const fetchProject = async () => {
+    const fetchProject = useCallback(async () => {
         if (!id) return;
         try {
             const response = await api.get(`/projets/${id}`);
             const proj = response.data;
             setProject(proj);
+            setDemande(null);
+            setService(null);
             if (proj.demandeId) {
                 const demandeRes = await api.get(`/demandes/${proj.demandeId}`);
                 const demandeData = demandeRes.data;
@@ -129,13 +130,16 @@ export default function ProjectDetailScreen() {
             }
         } catch (error) {
             console.error("Error fetching project:", error);
+            setProject(null);
+            setDemande(null);
+            setService(null);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [id]);
 
-    useFocusEffect(useCallback(() => { fetchProject(); }, [id]));
+    useAutoRefresh(fetchProject, [fetchProject]);
 
     const handleRefresh = () => {
         setRefreshing(true);

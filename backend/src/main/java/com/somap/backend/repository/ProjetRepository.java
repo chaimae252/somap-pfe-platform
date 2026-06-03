@@ -12,12 +12,16 @@ public interface ProjetRepository extends JpaRepository<Projet, Long> {
     List<Projet> findByClientId(Long clientId);
     Optional<Projet> findFirstByOrderByDateDebutDesc();
     long countByClientId(Long clientId);
+    boolean existsByDemandeId(Long demandeId);
+
+    @Query(value = "SELECT setval(pg_get_serial_sequence('projet', 'id'), COALESCE((SELECT MAX(id) FROM projet), 0) + 1, false)", nativeQuery = true)
+    Long syncProjetIdSequence();
     Optional<Projet> findFirstByClientIdOrderByDateDebutDesc(
             Long clientId
     );
      
 Optional<Projet> findByIdAndClientId(Long id, Long clientId); 
 
-@Query(value = "SELECT EXTRACT(MONTH FROM date_debut) as month, COUNT(*) FROM projet GROUP BY month ORDER BY month", nativeQuery = true)
+@Query("SELECT MONTH(p.dateDebut), COUNT(p) FROM Projet p WHERE p.dateDebut IS NOT NULL GROUP BY MONTH(p.dateDebut) ORDER BY MONTH(p.dateDebut)")
 List<Object[]> countProjetsByMonth();
 }

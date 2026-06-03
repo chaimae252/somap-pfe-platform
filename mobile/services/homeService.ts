@@ -9,8 +9,9 @@ const isUnread = (notification: NotificationPayload): boolean => (
     notification?.lu === "0" ||
     notification?.lu === false
 );
+
 export const getHomeStats = async (clientId: number) => {
-const [demandesResponse, projetsResponse, notificationsResponse, servicesResponse] = await Promise.all([
+     const [demandesResponse, projetsResponse, notificationsResponse, servicesResponse] = await Promise.all([
         api.get(`/demandes/client/${clientId}`),
         api.get(`/projets/client/${clientId}`),
         api.get(`/notifications/client/${clientId}`),

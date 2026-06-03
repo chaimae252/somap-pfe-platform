@@ -9,12 +9,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Theme from "../../constants/theme";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { getNotifications, markNotificationAsRead } from "../../services/notificationService";
 import { useAuthStore } from "@/store/authStore";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -205,17 +206,15 @@ export default function NotificationsScreen() {
     useEffect(() => {
         console.log("🔥 AUTH USER:", user);
         console.log("🔥 CLIENT ID USED:", clientId);
-    }, [user]);
+    }, [user, clientId]);
 
-    useEffect(() => {
-        if (clientId) {
-            loadNotifications();
-        } else {
-            console.log("❌ No clientId found yet");
+    const loadNotifications = useCallback(async () => {
+        if (!clientId) {
+            console.log("No clientId found yet");
+            setLoading(false);
+            return;
         }
-    }, [clientId]);
 
-    const loadNotifications = async () => {
         try {
             console.log("🚀 fetching notifications for client:", clientId);
 
@@ -275,7 +274,9 @@ export default function NotificationsScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [clientId]);
+
+    useAutoRefresh(loadNotifications, [loadNotifications]);
 
     const markAllRead = async () => {
         if (markingAllRead) return;

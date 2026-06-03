@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { useEffect, useState,useCallback  } from "react";
+import { useState,useCallback  } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +18,7 @@ import { getHomeStats } from "../../services/homeService";
 import { getCurrentProject } from "../../services/projectService";
 import { getNotifications } from "../../services/notificationService";
 import NotificationButton from "@/components/ui/NotificationButton";
-import { useFocusEffect } from "expo-router";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -67,18 +67,12 @@ const PARTNERS = [
 export default function HomeScreen() {
 
   const insets = useSafeAreaInsets();
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const [services, setServices] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [project, setProject] = useState<any>(null);
 
-  useFocusEffect(
-  useCallback(() => {
-    fetchHomeData();
-  }, [])
-);
-
-  const fetchHomeData = async () => {
+  const fetchHomeData = useCallback(async () => {
     try {
       if (!user?.id) {
         console.log("No connected user");
@@ -107,7 +101,9 @@ export default function HomeScreen() {
     } catch (error) {
       console.log("Erreur Home:", error);
     }
-  };
+  }, [user?.id]);
+
+  useAutoRefresh(fetchHomeData, [fetchHomeData]);
 
   const getServiceIcon = (title: string) => {
 

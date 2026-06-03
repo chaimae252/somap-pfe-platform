@@ -10,13 +10,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import Theme from '../../constants/theme';
-import { router, useFocusEffect } from 'expo-router';
+import { router } from 'expo-router';
 import { getHomeStats } from '../../services/homeService';
-import { updateClient } from '../../services/clientService';
+import { getClientById, updateClient } from '../../services/clientService';
 import { changePassword } from '../../services/authService';
 import api from '../../services/api';
 import { ALLOW_SCREEN_RECORDING_DEMO } from '../../constants/demo';
 import * as Haptics from 'expo-haptics';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 const { width } = Dimensions.get('window');
@@ -174,8 +175,37 @@ export default function ProfileScreen() {
     }
   }, [user?.id]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
-  useFocusEffect(useCallback(() => { fetchStats(); }, [fetchStats]));
+  const fetchProfile = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const latestClient = await getClientById(user.id);
+      const hasProfileChanged =
+        latestClient.nom !== user.nom ||
+        latestClient.email !== user.email ||
+        latestClient.telephone !== user.telephone ||
+        latestClient.adresse !== user.adresse ||
+        latestClient.role !== user.role;
+
+      if (!hasProfileChanged) return;
+
+      const latestUser = { ...user, ...latestClient };
+
+      if (token) {
+        setAuth(token, latestUser);
+      } else {
+        useAuthStore.setState({ user: latestUser });
+      }
+    } catch (error) {
+      console.log('Error fetching profile:', error);
+    }
+  }, [setAuth, token, user]);
+
+  const refreshProfileScreen = useCallback(() => {
+    void fetchStats();
+    void fetchProfile();
+  }, [fetchProfile, fetchStats]);
+
+  useAutoRefresh(refreshProfileScreen, [refreshProfileScreen]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

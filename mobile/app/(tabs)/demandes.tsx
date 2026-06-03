@@ -14,7 +14,7 @@ import {
     TextInput,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import api from "@/services/api";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,6 +23,7 @@ import { getHomeStats } from "@/services/homeService";
 import { getNotifications } from "@/services/notificationService";
 import { useAuthStore } from "@/store/authStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 type Demande = {
     id: number;
@@ -109,11 +110,7 @@ export default function HomeScreen() {
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [selectedDemandeId, setSelectedDemandeId] = useState<number | null>(null);
 
-    useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             if (!user?.id) return;
             const data = await getHomeStats(user.id);
@@ -131,18 +128,18 @@ export default function HomeScreen() {
         } catch (err) {
             console.log("Stats error:", err);
         }
-    };
+    }, [user?.id]);
 
-    const fetchServices = async () => {
+    const fetchServices = useCallback(async () => {
         try {
             const response = await api.get("/services");
             setServices(response.data);
         } catch (error) {
             console.error("Error fetching services:", error);
         }
-    };
+    }, []);
 
-    const fetchDemandes = async () => {
+    const fetchDemandes = useCallback(async () => {
         try {
             const clientIdStr = await AsyncStorage.getItem("userId");
             if (!clientIdStr) {
@@ -162,15 +159,15 @@ export default function HomeScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, []);
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchStats();
-            fetchServices();
-            fetchDemandes();
-        }, [])
-    );
+    const refreshDemandesScreen = useCallback(() => {
+        void fetchStats();
+        void fetchServices();
+        void fetchDemandes();
+    }, [fetchDemandes, fetchServices, fetchStats]);
+
+    useAutoRefresh(refreshDemandesScreen, [refreshDemandesScreen]);
 
     const onRefresh = () => {
         setRefreshing(true);

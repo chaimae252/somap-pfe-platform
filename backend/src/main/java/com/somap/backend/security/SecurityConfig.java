@@ -49,9 +49,7 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/uploads/**")
                         .permitAll()
-                         .requestMatchers("/api/dashboard/monthly").permitAll()
-                        .requestMatchers("/api/dashboard/status").permitAll()
-                        .requestMatchers("/api/dashboard/stats/**").permitAll()
+                        .requestMatchers("/api/dashboard/**").permitAll()
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/contact").authenticated()
                         .requestMatchers("/api/contact/admin/**").hasRole("ADMIN")
@@ -80,6 +78,8 @@ public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
     configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",
+            "http://127.0.0.1:*",
             "http://localhost:5173",
             "http://localhost:3000",
             "http://localhost:19006",
@@ -121,8 +121,8 @@ public WebMvcConfigurer corsConfigurer() {
     return new WebMvcConfigurer() {
         @Override
         public void addCorsMappings(CorsRegistry registry) {
-            registry.addMapping("/**")
-                    .allowedOrigins("http://localhost:5173")
+              registry.addMapping("/**")
+                    .allowedOriginPatterns("http://localhost:*", "http://127.0.0.1:*")
                     .allowedMethods("*")
                     .allowedHeaders("*");
         }

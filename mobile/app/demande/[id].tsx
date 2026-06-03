@@ -12,13 +12,14 @@ import {
   Share,
   Modal,
 } from "react-native";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import api, { API_ORIGIN } from "@/services/api";
 import { Alert } from "react-native";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
 
 type Demande = {
   id: number;
@@ -98,11 +99,7 @@ export default function DemandeDetailScreen() {
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchDemande();
-  }, [id]);
-
-  const fetchDemande = async () => {
+  const fetchDemande = useCallback(async () => {
     if (!id) return;
     try {
       const res = await api.get(`/demandes/${id}`);
@@ -120,10 +117,15 @@ export default function DemandeDetailScreen() {
       setImages(filtered);
     } catch (error) {
       console.error(error);
+      setDemande(null);
+      setService(null);
+      setImages([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useAutoRefresh(fetchDemande, [fetchDemande]);
 
   const generateDemandeHTML = () => {
     if (!demande || !service) return "";

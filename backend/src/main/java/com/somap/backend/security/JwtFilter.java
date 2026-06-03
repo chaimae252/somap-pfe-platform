@@ -39,6 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
         // ✅ Public routes / CORS preflight
         if (HttpMethod.OPTIONS.matches(request.getMethod())
                 || path.startsWith("/api/auth")
+                || path.startsWith("/api/dashboard")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/images")
