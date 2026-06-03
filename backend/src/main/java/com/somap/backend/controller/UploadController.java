@@ -10,10 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.somap.backend.service.CloudinaryService;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/api")
@@ -21,6 +19,7 @@ import java.nio.file.Paths;
 public class UploadController {
 
     private final ImageService imageService;
+    private final CloudinaryService cloudinaryService;
 
     @PostMapping("/upload")
     public ResponseEntity<ImageDTO> uploadFile(
@@ -28,22 +27,14 @@ public class UploadController {
             @RequestParam(value = "demandeId", required = false) Long demandeId,
             @RequestParam(value = "commentaireId", required = false) Long commentaireId
     ) throws IOException {
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path uploadPath = Paths.get("uploads/");
-
-        System.out.println("UPLOAD COMMENTAIRE: file=" + fileName
+        System.out.println("UPLOAD COMMENTAIRE: file=" + file.getOriginalFilename()
                 + ", commentaireId=" + commentaireId
                 + ", demandeId=" + demandeId);
 
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        Path filePath = uploadPath.resolve(fileName);
-        Files.write(filePath, file.getBytes());
+        String imageUrl = cloudinaryService.uploadFile(file);
 
         ImageDTO dto = new ImageDTO();
-        dto.setImageUrl("/uploads/" + fileName);
+        dto.setImageUrl(imageUrl);
         dto.setDemandeId(demandeId);
         dto.setCommentaireId(commentaireId);
 
