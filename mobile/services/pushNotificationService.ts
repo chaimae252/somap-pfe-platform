@@ -15,7 +15,9 @@ export async function registerForPushNotificationsAsync(userId: number) {
             shouldShowAlert: true,
             shouldPlaySound: true,
             shouldSetBadge: true,
-        }),
+            shouldShowBanner: true,
+            shouldShowList: true,
+        } as any),
     });
 
     let token = null;

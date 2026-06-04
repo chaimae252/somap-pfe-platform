@@ -32,6 +32,8 @@ type Demande = {
     serviceId?: number;
     clientNom?: string;
     serviceTitre?: string;
+    adminId?: number;
+    adminNom?: string;
     images?: Array<{
         id: number;
         imageUrl: string;
@@ -328,9 +330,16 @@ export default function Demandes() {
                                     <span style={{ ...styles.urgencyBadge, color: urgency.color, background: urgency.background }}>
                                         {demande.urgence ? urgencyLabels[demande.urgence] : "Normal"}
                                     </span>
-                                    <span style={{ ...styles.statusBadge, color: status.color, background: status.background, borderColor: status.border }}>
-                                        {statusLabels[demande.statut] ?? demande.statut}
-                                    </span>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                                        <span style={{ ...styles.statusBadge, color: status.color, background: status.background, borderColor: status.border }}>
+                                            {statusLabels[demande.statut] ?? demande.statut}
+                                        </span>
+                                        {demande.adminNom && (
+                                            <span style={{ fontSize: 10, color: MUTED, fontWeight: 700, paddingLeft: 4 }}>
+                                                par: {demande.adminNom}
+                                            </span>
+                                        )}
+                                    </div>
 
                                     <div style={styles.actionCell}>
                                         <button style={styles.detailsButton} onClick={() => setSelectedDemande(demande)}>
@@ -374,7 +383,7 @@ export default function Demandes() {
                                 <button style={styles.closeButton} onClick={() => setSelectedDemande(null)}>×</button>
                             </div>
 
-                            <div style={styles.modalMeta}>
+                            <div style={{ ...styles.modalMeta, gridTemplateColumns: selectedDemande.adminNom ? "repeat(5, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))" }}>
                                 <div>
                                     <span style={styles.modalLabel}>Client</span>
                                     <strong>{selectedDemande.clientNom || `Client #${selectedDemande.clientId ?? "-"}`}</strong>
@@ -391,6 +400,12 @@ export default function Demandes() {
                                     <span style={styles.modalLabel}>Statut</span>
                                     <strong>{statusLabels[selectedDemande.statut] ?? selectedDemande.statut}</strong>
                                 </div>
+                                {selectedDemande.adminNom && (
+                                    <div>
+                                        <span style={styles.modalLabel}>Traité par</span>
+                                        <strong>{selectedDemande.adminNom}</strong>
+                                    </div>
+                                )}
                             </div>
 
                             <div style={styles.modalBody}>

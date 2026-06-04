@@ -54,6 +54,9 @@ export default function ContactMessages() {
     const [filter, setFilter] = useState<FilterType>("ALL");
     const [replyText, setReplyText] = useState<Record<number, string>>({});
     const [submittingReply, setSubmittingReply] = useState<Record<number, boolean>>({});
+    const [confirmDeleteMessage, setConfirmDeleteMessage] = useState<ContactMessageItem | null>(null);
+    const [deletingMessageId, setDeletingMessageId] = useState<number | null>(null);
+
 
     const loadMessages = async () => {
         setLoading(true);
@@ -126,9 +129,11 @@ export default function ContactMessages() {
         }
     };
 
-    const deleteMessage = async (id: number) => {
-        if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce message de contact ?")) return;
+    const handleDeleteMessageConfirm = async () => {
+        if (!confirmDeleteMessage) return;
+        const id = confirmDeleteMessage.id;
 
+        setDeletingMessageId(id);
         setError("");
         setSuccess("");
         
@@ -138,11 +143,15 @@ export default function ContactMessages() {
         try {
             await api.delete(`/contact/admin/messages/${id}`);
             setSuccess("Message de contact supprimé.");
+            setConfirmDeleteMessage(null);
         } catch {
             setError("Impossible de supprimer le message.");
             void loadMessages();
+        } finally {
+            setDeletingMessageId(null);
         }
     };
+
 
     const filteredMessages = useMemo(() => {
         const q = search.toLowerCase().trim();
@@ -372,11 +381,12 @@ export default function ContactMessages() {
                                             <button
                                                 style={styles.deleteBtn}
                                                 title="Supprimer"
-                                                onClick={() => void deleteMessage(m.id)}
+                                                onClick={() => setConfirmDeleteMessage(m)}
                                             >
                                                 <DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />
                                             </button>
                                         </div>
+
                                     </div>
                                 );
                             })
@@ -390,9 +400,36 @@ export default function ContactMessages() {
                     </div>
                 </section>
             </div>
+            {confirmDeleteMessage && (
+                <div style={styles.modalOverlay} onClick={() => setConfirmDeleteMessage(null)}>
+                    <section style={styles.confirmCard} onClick={(event) => event.stopPropagation()}>
+                        <h2 style={styles.confirmTitle}>Supprimer ce message ?</h2>
+                        <p style={styles.confirmText}>
+                            Cette action supprimera définitivement le message de "{confirmDeleteMessage.name}" ({confirmDeleteMessage.email}) de la liste.
+                        </p>
+                        <div style={styles.confirmActions}>
+                            <button
+                                style={styles.cancelButton}
+                                onClick={() => setConfirmDeleteMessage(null)}
+                                disabled={deletingMessageId === confirmDeleteMessage.id}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                style={styles.confirmDeleteButton}
+                                onClick={() => void handleDeleteMessageConfirm()}
+                                disabled={deletingMessageId === confirmDeleteMessage.id}
+                            >
+                                {deletingMessageId === confirmDeleteMessage.id ? "Suppression..." : "Oui, supprimer"}
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
         </Layout>
     );
 }
+
 
 const styles: Record<string, CSSProperties> = {
     page: {
@@ -755,5 +792,54 @@ const styles: Record<string, CSSProperties> = {
         fontSize: 24,
         fontWeight: "bold",
         marginBottom: 8,
+    },
+    modalOverlay: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 20,
+        background: "rgba(10,24,44,0.42)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+    },
+    confirmCard: {
+        width: "min(420px, 100%)",
+        background: "#fff",
+        border: "1px solid #dfe9f3",
+        borderRadius: 16,
+        padding: 20,
+        boxShadow: "0 24px 70px rgba(13,45,94,0.22)",
+    },
+    confirmTitle: { margin: 0, color: TEXT, fontSize: 18, fontWeight: 700 },
+    confirmText: { margin: "10px 0 0", color: MUTED, fontSize: 13, lineHeight: 1.5 },
+    confirmActions: {
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 18,
+    },
+    confirmDeleteButton: {
+        border: "none",
+        background: SOMAP_RED,
+        color: "#fff",
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    cancelButton: {
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: MUTED,
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
 };

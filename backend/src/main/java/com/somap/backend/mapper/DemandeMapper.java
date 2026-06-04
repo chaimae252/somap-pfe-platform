@@ -14,6 +14,10 @@ public class DemandeMapper {
         dto.setDescription(demande.getDescription());
         dto.setStatut(demande.getStatut());
         dto.setDateCreation(demande.getDateCreation());
+        if (demande.getAdmin() != null) {
+            dto.setAdminId(demande.getAdmin().getId());
+            dto.setAdminNom(demande.getAdmin().getNom());
+        }
 
         return dto;
     }

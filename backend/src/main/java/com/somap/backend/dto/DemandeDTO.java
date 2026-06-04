@@ -23,5 +23,7 @@ public class DemandeDTO {
     private Long serviceId;
     private String clientNom;
     private String serviceTitre;
-
+    
+    private Long adminId;
+    private String adminNom;
 }

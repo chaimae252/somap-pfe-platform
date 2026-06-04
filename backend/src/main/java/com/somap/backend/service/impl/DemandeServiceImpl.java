@@ -13,10 +13,13 @@ import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.repository.ProjetRepository;
+import com.somap.backend.repository.AdminRepository;
 import com.somap.backend.service.DemandeService;
 import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,6 +34,7 @@ public class DemandeServiceImpl implements DemandeService {
     private final ServiceRepository serviceRepository;
     private final NotificationService notificationService;
     private final ProjetRepository projetRepository;
+    private final AdminRepository adminRepository;
 
     // 🔥 CREATE DEMANDE
     @Override
@@ -120,7 +124,13 @@ public class DemandeServiceImpl implements DemandeService {
 
         demande.setStatut(newStatus);
 
-Demande updated = demandeRepository.save(demande);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            adminRepository.findByEmail(email).ifPresent(demande::setAdmin);
+        }
+
+        Demande updated = demandeRepository.save(demande);
 System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus saved id=" + updated.getId()
         + " savedStatus=" + updated.getStatut());
 
@@ -161,6 +171,12 @@ public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
 
     if (dto.getStatut() != null) {
         demande.setStatut(dto.getStatut());
+    }
+
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+        String email = auth.getName();
+        adminRepository.findByEmail(email).ifPresent(demande::setAdmin);
     }
 
     Demande updated = demandeRepository.save(demande);
@@ -208,6 +224,10 @@ return mapToDTO(updated);
         if (demande.getService() != null) {
             dto.setServiceId(demande.getService().getId());
             dto.setServiceTitre(demande.getService().getTitre());
+        }
+        if (demande.getAdmin() != null) {
+            dto.setAdminId(demande.getAdmin().getId());
+            dto.setAdminNom(demande.getAdmin().getNom());
         }
         if (demande.getImages() != null) {
             dto.setImages(demande.getImages().stream()

@@ -40,4 +40,8 @@ public class Demande {
 
     @OneToOne(mappedBy = "demande", cascade = CascadeType.ALL)
     private Projet projet;
+
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
 }

@@ -26,10 +26,21 @@ const getClientName = (item: any) =>
 const getInitial = (name: string) =>
     name.trim().charAt(0).toUpperCase() || "C";
 
+const parseSafeDate = (value?: string | null) => {
+    if (!value) return null;
+    if (typeof value === "string") {
+        const formatted = value.trim().replace(/\s+/, "T");
+        const date = new Date(formatted);
+        if (!Number.isNaN(date.getTime())) return date;
+    }
+    const fallback = new Date(value);
+    if (!Number.isNaN(fallback.getTime())) return fallback;
+    return null;
+};
+
 const formatDate = (value?: string) => {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
+    const date = parseSafeDate(value);
+    if (!date) return "";
     return date.toLocaleDateString("fr-FR", {
         day: "2-digit",
         month: "short",
@@ -293,8 +304,8 @@ const flattenReplies = (replies: any[]): any[] => {
         }
     });
     return flat.sort((a, b) => {
-        const dateA = new Date(a.dateCommentaire || a.date_commentaire || 0).getTime();
-        const dateB = new Date(b.dateCommentaire || b.date_commentaire || 0).getTime();
+        const dateA = parseSafeDate(a.dateCommentaire || a.date_commentaire)?.getTime() || 0;
+        const dateB = parseSafeDate(b.dateCommentaire || b.date_commentaire)?.getTime() || 0;
         return dateA - dateB;
     });
 };

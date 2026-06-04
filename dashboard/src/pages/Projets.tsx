@@ -15,7 +15,6 @@ import api, { API_ORIGIN } from "../api/api";
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
 const SOMAP_RED = "#ad2324";
-const SOMAP_GOLD = "#f6b718";
 const TEXT = "#1a2e4a";
 const MUTED = "#6b7f95";
 
