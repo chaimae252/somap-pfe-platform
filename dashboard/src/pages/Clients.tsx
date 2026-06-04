@@ -3,7 +3,6 @@ import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
-import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import Navbar from "../components/Navbar";
 import SomapBackground from "../components/SomapBackground";
 import api from "../api/api";
@@ -157,13 +156,6 @@ export default function Clients() {
             helper: "Catalogue actif",
             icon: BuildOutlinedIcon,
             color: "#ad2324",
-        },
-        {
-            label: "Notifications",
-            value: stats.notifications ?? 0,
-            helper: "Alertes et suivis",
-            icon: NotificationsNoneOutlinedIcon,
-            color: "#6f42c1",
         },
     ];
 
@@ -472,7 +464,7 @@ const styles: Record<string, React.CSSProperties> = {
     },
     statsGrid: {
         display: "grid",
-        gridTemplateColumns: "repeat(5, minmax(130px, 1fr))",
+        gridTemplateColumns: "repeat(4, minmax(130px, 1fr))",
         gap: 14,
         marginBottom: 18,
     },

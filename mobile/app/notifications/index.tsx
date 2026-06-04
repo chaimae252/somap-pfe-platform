@@ -36,6 +36,8 @@ type Notification = {
     tagBg: string;
     unread: boolean;
     category: Exclude<Category, "Toutes" | "Non lues">;
+    targetType?: string;
+    targetId?: number | string;
 };
 
 const FILTERS: Category[] = ["Toutes", "Non lues", "Demandes", "Projets", "Commentaires", "Système"];
@@ -262,6 +264,8 @@ export default function NotificationsScreen() {
                     tagLabel: cfg.tagLabel,
                     tagColor: cfg.tagColor,
                     tagBg: cfg.tagBg,
+                    targetType: n.targetType ?? n.target_type,
+                    targetId: n.targetId ?? n.target_id,
                 };
             });
 
@@ -277,6 +281,29 @@ export default function NotificationsScreen() {
     }, [clientId]);
 
     useAutoRefresh(loadNotifications, [loadNotifications]);
+
+    const handleNotificationPress = async (item: Notification) => {
+        if (item.unread) {
+            try {
+                await markNotificationAsRead(item.id);
+                setNotifications((prev) =>
+                    prev.map((n) => (n.id === item.id ? { ...n, unread: false } : n))
+                );
+            } catch (err) {
+                console.log("Error marking notification as read:", err);
+            }
+        }
+
+        if (item.targetType === "SERVICE" && item.targetId) {
+            router.push({
+                pathname: "/service/[id]",
+                params: {
+                    id: String(item.targetId),
+                    openComments: "true",
+                },
+            });
+        }
+    };
 
     const markAllRead = async () => {
         if (markingAllRead) return;
@@ -402,7 +429,12 @@ export default function NotificationsScreen() {
                     <Text style={styles.sectionLabel}>{section.title}</Text>
                 )}
                 renderItem={({ item }) => (
-                    <NotifCard item={item} />
+                    <TouchableOpacity
+                        activeOpacity={0.82}
+                        onPress={() => void handleNotificationPress(item)}
+                    >
+                        <NotifCard item={item} />
+                    </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                     loading ? (

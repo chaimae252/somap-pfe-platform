@@ -72,12 +72,13 @@ export default forwardRef(function CommentsSheet(
 
         const replyName = replyTo?.clientNom || replyTo?.client?.nom;
         const content = replyName ? `@${replyName} ${text}` : text;
+        const resolvedParentId = replyTo?.id ?? null;
 
         const comment = await addCommentaire(
             serviceId,
             content,
             clientId,
-            replyTo?.id ?? null
+            resolvedParentId
         );
 
         if (comment?.id && images.length > 0) {

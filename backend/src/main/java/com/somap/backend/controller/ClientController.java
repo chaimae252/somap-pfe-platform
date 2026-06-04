@@ -18,7 +18,6 @@ public class ClientController {
 
     @GetMapping
     public ResponseEntity<List<ClientDTO>> getAllClients() {
-
         return ResponseEntity.ok(
                 clientService.getAllClients()
         );
@@ -26,7 +25,6 @@ public class ClientController {
 
     @GetMapping("/stats")
     public ResponseEntity<DashboardStatsDTO> getClientStats() {
-
         return ResponseEntity.ok(
                 clientService.getStats()
         );
@@ -36,7 +34,6 @@ public class ClientController {
     public ResponseEntity<ClientDTO> getClientById(
             @PathVariable Long id
     ) {
-
         return ResponseEntity.ok(
                 clientService.getClientById(id)
         );
@@ -47,7 +44,6 @@ public class ClientController {
             @PathVariable Long id,
             @RequestBody ClientDTO clientDTO
     ) {
-
         return ResponseEntity.ok(
                 clientService.updateClient(id, clientDTO)
         );
@@ -57,9 +53,17 @@ public class ClientController {
     public ResponseEntity<String> deleteClient(
             @PathVariable Long id
     ) {
-
         clientService.deleteClient(id);
-
         return ResponseEntity.ok("Client supprimé avec succès");
+    }
+
+    @PostMapping("/{id}/push-token")
+    public ResponseEntity<Void> updatePushToken(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> payload
+    ) {
+        String token = payload.get("token");
+        clientService.updatePushToken(id, token);
+        return ResponseEntity.ok().build();
     }
 }

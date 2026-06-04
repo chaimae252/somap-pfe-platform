@@ -6,8 +6,11 @@ import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutli
 import PauseCircleOutlineOutlinedIcon from "@mui/icons-material/PauseCircleOutlineOutlined";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import Layout from "../components/Layout";
-import api from "../api/api";
+import api, { API_ORIGIN } from "../api/api";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -43,6 +46,10 @@ type Demande = {
     clientId?: number;
     clientNom?: string;
     serviceTitre?: string;
+    images?: Array<{
+        id: number;
+        imageUrl: string;
+    }>;
 };
 
 type ProjetForm = {
@@ -97,6 +104,13 @@ function toDateInput(value?: string) {
     return date.toISOString().slice(0, 10);
 }
 
+function getImageUrl(imageUrl: string) {
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+        return imageUrl;
+    }
+    return `${API_ORIGIN}${imageUrl}`;
+}
+
 function getErrorMessage(error: unknown, fallback: string) {
     if (typeof error === "object" && error !== null && "message" in error && typeof (error as { message?: string }).message === "string") {
         return (error as { message: string }).message;
@@ -129,6 +143,8 @@ export default function Projets() {
     const [editingProjet, setEditingProjet] = useState<Projet | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [form, setForm] = useState<ProjetForm>(emptyForm);
+    const [confirmDeleteProjet, setConfirmDeleteProjet] = useState<Projet | null>(null);
+    const [deletingProjetId, setDeletingProjetId] = useState<number | null>(null);
 
     const loadData = async () => {
         setLoading(true);
@@ -175,6 +191,11 @@ export default function Projets() {
             return matchesStatus && matchesSearch;
         });
     }, [projets, search, statusFilter]);
+
+    const associatedDemande = useMemo(() => {
+        if (!selectedProjet || !selectedProjet.demandeId) return null;
+        return demandes.find((d) => d.id === selectedProjet.demandeId);
+    }, [selectedProjet, demandes]);
 
     const linkedDemandeIds = useMemo(() => {
         return new Set(
@@ -270,17 +291,43 @@ export default function Projets() {
         }
     };
 
-    const deleteProjet = async (projet: Projet) => {
-        if (!window.confirm(`Supprimer le projet "${projet.titre}" ?`)) return;
+    const handleDeleteProjet = async () => {
+        if (!confirmDeleteProjet) return;
+        setDeletingProjetId(confirmDeleteProjet.id);
         setError("");
         setSuccess("");
         try {
-            await api.delete(`/projets/${projet.id}`);
-            setProjets(items => items.filter(p => p.id !== projet.id));
-            setSelectedProjet(cur => cur?.id === projet.id ? null : cur);
+            await api.delete(`/projets/${confirmDeleteProjet.id}`);
+            setProjets(items => items.filter(p => p.id !== confirmDeleteProjet.id));
+            setSelectedProjet(cur => cur?.id === confirmDeleteProjet.id ? null : cur);
             setSuccess("Projet supprimé.");
+            setConfirmDeleteProjet(null);
         } catch (err) {
             setError(getErrorMessage(err, "Impossible de supprimer."));
+        } finally {
+            setDeletingProjetId(null);
+        }
+    };
+
+    const updateProjetStatus = async (projet: Projet, newStatus: ProjetStatus) => {
+        setError("");
+        setSuccess("");
+        try {
+            const payload = {
+                titre: projet.titre,
+                description: projet.description || "",
+                statut: newStatus,
+                dateDebut: projet.dateDebut ? projet.dateDebut.slice(0, 19) : null,
+                dateFin: projet.dateFin ? projet.dateFin.slice(0, 19) : null,
+                clientId: projet.clientId,
+                demandeId: projet.demandeId,
+            };
+            const response = await api.put<Projet>(`/projets/${projet.id}`, payload);
+            setProjets(items => items.map(p => p.id === projet.id ? response.data : p));
+            setSelectedProjet(response.data);
+            setSuccess(`Statut du projet "${projet.titre}" mis à jour.`);
+        } catch (err) {
+            setError(getErrorMessage(err, "Impossible de mettre à jour le statut."));
         }
     };
 
@@ -294,10 +341,10 @@ export default function Projets() {
                         <h1 style={styles.title}>Projets</h1>
                         <p style={styles.subtitle}>Créez, suivez et mettez à jour les projets validés par les demandes clients.</p>
                     </div>
-                    <div style={styles.headerBadge}>
+                    <button style={styles.headerButton} onClick={openCreateModal}>
                         <AddCircleOutlineOutlinedIcon sx={{ fontSize: 18 }} />
-                        <button style={styles.headerButton} onClick={openCreateModal}>Nouveau projet</button>
-                    </div>
+                        Nouveau projet
+                    </button>
                 </section>
 
                 {error && (
@@ -318,7 +365,7 @@ export default function Projets() {
                     {statCards.map((stat) => {
                         const Icon = stat.icon;
                         return (
-                            <div key={stat.label} style={styles.statCard}>
+                            <div key={stat.label} style={stat.label === "Suspendus" ? { ...styles.statCard, borderLeft: `4px solid ${SOMAP_RED}` } : stat.label === "Terminés" ? { ...styles.statCard, borderLeft: `4px solid ${SOMAP_GREEN}` } : stat.label === "En cours" ? { ...styles.statCard, borderLeft: `4px solid ${SOMAP_BLUE}` } : styles.statCard}>
                                 <div style={{ ...styles.statIcon, color: stat.color, background: `${stat.color}18` }}>
                                     <Icon sx={{ fontSize: 22 }} />
                                 </div>
@@ -392,7 +439,9 @@ export default function Projets() {
                             return (
                                 <div key={projet.id} style={{ ...styles.row, ...(idx === filteredProjets.length - 1 ? { borderBottom: "none" } : {}) }}>
                                     <div style={styles.demandeCell}>
-                                        <div style={{ ...styles.demandeIcon, background: tone.color }} />
+                                        <div style={{ ...styles.demandeIconBox, color: tone.color, background: tone.background }}>
+                                            <WorkOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+                                        </div>
                                         <div style={{ minWidth: 0 }}>
                                             <strong style={styles.demandeTitle}>{projet.titre}</strong>
                                             <p style={styles.demandeDescription}>{projet.description || "Aucune description."}</p>
@@ -404,14 +453,20 @@ export default function Projets() {
                                     <span style={{ ...styles.statusBadge, color: tone.color, background: tone.background, borderColor: tone.border }}>
                                         {statusLabels[projet.statut]}
                                     </span>
-                                    <div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                         <span style={styles.primaryText}>{formatDate(projet.dateDebut)}</span>
-                                        <span style={styles.secondaryText}>Fin: {formatDate(projet.dateFin)}</span>
+                                        <span style={styles.dateFinLabel}>Fin: {formatDate(projet.dateFin)}</span>
                                     </div>
                                     <div style={styles.actionCell}>
-                                        <button style={styles.detailsButton} onClick={() => setSelectedProjet(projet)}>Détails</button>
-                                        <button style={styles.editButton} onClick={() => openEditModal(projet)}>Modifier</button>
-                                        <button style={styles.deleteButton} onClick={() => void deleteProjet(projet)}>Supprimer</button>
+                                        <button style={styles.detailsButton} onClick={() => setSelectedProjet(projet)} title="Détails">
+                                            <VisibilityOutlinedIcon sx={{ fontSize: 16 }} />
+                                        </button>
+                                        <button style={styles.editButton} onClick={() => openEditModal(projet)} title="Modifier">
+                                            <EditOutlinedIcon sx={{ fontSize: 16 }} />
+                                        </button>
+                                        <button style={styles.deleteButton} onClick={() => setConfirmDeleteProjet(projet)} title="Supprimer">
+                                            <DeleteOutlineOutlinedIcon sx={{ fontSize: 16 }} />
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -436,36 +491,125 @@ export default function Projets() {
                                 <span style={styles.modalEyebrow}>Projet #{selectedProjet.id}</span>
                                 <h2 style={styles.modalTitle}>{selectedProjet.titre}</h2>
                                 <p style={styles.modalSubtitle}>
-                                    {selectedProjet.clientNom || `Client #${selectedProjet.clientId ?? "-"}`} · {selectedProjet.serviceTitre || "Service non défini"}
+                                    {selectedProjet.serviceTitre || "Service industriel"}
                                 </p>
                             </div>
                             <button style={styles.closeButton} onClick={() => setSelectedProjet(null)}>×</button>
                         </div>
 
                         <div style={styles.modalMeta}>
-                            <div><span style={styles.modalLabel}>Client</span><strong>{selectedProjet.clientNom || `#${selectedProjet.clientId ?? "-"}`}</strong></div>
-                            <div><span style={styles.modalLabel}>Demande liée</span><strong>{selectedProjet.demandeObjet || `#${selectedProjet.demandeId ?? "-"}`}</strong></div>
-                            <div><span style={styles.modalLabel}>Statut</span><strong>{statusLabels[selectedProjet.statut]}</strong></div>
-                            <div><span style={styles.modalLabel}>Date fin</span><strong>{formatDate(selectedProjet.dateFin)}</strong></div>
+                            <div>
+                                <span style={styles.modalLabel}>Client</span>
+                                <strong>{selectedProjet.clientNom || `Client #${selectedProjet.clientId ?? "-"}`}</strong>
+                            </div>
+                            <div>
+                                <span style={styles.modalLabel}>Demande d'origine</span>
+                                <strong>{selectedProjet.demandeObjet || `Demande #${selectedProjet.demandeId ?? "-"}`}</strong>
+                            </div>
+                            <div>
+                                <span style={styles.modalLabel}>Statut du Projet</span>
+                                <strong>{statusLabels[selectedProjet.statut]}</strong>
+                            </div>
+                            <div>
+                                <span style={styles.modalLabel}>Date de fin prévue</span>
+                                <strong>{formatDate(selectedProjet.dateFin)}</strong>
+                            </div>
                         </div>
 
                         <div style={styles.modalBody}>
                             <div style={styles.descriptionPanel}>
-                                <span style={styles.modalLabel}>Description</span>
-                                <p style={styles.fullDescription}>{selectedProjet.description || "Aucune description."}</p>
-                                <span style={styles.dateText}>Début : {formatDate(selectedProjet.dateDebut)}</span>
+                                <span style={styles.modalLabel}>Description du Projet</span>
+                                <p style={styles.fullDescription}>{selectedProjet.description || "Aucune description fournie pour ce projet."}</p>
+                                <span style={styles.dateText}>Débuté le : {formatDate(selectedProjet.dateDebut)}</span>
+                            </div>
+
+                            <div style={styles.imagesPanel}>
+                                <div style={styles.imagesHeader}>
+                                    <span style={styles.modalLabel}>Photos de la Demande Associée</span>
+                                    <strong>{formatNumber(associatedDemande?.images?.length ?? 0)}</strong>
+                                </div>
+                                {associatedDemande?.images?.length ? (
+                                    <div style={styles.imageGrid}>
+                                        {associatedDemande.images.map((image) => (
+                                            <img
+                                                key={image.id}
+                                                src={getImageUrl(image.imageUrl)}
+                                                alt={selectedProjet.titre || "Image demande"}
+                                                style={styles.demandeImage}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={styles.noImages}>Aucune photo jointe à la demande.</div>
+                                )}
                             </div>
                         </div>
 
-                        <div style={styles.modalFooter}>
-                            <button style={styles.editButton} onClick={() => openEditModal(selectedProjet)}>Modifier</button>
-                            <button style={styles.deleteButton} onClick={() => void deleteProjet(selectedProjet)}>Supprimer</button>
+                        <div style={{ ...styles.modalFooter, borderTop: "1px solid #edf2f7", paddingTop: 16 }}>
+                            <div style={{ display: "flex", gap: 8, marginRight: "auto" }}>
+                                {selectedProjet.statut === "EN_COURS" && (
+                                    <>
+                                        <button
+                                            style={styles.modalValidateButton}
+                                            onClick={() => void updateProjetStatus(selectedProjet, "TERMINE")}
+                                        >
+                                            <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 15 }} />
+                                            Terminer le projet
+                                        </button>
+                                        <button
+                                            style={styles.modalSuspendButton}
+                                            onClick={() => void updateProjetStatus(selectedProjet, "SUSPENDU")}
+                                        >
+                                            <PauseCircleOutlineOutlinedIcon sx={{ fontSize: 15 }} />
+                                            Suspendre
+                                        </button>
+                                    </>
+                                )}
+                                {selectedProjet.statut === "SUSPENDU" && (
+                                    <>
+                                        <button
+                                            style={styles.modalResumeButton}
+                                            onClick={() => void updateProjetStatus(selectedProjet, "EN_COURS")}
+                                        >
+                                            <SyncOutlinedIcon sx={{ fontSize: 15 }} />
+                                            Reprendre le projet
+                                        </button>
+                                        <button
+                                            style={styles.modalValidateButton}
+                                            onClick={() => void updateProjetStatus(selectedProjet, "TERMINE")}
+                                        >
+                                            <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 15 }} />
+                                            Terminer le projet
+                                        </button>
+                                    </>
+                                )}
+                                {selectedProjet.statut === "TERMINE" && (
+                                    <button
+                                        style={styles.modalResumeButton}
+                                        onClick={() => void updateProjetStatus(selectedProjet, "EN_COURS")}
+                                    >
+                                        <SyncOutlinedIcon sx={{ fontSize: 15 }} />
+                                        Reprendre le projet
+                                    </button>
+                                )}
+                            </div>
+
+                            <div style={{ display: "flex", gap: 8 }}>
+                                <button style={styles.modalEditButton} onClick={() => openEditModal(selectedProjet)} title="Modifier">
+                                    <EditOutlinedIcon sx={{ fontSize: 14 }} />
+                                    Modifier
+                                </button>
+                                <button style={styles.modalDeleteButton} onClick={() => setConfirmDeleteProjet(selectedProjet)} title="Supprimer">
+                                    <DeleteOutlineOutlinedIcon sx={{ fontSize: 14 }} />
+                                    Supprimer
+                                </button>
+                            </div>
                         </div>
                     </section>
                 </div>
             )}
 
-            {/* Modal création/édition – gardée pragmatique mais avec touches Demandes */}
+            {/* Modal création/édition */}
             {showCreateModal && (
                 <div style={styles.modalOverlay} onClick={closeFormModal}>
                     <form style={styles.modalCard} onSubmit={(e) => void saveProjet(e)} onClick={(e) => e.stopPropagation()}>
@@ -477,7 +621,7 @@ export default function Projets() {
                             <button type="button" style={styles.closeButton} onClick={closeFormModal}>×</button>
                         </div>
 
-                        <div style={styles.formGrid}>
+                        <div style={{ ...styles.formGrid, marginTop: 20 }}>
                             <label style={styles.fieldLabel}>Demande validée
                                 <select required style={styles.formControl} value={form.demandeId} onChange={(e) => handleDemandeChange(e.target.value)}>
                                     <option value="">Choisir une demande</option>
@@ -485,7 +629,7 @@ export default function Projets() {
                                         <option value={editingProjet.demandeId}>{editingProjet.demandeObjet || `Demande #${editingProjet.demandeId}`}</option>
                                     )}
                                      {demandesForSelect.length === 0 && (
-                                        <option value="" disabled>Aucune demande disponible</option>
+                                         <option value="" disabled>Aucune demande disponible</option>
                                     )}
                                     {demandesForSelect.map(d => {
                                         const alreadyLinked = linkedDemandeIds.has(d.id);
@@ -519,7 +663,7 @@ export default function Projets() {
                                 </select>
                             </label>
                             <label style={{ ...styles.fieldLabel, gridColumn: "1 / -1" }}>Description
-                                <textarea rows={4} style={{ ...styles.formControl, resize: "vertical" }} value={form.description} onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))} />
+                                <textarea rows={4} style={{ ...styles.formControl, height: "auto", padding: "10px 12px", resize: "vertical" }} value={form.description} onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))} />
                             </label>
                             <label style={styles.fieldLabel}>Date fin
                                 <input type="date" style={styles.formControl} value={form.dateFin} onChange={(e) => setForm(prev => ({ ...prev, dateFin: e.target.value }))} />
@@ -533,25 +677,51 @@ export default function Projets() {
                     </form>
                 </div>
             )}
+
+            {confirmDeleteProjet && (
+                <div style={styles.modalOverlay} onClick={() => setConfirmDeleteProjet(null)}>
+                    <section style={styles.confirmCard} onClick={(event) => event.stopPropagation()}>
+                        <h2 style={styles.confirmTitle}>Supprimer ce projet ?</h2>
+                        <p style={styles.confirmText}>
+                            Cette action supprimera définitivement le projet "{confirmDeleteProjet.titre}" de la liste.
+                        </p>
+                        <div style={styles.confirmActions}>
+                            <button
+                                style={styles.cancelButton}
+                                onClick={() => setConfirmDeleteProjet(null)}
+                                disabled={deletingProjetId === confirmDeleteProjet.id}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                style={styles.confirmDeleteButton}
+                                onClick={() => void handleDeleteProjet()}
+                                disabled={deletingProjetId === confirmDeleteProjet.id}
+                            >
+                                {deletingProjetId === confirmDeleteProjet.id ? "Suppression..." : "Oui, supprimer"}
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
         </Layout>
     );
 }
 
 const styles: Record<string, CSSProperties> = {
-    page: { display: "flex", flexDirection: "column", gap: 18, paddingBottom: 28 },
+    page: { display: "flex", flexDirection: "column", gap: 18, paddingBottom: 28, fontFamily: "'Segoe UI', system-ui, sans-serif" },
     header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, marginBottom: 4 },
     eyebrow: { display: "block", color: SOMAP_BLUE, fontSize: 11, fontWeight: 800, letterSpacing: 1.1, marginBottom: 6 },
-    title: { margin: 0, fontSize: 32, lineHeight: 1.1, color: TEXT },
+    title: { margin: 0, fontSize: 32, lineHeight: 1.1, color: TEXT, fontWeight: 800 },
     subtitle: { marginTop: 6, color: MUTED, fontSize: 13 },
-    headerBadge: { height: 42, borderRadius: 12, background: SOMAP_BLUE, color: "#fff", padding: "0 12px", display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 },
-    headerButton: { background: "none", border: "none", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 },
+    headerButton: { height: 42, borderRadius: 12, background: SOMAP_BLUE, color: "#fff", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "opacity 0.15s ease", fontFamily: "'Segoe UI', system-ui, sans-serif" },
     errorBox: { display: "flex", alignItems: "center", gap: 8, background: "rgba(173,35,36,0.08)", border: "1px solid rgba(173,35,36,0.18)", color: "#8f1f20", borderRadius: 14, padding: "12px 14px", fontSize: 13, fontWeight: 700 },
     successBox: { display: "flex", alignItems: "center", gap: 8, background: "rgba(126,201,51,0.12)", border: "1px solid rgba(126,201,51,0.25)", color: "#2f7d32", borderRadius: 14, padding: "12px 14px", fontSize: 13, fontWeight: 700 },
     statsGrid: { display: "grid", gridTemplateColumns: "repeat(4, minmax(130px, 1fr))", gap: 14 },
-    statCard: { background: "#fff", border: "1px solid #e5edf5", borderRadius: 16, padding: 16, display: "flex", alignItems: "center", gap: 12 },
+    statCard: { background: "#fff", border: "1px solid #e5edf5", borderRadius: 16, padding: 16, display: "flex", alignItems: "center", gap: 12, boxShadow: "0 4px 12px rgba(18,113,184,0.02)" },
     statIcon: { width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
     statLabel: { margin: 0, color: MUTED, fontSize: 12, fontWeight: 600 },
-    statValue: { display: "block", color: TEXT, fontSize: 22, lineHeight: 1.1, marginTop: 2 },
+    statValue: { display: "block", color: TEXT, fontSize: 22, lineHeight: 1.1, marginTop: 2, fontWeight: 800 },
     statHelper: { margin: "3px 0 0", color: "#91a1b2", fontSize: 11 },
     toolbar: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
     searchBox: { flex: "1 1 280px", height: 44, background: "#fff", border: "1px solid #dfe9f3", borderRadius: 12, display: "flex", alignItems: "center", gap: 8, padding: "0 14px" },
@@ -559,45 +729,85 @@ const styles: Record<string, CSSProperties> = {
     searchInput: { flex: 1, border: "none", outline: "none", fontSize: 13, color: TEXT, background: "transparent", fontFamily: "inherit" },
     clearButton: { border: "none", background: "transparent", color: MUTED, fontSize: 18, cursor: "pointer", lineHeight: 1 },
     filters: { display: "flex", gap: 8, flexWrap: "wrap" },
-    filterButton: { border: "1px solid #dfe9f3", background: "#fff", color: MUTED, height: 38, padding: "0 13px", borderRadius: 999, fontWeight: 700, cursor: "pointer", fontSize: 12, fontFamily: "inherit" },
+    filterButton: { border: "1px solid #dfe9f3", background: "#fff", color: MUTED, height: 38, padding: "0 13px", borderRadius: 999, fontWeight: 700, cursor: "pointer", fontSize: 12, fontFamily: "inherit", transition: "all 0.15s ease" },
     filterButtonActive: { background: "rgba(18,113,184,0.10)", color: SOMAP_BLUE, borderColor: "rgba(18,113,184,0.22)" },
-    tableCard: { background: "#fff", border: "1px solid #e5edf5", borderRadius: 18, overflow: "hidden" },
+    tableCard: { background: "#fff", border: "1px solid #e5edf5", borderRadius: 18, overflow: "hidden", boxShadow: "0 8px 24px rgba(18,113,184,0.03)" },
     tableHeader: { padding: "16px 20px", borderBottom: "1px solid #edf2f7", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 },
-    sectionTitle: { margin: 0, color: TEXT, fontSize: 16, fontWeight: 600 },
+    sectionTitle: { margin: 0, color: TEXT, fontSize: 16, fontWeight: 700 },
     sectionSubtitle: { margin: "3px 0 0", color: MUTED, fontSize: 12 },
     countBadge: { background: "rgba(126,201,51,0.16)", color: "#3f8619", fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "5px 10px" },
-    row: { display: "grid", gridTemplateColumns: "minmax(250px, 1.7fr) minmax(120px, 0.8fr) minmax(150px, 0.9fr) minmax(92px, 0.55fr) minmax(130px, 0.8fr) minmax(160px, 0.9fr)", gap: 14, alignItems: "center", padding: "13px 20px", borderBottom: "1px solid #edf2f7" },
+    row: { display: "grid", gridTemplateColumns: "minmax(250px, 1.7fr) minmax(120px, 0.8fr) minmax(150px, 0.9fr) minmax(92px, 0.55fr) minmax(130px, 0.8fr) minmax(130px, 0.6fr)", gap: 14, alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #edf2f7" },
     headRow: { background: "#f8fbff", color: "#7890a8", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.7, paddingTop: 11, paddingBottom: 11 },
     demandeCell: { display: "flex", alignItems: "center", gap: 11, minWidth: 0 },
-    demandeIcon: { width: 10, height: 42, borderRadius: 999, boxShadow: "0 0 0 4px rgba(18,113,184,0.06)", flexShrink: 0 },
+    demandeIconBox: { width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
     demandeTitle: { display: "block", color: TEXT, fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
     demandeDescription: { margin: "3px 0 0", color: MUTED, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
     dateText: { display: "block", marginTop: 4, color: "#96a6b7", fontSize: 11, fontWeight: 700 },
     primaryText: { color: TEXT, fontSize: 13, fontWeight: 700 },
     secondaryText: { color: MUTED, fontSize: 12, fontWeight: 700 },
+    dateFinLabel: { display: "block", color: MUTED, fontSize: 11, fontWeight: 600 },
     statusBadge: { justifySelf: "start", border: "1px solid", borderRadius: 999, padding: "5px 10px", fontSize: 11, fontWeight: 800 },
-    actionCell: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
-    detailsButton: { border: "1px solid rgba(18,113,184,0.22)", background: "rgba(18,113,184,0.08)", color: SOMAP_BLUE, height: 32, padding: "0 11px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
-    editButton: { border: "1px solid rgba(126,201,51,0.28)", background: "rgba(126,201,51,0.14)", color: "#3f8619", height: 32, padding: "0 11px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer" },
-    deleteButton: { border: "1px solid rgba(173,35,36,0.22)", background: "rgba(173,35,36,0.08)", color: SOMAP_RED, height: 32, padding: "0 11px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer" },
+    actionCell: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" },
+    detailsButton: { border: "1px solid rgba(18,113,184,0.22)", background: "rgba(18,113,184,0.08)", color: SOMAP_BLUE, width: 34, height: 34, borderRadius: 8, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s ease" },
+    editButton: { border: "1px solid rgba(126,201,51,0.28)", background: "rgba(126,201,51,0.14)", color: "#3f8619", width: 34, height: 34, borderRadius: 8, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s ease" },
+    deleteButton: { border: "1px solid rgba(173,35,36,0.22)", background: "rgba(173,35,36,0.08)", color: SOMAP_RED, width: 34, height: 34, borderRadius: 8, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s ease" },
     emptyState: { padding: "48px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, color: MUTED, fontSize: 14 },
     resetButton: { border: "none", background: "rgba(18,113,184,0.10)", color: SOMAP_BLUE, padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" },
     modalOverlay: { position: "fixed", inset: 0, zIndex: 20, background: "rgba(10,24,44,0.42)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
-    modalCard: { width: "min(820px, 100%)", maxHeight: "84dvh", overflowY: "auto", background: "#fff", border: "1px solid #dfe9f3", borderRadius: 16, boxShadow: "0 24px 70px rgba(13,45,94,0.22)" },
+    modalCard: { width: "min(820px, 100%)", maxHeight: "84dvh", overflowY: "auto", background: "#fff", border: "1px solid #dfe9f3", borderRadius: 16, boxShadow: "0 24px 70px rgba(13,45,94,0.22)", fontFamily: "'Segoe UI', system-ui, sans-serif" },
     modalHeader: { padding: "22px 24px", background: `linear-gradient(135deg, ${SOMAP_BLUE}, #0f5d98 58%, ${SOMAP_GREEN})`, color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18 },
     modalEyebrow: { display: "block", fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, opacity: 0.78, marginBottom: 5 },
-    modalTitle: { margin: 0, color: "#fff", fontSize: 22, lineHeight: 1.15 },
+    modalTitle: { margin: 0, color: "#fff", fontSize: 22, lineHeight: 1.15, fontWeight: 800 },
     modalSubtitle: { margin: "6px 0 0", color: "rgba(255,255,255,0.84)", fontSize: 13, fontWeight: 700 },
     closeButton: { width: 34, height: 34, borderRadius: 8, border: "1px solid rgba(255,255,255,0.28)", background: "rgba(255,255,255,0.16)", color: "#fff", fontSize: 22, lineHeight: 1, cursor: "pointer" },
     modalMeta: { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12, padding: "18px 20px", borderBottom: "1px solid #edf2f7", background: "#f8fbff" },
-    modalLabel: { display: "block", color: MUTED, fontSize: 11, fontWeight: 800, textTransform: "uppercase", marginBottom: 5 },
+    modalLabel: { display: "block", color: MUTED, fontSize: 11, fontWeight: 800, textTransform: "uppercase", marginBottom: 5, letterSpacing: 0.5 },
     modalBody: { display: "grid", gridTemplateColumns: "1fr", gap: 16, padding: 20 },
-    descriptionPanel: { border: "1px solid #e5edf5", borderRadius: 14, padding: 16, background: "#fbfdff", minHeight: 180 },
+    sidebarValue: { display: "block", fontSize: 13, color: TEXT, marginTop: 4, fontWeight: 700 },
+    descriptionPanel: { border: "1px solid #e5edf5", borderRadius: 14, padding: 16, background: "#fbfdff", minHeight: 100 },
     fullDescription: { margin: "8px 0 0", color: TEXT, fontSize: 14, lineHeight: 1.65, whiteSpace: "pre-wrap" },
     modalFooter: { padding: "0 20px 20px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 10, flexWrap: "wrap" },
     formGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14, padding: "0 20px 20px" },
     fieldLabel: { display: "flex", flexDirection: "column", gap: 7, color: TEXT, fontSize: 12, fontWeight: 900 },
     formControl: { minHeight: 42, border: "1px solid #dfe9f3", borderRadius: 11, padding: "0 12px", color: TEXT, fontWeight: 700, outline: "none", fontFamily: "inherit" },
-    cancelButton: { border: "1px solid #dfe9f3", background: "#fff", color: MUTED, minHeight: 40, padding: "0 16px", borderRadius: 10, cursor: "pointer", fontWeight: 900 },
-    primaryButton: { border: "none", background: `linear-gradient(135deg, ${SOMAP_GREEN}, #5eb81f)`, color: "#fff", minHeight: 40, padding: "0 16px", borderRadius: 10, fontSize: 13, fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 },
+    cancelButton: { border: "1px solid #dfe9f3", background: "#fff", color: MUTED, minHeight: 40, padding: "0 16px", borderRadius: 10, cursor: "pointer", fontWeight: 900, fontFamily: "inherit" },
+    primaryButton: { border: "none", background: `linear-gradient(135deg, ${SOMAP_GREEN}, #5eb81f)`, color: "#fff", minHeight: 40, padding: "0 16px", borderRadius: 10, fontSize: 13, fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, fontFamily: "inherit" },
+    imagesPanel: { marginTop: 14, border: "1px solid #e5edf5", borderRadius: 14, padding: 16, background: "#fbfdff" },
+    imagesHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+    imageGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 12 },
+    demandeImage: { width: "100%", aspectRatio: "1.5", objectFit: "cover", borderRadius: 10, border: "1px solid #edf2f7", boxShadow: "0 2px 6px rgba(0,0,0,0.03)" },
+    noImages: { color: MUTED, fontSize: 12, fontWeight: 600, textAlign: "center", padding: "24px 0" },
+    modalEditButton: { border: "1px solid rgba(126,201,51,0.28)", background: "rgba(126,201,51,0.14)", color: "#3f8619", height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
+    modalDeleteButton: { border: "1px solid rgba(173,35,36,0.22)", background: "rgba(173,35,36,0.08)", color: SOMAP_RED, height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
+    modalValidateButton: { border: "1px solid rgba(126,201,51,0.28)", background: "rgba(126,201,51,0.14)", color: "#3f8619", height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
+    modalSuspendButton: { border: "1px solid rgba(173,35,36,0.22)", background: "rgba(173,35,36,0.08)", color: SOMAP_RED, height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
+    modalResumeButton: { border: "1px solid rgba(18,113,184,0.22)", background: "rgba(18,113,184,0.08)", color: SOMAP_BLUE, height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
+    confirmCard: {
+        width: "min(420px, 100%)",
+        background: "#fff",
+        border: "1px solid #dfe9f3",
+        borderRadius: 16,
+        padding: 20,
+        boxShadow: "0 24px 70px rgba(13,45,94,0.22)",
+    },
+    confirmTitle: { margin: 0, color: TEXT, fontSize: 18, fontWeight: 700 },
+    confirmText: { margin: "10px 0 0", color: MUTED, fontSize: 13, lineHeight: 1.5 },
+    confirmActions: {
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 18,
+    },
+    confirmDeleteButton: {
+        border: "none",
+        background: SOMAP_RED,
+        color: "#fff",
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
 };

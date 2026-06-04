@@ -14,6 +14,8 @@ public class Client extends Utilisateur {
 
     private String adresse;
 
+    private String pushToken;
+
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
     private List<Demande> demandes;
 

@@ -6,8 +6,10 @@ import com.somap.backend.entity.Notification;
 import com.somap.backend.entity.Utilisateur;
 import com.somap.backend.enums.NotificationType;
 import com.somap.backend.repository.AdminRepository;
+import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.NotificationRepository;
 import com.somap.backend.repository.UtilisateurRepository;
+import com.somap.backend.service.ExpoNotificationService;
 import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationRepository notificationRepository;
     private final UtilisateurRepository utilisateurRepository;
     private final AdminRepository adminRepository;
+    private final ClientRepository clientRepository;
+    private final ExpoNotificationService expoNotificationService;
 
     // =========================
     // CREATE NOTIFICATION
@@ -61,6 +65,21 @@ public class NotificationServiceImpl implements NotificationService {
                 + " userId=" + saved.getUtilisateur().getId()
                 + " type=" + saved.getType()
                 + " date=" + saved.getDateEnvoi());
+
+        try {
+            clientRepository.findById(user.getId()).ifPresent(client -> {
+                if (client.getPushToken() != null && !client.getPushToken().trim().isEmpty()) {
+                    System.out.println("[EXPO PUSH] Dispatching push to client: " + client.getId());
+                    expoNotificationService.sendPushNotification(
+                            client.getPushToken(),
+                            saved.getTitre(),
+                            saved.getMessage()
+                    );
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("[EXPO PUSH ERROR] Failed to dispatch push notification: " + e.getMessage());
+        }
 
         return mapToDTO(saved);
     }

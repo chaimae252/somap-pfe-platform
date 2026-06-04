@@ -283,6 +283,22 @@ function ReplyCard({
     );
 }
 
+const flattenReplies = (replies: any[]): any[] => {
+    if (!replies || replies.length === 0) return [];
+    let flat: any[] = [];
+    replies.forEach((reply) => {
+        flat.push(reply);
+        if (reply.replies && reply.replies.length > 0) {
+            flat = flat.concat(flattenReplies(reply.replies));
+        }
+    });
+    return flat.sort((a, b) => {
+        const dateA = new Date(a.dateCommentaire || a.date_commentaire || 0).getTime();
+        const dateB = new Date(b.dateCommentaire || b.date_commentaire || 0).getTime();
+        return dateA - dateB;
+    });
+};
+
 export default function CommentCard({
     item,
     currentClientId,
@@ -292,7 +308,8 @@ export default function CommentCard({
     onEditingChange,
 }: any) {
     const clientName = getClientName(item);
-    const hasReplies = item.replies?.length > 0;
+    const flatReplies = flattenReplies(item.replies);
+    const hasReplies = flatReplies.length > 0;
     const [showReplies, setShowReplies] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -449,7 +466,7 @@ export default function CommentCard({
                         <Text style={styles.replyText}>
                             {showReplies
                                 ? "Masquer les reponses"
-                                : `Voir ${item.replies.length} reponse${item.replies.length > 1 ? "s" : ""}`}
+                                : `Voir ${flatReplies.length} reponse${flatReplies.length > 1 ? "s" : ""}`}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -459,7 +476,7 @@ export default function CommentCard({
                 <View style={styles.repliesContainer}>
                     <View style={styles.threadLine} />
                     <View style={styles.repliesList}>
-                        {item.replies.map((reply: any) => (
+                        {flatReplies.map((reply: any) => (
                             <ReplyCard
                                 key={reply.id}
                                 item={reply}

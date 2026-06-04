@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from "react-native";
-import { useState,useCallback  } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +19,7 @@ import { getCurrentProject } from "../../services/projectService";
 import { getNotifications } from "../../services/notificationService";
 import NotificationButton from "@/components/ui/NotificationButton";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { registerForPushNotificationsAsync } from "../../services/pushNotificationService";
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 
@@ -71,6 +72,12 @@ export default function HomeScreen() {
   const [services, setServices] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [project, setProject] = useState<any>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      void registerForPushNotificationsAsync(user.id);
+    }
+  }, [user?.id]);
 
   const fetchHomeData = useCallback(async () => {
     try {

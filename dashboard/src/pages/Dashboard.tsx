@@ -203,13 +203,6 @@ export default function Dashboard() {
             icon: BuildOutlinedIcon,
             color: SOMAP_RED,
         },
-        {
-            label: "Notifications",
-            value: stats.notifications ?? 0,
-            helper: "Alertes et suivis",
-            icon: NotificationsNoneOutlinedIcon,
-            color: "#6f42c1",
-        },
     ];
 
     const analysisRows = [
@@ -607,7 +600,7 @@ const styles: Record<string, CSSProperties> = {
     },
     statsGrid: {
         display: "grid",
-        gridTemplateColumns: "repeat(5, minmax(140px, 1fr))",
+        gridTemplateColumns: "repeat(4, minmax(140px, 1fr))",
         gap: 14,
     },
     statCard: {

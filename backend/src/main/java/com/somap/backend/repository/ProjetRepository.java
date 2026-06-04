@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface ProjetRepository extends JpaRepository<Projet, Long> {
 
     List<Projet> findByClientId(Long clientId);
+    List<Projet> findByClientIdOrderByDateDebutDesc(Long clientId);
+    List<Projet> findAllByOrderByDateDebutDesc();
     Optional<Projet> findFirstByOrderByDateDebutDesc();
     long countByClientId(Long clientId);
     boolean existsByDemandeId(Long demandeId);

@@ -101,4 +101,13 @@ public class ClientServiceImpl implements ClientService {
 
         return dto;
     }
+
+    @Override
+    @Transactional
+    public void updatePushToken(Long id, String pushToken) {
+        Client client = clientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client introuvable"));
+        client.setPushToken(pushToken);
+        clientRepository.save(client);
+    }
 }

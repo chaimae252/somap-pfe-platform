@@ -16,4 +16,6 @@ public interface ClientService {
     ClientDTO updateClient(Long id, ClientDTO clientDTO);
 
     void deleteClient(Long id);
+
+    void updatePushToken(Long id, String pushToken);
 }

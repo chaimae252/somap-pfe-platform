@@ -76,7 +76,7 @@ public class ProjetServiceImpl implements ProjetService {
 
      @Override
     public List<ProjetDTO> getAllProjects() {
-        return projetRepository.findAll()
+        return projetRepository.findAllByOrderByDateDebutDesc()
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
@@ -239,7 +239,7 @@ public class ProjetServiceImpl implements ProjetService {
     }
     @Override
 public List<ProjetDTO> getProjectsByClient(Long clientId) {
-    return projetRepository.findByClientId(clientId)
+    return projetRepository.findByClientIdOrderByDateDebutDesc(clientId)
             .stream()
             .map(this::mapToDTO)
             .collect(Collectors.toList());

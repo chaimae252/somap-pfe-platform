@@ -45,7 +45,7 @@ const getSafeImages = (images?: { imageUrl: string | null }[]) => {
 /* -------------------------------------------------- */
 
 export default function ServiceDetails() {
-    const { id } = useLocalSearchParams();
+    const { id, openComments } = useLocalSearchParams();
     const router = useRouter();
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
@@ -54,6 +54,12 @@ export default function ServiceDetails() {
     const [loading, setLoading] = useState(true);
     const [activeImg, setActiveImg] = useState(0);
     const [commentsVisible, setCommentsVisible] = useState(false);
+
+    useEffect(() => {
+        if (openComments === "true") {
+            setCommentsVisible(true);
+        }
+    }, [openComments]);
 
     const slideAnim = useRef(new Animated.Value(28)).current;
     const fadeAnim = useRef(new Animated.Value(1)).current;
