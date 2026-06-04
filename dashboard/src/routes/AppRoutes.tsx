@@ -10,6 +10,7 @@ import Notifications from "../pages/Notifications";
 import Profile from "../pages/Profile";
 import RegisterAdmin from "../pages/RegisterAdmin";
 import Login from "../pages/Login";
+import ContactMessages from "../pages/ContactMessages";
 
 export default function AppRoutes() {
     return (
@@ -23,6 +24,7 @@ export default function AppRoutes() {
             <Route path="/projets" element={<Projets />} />
             <Route path="/services" element={<Services />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/messages" element={<ContactMessages />} />
             <Route path="/profile" element={<Profile />} />
         </Routes>
     );

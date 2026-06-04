@@ -1,13 +1,22 @@
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import DoneAllOutlinedIcon from "@mui/icons-material/DoneAllOutlined";
+import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
+import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import Layout from "../components/Layout";
 import api from "../api/api";
+import { useNavigate } from "react-router-dom";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
+const SOMAP_RED = "#ad2324";
+const SOMAP_GOLD = "#f6b718";
 const TEXT = "#1a2e4a";
 const MUTED = "#6b7f95";
 
@@ -21,6 +30,8 @@ type NotificationItem = {
     targetType?: string;
     targetId?: number;
 };
+
+type FilterType = "TOUT" | "NON_LUES" | "DEMANDE" | "PROJET" | "SYSTEME";
 
 function formatDate(value?: string) {
     if (!value) return "Date non disponible";
@@ -38,66 +49,178 @@ function formatDate(value?: string) {
 }
 
 function formatType(type?: string) {
-    if (!type) return "Systeme";
+    if (!type) return "Système";
     return type.toLowerCase().replaceAll("_", " ").replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
 export default function Notifications() {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [search, setSearch] = useState("");
+    const [filter, setFilter] = useState<FilterType>("TOUT");
+    const [pendingMessagesCount, setPendingMessagesCount] = useState(0);
+
+    const loadNotifications = async () => {
+        setLoading(true);
+        setError("");
+        const adminId = localStorage.getItem("userId");
+
+        try {
+            // Load pending contact messages count
+            try {
+                const countResponse = await api.get<number>("/contact/admin/pending-count");
+                setPendingMessagesCount(countResponse.data ?? 0);
+            } catch {
+                setPendingMessagesCount(0);
+            }
+
+            // ✅ Fix: Load notifications specifically for this user to avoid duplications from other admins
+            const url = adminId ? `/notifications/client/${adminId}` : "/notifications";
+            const response = await api.get<NotificationItem[]>(url);
+            
+            // ✅ Fix: Sort newest first (by dateEnvoi descending)
+            const sorted = (response.data ?? []).sort((a, b) => {
+                const dateA = a.dateEnvoi ? new Date(a.dateEnvoi).getTime() : 0;
+                const dateB = b.dateEnvoi ? new Date(b.dateEnvoi).getTime() : 0;
+                return dateB - dateA;
+            });
+            setNotifications(sorted);
+        } catch {
+            setNotifications([]);
+            setError("Impossible de charger les notifications.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const loadNotifications = async () => {
-            setLoading(true);
-            setError("");
-
-            try {
-                const response = await api.get<NotificationItem[]>("/notifications");
-                setNotifications(response.data ?? []);
-            } catch {
-                setNotifications([]);
-                setError("Impossible de charger les notifications.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
         void loadNotifications();
     }, []);
 
     const unreadCount = useMemo(
-        () => notifications.filter((notification) => !notification.lu).length,
+        () => notifications.filter((n) => !n.lu).length,
         [notifications]
     );
 
     const markAsRead = async (id: number) => {
         setNotifications((items) =>
-            items.map((notification) =>
-                notification.id === id ? { ...notification, lu: true } : notification
-            )
+            items.map((n) => (n.id === id ? { ...n, lu: true } : n))
         );
 
         try {
             await api.put(`/notifications/${id}/read`);
         } catch {
-            setError("Notification marquee localement, mais le backend n'a pas confirme la mise a jour.");
+            setError("Impossible de marquer la notification comme lue.");
+            void loadNotifications();
+        }
+    };
+
+    const markAllAsRead = async () => {
+        const unreadList = notifications.filter((n) => !n.lu);
+        if (unreadList.length === 0) return;
+
+        setNotifications((items) => items.map((n) => ({ ...n, lu: true })));
+
+        try {
+            await Promise.all(unreadList.map((n) => api.put(`/notifications/${n.id}/read`)));
+        } catch {
+            setError("Certaines notifications n'ont pas pu être marquées comme lues.");
+            void loadNotifications();
+        }
+    };
+
+    const deleteNotification = async (id: number) => {
+        setNotifications((items) => items.filter((n) => n.id !== id));
+
+        try {
+            await api.delete(`/notifications/${id}`);
+        } catch {
+            setError("Impossible de supprimer la notification.");
+            void loadNotifications();
+        }
+    };
+
+    const handleViewDetail = (n: NotificationItem) => {
+        if (n.targetType === "DEMANDE" && n.targetId) {
+            navigate(`/demandes?id=${n.targetId}`);
+        } else if (n.targetType === "PROJET" && n.targetId) {
+            navigate(`/projets?id=${n.targetId}`);
+        }
+    };
+
+    const filteredNotifications = useMemo(() => {
+        const q = search.toLowerCase().trim();
+        return notifications.filter((n) => {
+            const matchSearch =
+                !q ||
+                n.titre.toLowerCase().includes(q) ||
+                n.message.toLowerCase().includes(q) ||
+                formatType(n.type).toLowerCase().includes(q);
+
+            const matchFilter =
+                filter === "TOUT" ||
+                (filter === "NON_LUES" && !n.lu) ||
+                (filter === "DEMANDE" && n.type === "DEMANDE") ||
+                (filter === "PROJET" && n.type === "PROJET") ||
+                (filter === "SYSTEME" && n.type === "SYSTEME");
+
+            return matchSearch && matchFilter;
+        });
+    }, [notifications, search, filter]);
+
+    const getNotificationIcon = (type?: string) => {
+        switch (type) {
+            case "DEMANDE":
+                return <AssignmentOutlinedIcon sx={{ fontSize: 20 }} />;
+            case "PROJET":
+                return <WorkOutlineOutlinedIcon sx={{ fontSize: 20 }} />;
+            default:
+                return <NotificationsNoneOutlinedIcon sx={{ fontSize: 20 }} />;
+        }
+    };
+
+    const getIconColorStyle = (type?: string, lu?: boolean) => {
+        if (lu) {
+            return { color: "#7890a8", background: "#f0f4f8" };
+        }
+        switch (type) {
+            case "DEMANDE":
+                return { color: SOMAP_GOLD, background: "rgba(246,183,24,0.12)" };
+            case "PROJET":
+                return { color: SOMAP_BLUE, background: "rgba(18,113,184,0.12)" };
+            default:
+                return { color: SOMAP_GREEN, background: "rgba(126,201,51,0.14)" };
         }
     };
 
     return (
         <Layout>
             <div style={styles.page}>
+                {/* Header */}
                 <section style={styles.header}>
                     <div>
                         <span style={styles.eyebrow}>SOMAP & SERVICE</span>
                         <h1 style={styles.title}>Notifications</h1>
-                        <p style={styles.subtitle}>Suivi des alertes, messages systeme et mises a jour importantes.</p>
+                        <p style={styles.subtitle}>Suivez les alertes, activités récentes et demandes d'assistance.</p>
                     </div>
 
-                    <div style={styles.headerBadge}>
-                        <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
-                        {loading ? "Chargement..." : `${unreadCount} non lue${unreadCount !== 1 ? "s" : ""}`}
+                    <div style={styles.headerActions}>
+                        <button style={styles.contactMessagesButton} onClick={() => navigate("/messages")}>
+                            <EmailOutlinedIcon sx={{ fontSize: 18 }} />
+                            Messages directs ({pendingMessagesCount})
+                        </button>
+                        {unreadCount > 0 && (
+                            <button style={styles.markAllButton} onClick={() => void markAllAsRead()}>
+                                <DoneAllOutlinedIcon sx={{ fontSize: 18 }} />
+                                Tout marquer comme lu
+                            </button>
+                        )}
+                        <div style={styles.headerBadge}>
+                            <NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />
+                            {loading ? "..." : `${unreadCount} non lue${unreadCount !== 1 ? "s" : ""}`}
+                        </div>
                     </div>
                 </section>
 
@@ -108,94 +231,155 @@ export default function Notifications() {
                     </section>
                 )}
 
+                {/* Stats row */}
                 <section style={styles.statsGrid}>
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, color: SOMAP_BLUE, background: "rgba(18,113,184,0.12)" }}>
+                        <div style={{ ...styles.statIcon, color: SOMAP_BLUE, background: "rgba(18,113,184,0.10)" }}>
                             <NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} />
                         </div>
                         <div>
                             <p style={styles.statLabel}>Total notifications</p>
                             <strong style={styles.statValue}>{loading ? "-" : notifications.length}</strong>
-                            <p style={styles.statHelper}>Toutes les alertes</p>
+                            <p style={styles.statHelper}>Reçues sur votre compte</p>
                         </div>
                     </div>
 
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, color: SOMAP_GREEN, background: "rgba(126,201,51,0.14)" }}>
+                        <div style={{ ...styles.statIcon, color: SOMAP_GREEN, background: "rgba(126,201,51,0.10)" }}>
                             <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 22 }} />
                         </div>
                         <div>
-                            <p style={styles.statLabel}>Lues</p>
+                            <p style={styles.statLabel}>Consultées</p>
                             <strong style={styles.statValue}>{loading ? "-" : notifications.length - unreadCount}</strong>
-                            <p style={styles.statHelper}>Deja consultees</p>
+                            <p style={styles.statHelper}>Notifications lues</p>
                         </div>
                     </div>
 
                     <div style={styles.statCard}>
-                        <div style={{ ...styles.statIcon, color: "#8a5a00", background: "#fff4d6" }}>
+                        <div style={{ ...styles.statIcon, color: SOMAP_GOLD, background: "rgba(246,183,24,0.10)" }}>
                             <NotificationsNoneOutlinedIcon sx={{ fontSize: 22 }} />
                         </div>
                         <div>
                             <p style={styles.statLabel}>Non lues</p>
                             <strong style={styles.statValue}>{loading ? "-" : unreadCount}</strong>
-                            <p style={styles.statHelper}>A traiter</p>
+                            <p style={styles.statHelper}>Nécessitent votre attention</p>
                         </div>
                     </div>
                 </section>
 
-                <section style={styles.tableCard}>
-                    <div style={styles.tableHeader}>
-                        <div>
-                            <h2 style={styles.sectionTitle}>Liste des notifications</h2>
-                            <p style={styles.sectionSubtitle}>
-                                {loading ? "Chargement en cours" : `${notifications.length} notification${notifications.length !== 1 ? "s" : ""} au total`}
-                            </p>
-                        </div>
-                        <span style={styles.countBadge}>{unreadCount} non lues</span>
+                {/* Toolbar (Search & Filter Tabs) */}
+                <section style={styles.toolbar}>
+                    <div style={styles.searchBox}>
+                        <span style={styles.searchIcon}>⌕</span>
+                        <input
+                            style={styles.searchInput}
+                            placeholder="Rechercher une notification..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        {search && (
+                            <button style={styles.clearButton} onClick={() => setSearch("")}>×</button>
+                        )}
                     </div>
 
-                    <div style={{ ...styles.row, ...styles.headRow }}>
-                        <span>Notification</span>
-                        <span>Type</span>
-                        <span>Date</span>
-                        <span>Statut</span>
-                    </div>
-
-                    {notifications.length > 0 ? (
-                        notifications.map((notification, index) => (
-                            <div
-                                key={notification.id}
-                                style={{
-                                    ...styles.row,
-                                    ...(index === notifications.length - 1 ? { borderBottom: "none" } : {}),
-                                }}
+                    <div style={styles.filters}>
+                        {(["TOUT", "NON_LUES", "DEMANDE", "PROJET", "SYSTEME"] as FilterType[]).map((f) => (
+                            <button
+                                key={f}
+                                style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
+                                onClick={() => setFilter(f)}
                             >
-                                <div style={styles.notificationCell}>
-                                    <div style={{ ...styles.dot, background: notification.lu ? "#cbd8e5" : SOMAP_GREEN }} />
-                                    <div style={{ minWidth: 0 }}>
-                                        <strong style={styles.notificationTitle}>{notification.titre}</strong>
-                                        <p style={styles.notificationMessage}>{notification.message}</p>
-                                    </div>
-                                </div>
+                                {f === "TOUT" ? "Toutes" : f === "NON_LUES" ? "Non lues" : f === "DEMANDE" ? "Demandes" : f === "PROJET" ? "Projets" : "Système"}
+                            </button>
+                        ))}
+                    </div>
+                </section>
 
-                                <span style={styles.typeBadge}>{formatType(notification.type)}</span>
-                                <span style={styles.secondaryText}>{formatDate(notification.dateEnvoi)}</span>
-                                {notification.lu ? (
-                                    <span style={{ ...styles.statusBadge, ...styles.readBadge }}>Lue</span>
-                                ) : (
-                                    <button style={styles.markButton} onClick={() => void markAsRead(notification.id)}>
-                                        Marquer lue
-                                    </button>
-                                )}
-                            </div>
-                        ))
-                    ) : (
-                        <div style={styles.emptyState}>
-                            <p style={{ margin: 0, color: MUTED, fontSize: 14 }}>
-                                {loading ? "Chargement des notifications..." : "Aucune notification disponible."}
+                {/* Notification List Container */}
+                <section style={styles.listCard}>
+                    <div style={styles.listHeader}>
+                        <div>
+                            <h2 style={styles.sectionTitle}>Boîte de réception</h2>
+                            <p style={styles.sectionSubtitle}>
+                                {loading
+                                    ? "Chargement des notifications..."
+                                    : filteredNotifications.length === notifications.length
+                                      ? `${notifications.length} notifications enregistrées`
+                                      : `${filteredNotifications.length} résultat${filteredNotifications.length !== 1 ? "s" : ""} trouvé${filteredNotifications.length !== 1 ? "s" : ""}`}
                             </p>
                         </div>
-                    )}
+                    </div>
+
+                    <div style={styles.cardsContainer}>
+                        {loading ? (
+                            <div style={styles.loadingState}>Chargement en cours...</div>
+                        ) : filteredNotifications.length > 0 ? (
+                            filteredNotifications.map((n) => {
+                                const iconStyle = getIconColorStyle(n.type, n.lu);
+                                return (
+                                    <div
+                                        key={n.id}
+                                        style={{
+                                            ...styles.notificationRow,
+                                            borderLeft: n.lu ? "4px solid transparent" : `4px solid ${SOMAP_GREEN}`,
+                                            background: n.lu ? "#ffffff" : "#f7fcfa"
+                                        }}
+                                    >
+                                        <div style={{ ...styles.iconBadge, ...iconStyle }}>
+                                            {getNotificationIcon(n.type)}
+                                        </div>
+
+                                        <div style={styles.contentArea}>
+                                            <div style={styles.titleRow}>
+                                                <strong style={{ ...styles.notifTitle, color: n.lu ? "#4a5568" : TEXT }}>
+                                                    {n.titre}
+                                                </strong>
+                                                <span style={styles.dateLabel}>{formatDate(n.dateEnvoi)}</span>
+                                            </div>
+                                            <p style={{ ...styles.notifMessage, color: n.lu ? MUTED : "#2d3748" }}>
+                                                {n.message}
+                                            </p>
+                                            
+                                            <div style={styles.footerRow}>
+                                                <span style={styles.typeLabel}>{formatType(n.type)}</span>
+                                                {n.targetType && n.targetId && (
+                                                    <button style={styles.inlineLinkButton} onClick={() => handleViewDetail(n)}>
+                                                        <VisibilityOutlinedIcon sx={{ fontSize: 13 }} />
+                                                        Voir l'élément
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div style={styles.actionsPanel}>
+                                            {!n.lu && (
+                                                <button
+                                                    style={{ ...styles.actionBtn, color: SOMAP_BLUE, background: "rgba(18,113,184,0.06)" }}
+                                                    title="Marquer comme lu"
+                                                    onClick={() => void markAsRead(n.id)}
+                                                >
+                                                    <CheckCircleOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+                                                </button>
+                                            )}
+                                            <button
+                                                style={{ ...styles.actionBtn, color: SOMAP_RED, background: "rgba(173,35,36,0.06)" }}
+                                                title="Supprimer"
+                                                onClick={() => void deleteNotification(n.id)}
+                                            >
+                                                <DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div style={styles.emptyState}>
+                                <div style={styles.emptyIcon}>✓</div>
+                                <h3>Aucune notification</h3>
+                                <p>Votre boîte de réception est complètement à jour !</p>
+                            </div>
+                        )}
+                    </div>
                 </section>
             </div>
         </Layout>
@@ -209,6 +393,7 @@ const styles: Record<string, CSSProperties> = {
         gap: 18,
         minWidth: 0,
         paddingBottom: 28,
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
     header: {
         display: "flex",
@@ -230,11 +415,49 @@ const styles: Record<string, CSSProperties> = {
         fontSize: 32,
         lineHeight: 1.1,
         color: TEXT,
+        fontWeight: 800,
     },
     subtitle: {
         marginTop: 6,
         color: MUTED,
         fontSize: 13,
+    },
+    headerActions: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+    },
+    contactMessagesButton: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: "rgba(246,183,24,0.08)",
+        border: "1px solid rgba(246,183,24,0.18)",
+        color: SOMAP_GOLD,
+        height: 38,
+        padding: "0 14px",
+        borderRadius: 10,
+        fontSize: 12.5,
+        fontWeight: 700,
+        cursor: "pointer",
+        transition: "all 0.2s",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    markAllButton: {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        background: "rgba(18,113,184,0.08)",
+        border: "1px solid rgba(18,113,184,0.18)",
+        color: SOMAP_BLUE,
+        height: 38,
+        padding: "0 14px",
+        borderRadius: 10,
+        fontSize: 12.5,
+        fontWeight: 700,
+        cursor: "pointer",
+        transition: "all 0.2s",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
     headerBadge: {
         height: 42,
@@ -263,7 +486,7 @@ const styles: Record<string, CSSProperties> = {
     },
     statsGrid: {
         display: "grid",
-        gridTemplateColumns: "repeat(3, minmax(150px, 1fr))",
+        gridTemplateColumns: "repeat(3, minmax(180px, 1fr))",
         gap: 14,
     },
     statCard: {
@@ -274,10 +497,11 @@ const styles: Record<string, CSSProperties> = {
         display: "flex",
         alignItems: "center",
         gap: 12,
+        boxShadow: "0 4px 12px rgba(18,113,184,0.02)",
     },
     statIcon: {
-        width: 40,
-        height: 40,
+        width: 42,
+        height: 42,
         borderRadius: 12,
         display: "flex",
         alignItems: "center",
@@ -285,119 +509,201 @@ const styles: Record<string, CSSProperties> = {
         flexShrink: 0,
     },
     statLabel: { margin: 0, color: MUTED, fontSize: 12, fontWeight: 600 },
-    statValue: { display: "block", color: TEXT, fontSize: 22, lineHeight: 1.1, marginTop: 2 },
-    statHelper: { margin: "3px 0 0", color: "#91a1b2", fontSize: 11 },
-    tableCard: {
+    statValue: { display: "block", color: TEXT, fontSize: 22, lineHeight: 1.1, marginTop: 2, fontWeight: 800 },
+    statHelper: { margin: "3px 0 0", color: "#91a1b2", fontSize: 11, fontWeight: 500 },
+    toolbar: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap",
+    },
+    searchBox: {
+        flex: "1 1 280px",
+        height: 44,
+        background: "#fff",
+        border: "1px solid #dfe9f3",
+        borderRadius: 12,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "0 14px",
+    },
+    searchIcon: { color: SOMAP_BLUE, fontSize: 19, fontWeight: 900, flexShrink: 0 },
+    searchInput: {
+        flex: 1,
+        border: "none",
+        outline: "none",
+        fontSize: 13,
+        color: TEXT,
+        background: "transparent",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    clearButton: {
+        border: "none",
+        background: "transparent",
+        color: MUTED,
+        fontSize: 18,
+        cursor: "pointer",
+        lineHeight: 1,
+    },
+    filters: {
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap",
+    },
+    filterButton: {
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: MUTED,
+        height: 38,
+        padding: "0 14px",
+        borderRadius: 999,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontSize: 12,
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        transition: "all 0.15s ease",
+    },
+    filterButtonActive: {
+        background: "rgba(18,113,184,0.10)",
+        color: SOMAP_BLUE,
+        borderColor: "rgba(18,113,184,0.22)",
+    },
+    listCard: {
         background: "#fff",
         border: "1px solid #e5edf5",
         borderRadius: 18,
         overflow: "hidden",
+        boxShadow: "0 8px 24px rgba(18,113,184,0.03)",
     },
-    tableHeader: {
+    listHeader: {
         padding: "16px 20px",
         borderBottom: "1px solid #edf2f7",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        gap: 12,
     },
-    sectionTitle: { margin: 0, color: TEXT, fontSize: 16, fontWeight: 600 },
+    sectionTitle: { margin: 0, color: TEXT, fontSize: 16, fontWeight: 700 },
     sectionSubtitle: { margin: "3px 0 0", color: MUTED, fontSize: 12 },
-    countBadge: {
-        background: "rgba(126,201,51,0.16)",
-        color: "#3f8619",
-        fontSize: 12,
-        fontWeight: 700,
-        borderRadius: 999,
-        padding: "5px 10px",
+    cardsContainer: {
+        display: "flex",
+        flexDirection: "column",
     },
-    row: {
-        display: "grid",
-        gridTemplateColumns: "minmax(260px, 1.8fr) minmax(110px, 0.7fr) minmax(160px, 0.9fr) minmax(100px, 0.6fr)",
+    notificationRow: {
+        display: "flex",
+        alignItems: "flex-start",
+        padding: "18px 20px",
+        borderBottom: "1px solid #f0f4f8",
         gap: 14,
-        alignItems: "center",
-        padding: "13px 20px",
-        borderBottom: "1px solid #edf2f7",
+        position: "relative",
+        transition: "all 0.15s ease",
     },
-    headRow: {
-        background: "#f8fbff",
-        color: "#7890a8",
-        fontSize: 11,
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: 0.7,
-        paddingTop: 11,
-        paddingBottom: 11,
-    },
-    notificationCell: {
+    iconBadge: {
+        width: 38,
+        height: 38,
+        borderRadius: 10,
         display: "flex",
         alignItems: "center",
-        gap: 11,
-        minWidth: 0,
-    },
-    dot: {
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
+        justifyContent: "center",
         flexShrink: 0,
     },
-    notificationTitle: {
-        display: "block",
-        color: TEXT,
-        fontSize: 13,
+    contentArea: {
+        flex: 1,
+        minWidth: 0,
+    },
+    titleRow: {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "baseline",
+        gap: 12,
+    },
+    notifTitle: {
+        fontSize: 14,
         fontWeight: 700,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
+        lineHeight: 1.3,
     },
-    notificationMessage: {
-        margin: "3px 0 0",
-        color: MUTED,
-        fontSize: 12,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-    },
-    secondaryText: {
-        color: MUTED,
-        fontSize: 12,
-        fontWeight: 700,
-    },
-    typeBadge: {
-        justifySelf: "start",
-        background: "rgba(18,113,184,0.10)",
-        color: SOMAP_BLUE,
-        borderRadius: 999,
-        padding: "5px 10px",
+    dateLabel: {
         fontSize: 11,
+        color: "#96a6b7",
         fontWeight: 700,
+        flexShrink: 0,
     },
-    statusBadge: {
-        justifySelf: "start",
-        borderRadius: 999,
-        padding: "5px 10px",
-        fontSize: 11,
-        fontWeight: 700,
+    notifMessage: {
+        margin: "5px 0 8px",
+        fontSize: 12.5,
+        lineHeight: 1.45,
     },
-    readBadge: {
-        color: "#2f7d32",
-        background: "rgba(126,201,51,0.15)",
+    footerRow: {
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
     },
-    markButton: {
-        justifySelf: "start",
-        border: "none",
-        background: "rgba(18,113,184,0.10)",
-        color: SOMAP_BLUE,
-        borderRadius: 999,
-        padding: "7px 11px",
-        fontSize: 11,
+    typeLabel: {
+        fontSize: 10,
         fontWeight: 800,
+        color: "#7890a8",
+        background: "#edf2f7",
+        padding: "2px 8px",
+        borderRadius: 4,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+    },
+    inlineLinkButton: {
+        border: "none",
+        background: "transparent",
+        color: SOMAP_BLUE,
+        fontSize: 11.5,
+        fontWeight: 700,
         cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: 0,
         fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
-    emptyState: {
-        padding: "48px 20px",
+    actionsPanel: {
         display: "flex",
+        alignItems: "center",
+        gap: 8,
+        marginLeft: 12,
+        flexShrink: 0,
+    },
+    actionBtn: {
+        border: "none",
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        display: "flex",
+        alignItems: "center",
         justifyContent: "center",
+        cursor: "pointer",
+        transition: "all 0.15s",
+    },
+    loadingState: {
+        padding: "48px 20px",
+        textAlign: "center",
+        color: MUTED,
+        fontSize: 14,
+    },
+    emptyState: {
+        padding: "64px 20px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        gap: 8,
+    },
+    emptyIcon: {
+        width: 54,
+        height: 54,
+        borderRadius: "50%",
+        background: "rgba(126,201,51,0.12)",
+        color: SOMAP_GREEN,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 24,
+        fontWeight: "bold",
+        marginBottom: 8,
     },
 };

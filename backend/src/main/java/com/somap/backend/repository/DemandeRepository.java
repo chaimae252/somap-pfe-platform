@@ -11,6 +11,8 @@ public interface DemandeRepository extends JpaRepository<Demande, Long> {
 
     List<Demande> findByClientId(Long clientId);
     List<Demande> findByStatut(DemandeStatus statut);
+    List<Demande> findByClientIdOrderByDateCreationDesc(Long clientId);
+    List<Demande> findAllByOrderByDateCreationDesc();
     long countByClientId(Long clientId);
     long countByStatut(DemandeStatus statut);
 

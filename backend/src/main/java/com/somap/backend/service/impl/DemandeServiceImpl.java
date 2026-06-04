@@ -83,7 +83,7 @@ public class DemandeServiceImpl implements DemandeService {
     // 📋 GET ALL
     @Override
     public List<DemandeDTO> getAllDemandes() {
-        return demandeRepository.findAll()
+        return demandeRepository.findAllByOrderByDateCreationDesc()
                 .stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
@@ -224,13 +224,14 @@ return mapToDTO(updated);
         return dto;
     }
     @Override
-public List<DemandeDTO> getDemandesByClient(Long clientId) {
-    return demandeRepository.findByClientId(clientId)
-            .stream()
-            .map(this::mapToDTO)
-            .collect(Collectors.toList());
-}
-private void createProjectWhenValidated(
+    public List<DemandeDTO> getDemandesByClient(Long clientId) {
+        return demandeRepository.findByClientIdOrderByDateCreationDesc(clientId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private void createProjectWhenValidated(
             Demande demande,
             DemandeStatus oldStatus,
             DemandeStatus newStatus

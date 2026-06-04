@@ -7,6 +7,7 @@ import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import PriorityHighOutlinedIcon from "@mui/icons-material/PriorityHighOutlined";
 import Layout from "../components/Layout";
 import api, { API_ORIGIN } from "../api/api";
+import { useSearchParams } from "react-router-dom";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -109,6 +110,7 @@ export default function Demandes() {
     const [urgencyFilter, setUrgencyFilter] = useState<UrgencyFilter>("TOUS");
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [selectedDemande, setSelectedDemande] = useState<Demande | null>(null);
+    const [searchParams] = useSearchParams();
 
     const loadDemandes = async () => {
         setLoading(true);
@@ -128,6 +130,16 @@ export default function Demandes() {
     useEffect(() => {
         void loadDemandes();
     }, []);
+
+    useEffect(() => {
+        const idParam = searchParams.get("id");
+        if (idParam && demandes.length > 0) {
+            const found = demandes.find((d) => String(d.id) === idParam);
+            if (found) {
+                setSelectedDemande(found);
+            }
+        }
+    }, [searchParams, demandes]);
 
     const updateStatus = async (id: number, status: DemandeStatus) => {
         setUpdatingId(id);

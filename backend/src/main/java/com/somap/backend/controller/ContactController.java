@@ -1,17 +1,22 @@
 package com.somap.backend.controller;
 
 import com.somap.backend.dto.ContactMessageRequestDTO;
+import com.somap.backend.dto.ContactMessageResponseDTO;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.ContactMessage;
+import com.somap.backend.enums.ContactMessageStatus;
 import com.somap.backend.mapper.ContactMessageMapper;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.ContactMessageRepository;
+import com.somap.backend.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/contact")
@@ -21,6 +26,7 @@ public class ContactController {
     private final ContactMessageRepository contactMessageRepository;
     private final ClientRepository clientRepository;
     private final ContactMessageMapper contactMessageMapper;
+    private final EmailService emailService;
 
     @PostMapping
     public ResponseEntity<?> submitContactMessage(@Valid @RequestBody ContactMessageRequestDTO request) {
@@ -37,5 +43,58 @@ public class ContactController {
         contactMessageRepository.save(message);
 
         return ResponseEntity.ok().body("Message envoyé avec succès");
+    }
+
+    @GetMapping("/admin/messages")
+    public ResponseEntity<List<ContactMessageResponseDTO>> getAllMessages() {
+        List<ContactMessageResponseDTO> messages = contactMessageRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(contactMessageMapper::toResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(messages);
+    }
+
+    @GetMapping("/admin/pending-count")
+    public ResponseEntity<Long> getPendingCount() {
+        long count = contactMessageRepository.countByStatus(ContactMessageStatus.PENDING);
+        return ResponseEntity.ok(count);
+    }
+
+    @PutMapping("/admin/messages/{id}/read")
+    public ResponseEntity<?> markMessageAsRead(@PathVariable Long id) {
+        ContactMessage msg = contactMessageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Message introuvable"));
+        if (msg.getStatus() == ContactMessageStatus.PENDING) {
+            msg.setStatus(ContactMessageStatus.READ);
+            contactMessageRepository.save(msg);
+        }
+        return ResponseEntity.ok().body("Message marqué comme lu");
+    }
+
+    @PostMapping("/admin/messages/{id}/reply")
+    public ResponseEntity<?> replyToMessage(@PathVariable Long id, @RequestParam String reply) {
+        ContactMessage msg = contactMessageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Message introuvable"));
+        
+        String subject = "Re: " + msg.getSubject();
+        String body = "Bonjour " + msg.getName() + ",\n\n"
+                + "Voici la réponse de l'administration SOMAP à votre message du " + msg.getCreatedAt() + " :\n\n"
+                + reply + "\n\n"
+                + "Cordialement,\n"
+                + "SOMAP & SERVICE";
+        
+        emailService.sendEmail(msg.getEmail(), subject, body);
+
+        msg.setStatus(ContactMessageStatus.REPLIED);
+        msg.setAdminReply(reply);
+        contactMessageRepository.save(msg);
+
+        return ResponseEntity.ok().body("Réponse envoyée avec succès");
+    }
+
+    @DeleteMapping("/admin/messages/{id}")
+    public ResponseEntity<?> deleteMessage(@PathVariable Long id) {
+        contactMessageRepository.deleteById(id);
+        return ResponseEntity.ok().body("Message supprimé avec succès");
     }
 }

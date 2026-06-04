@@ -13,5 +13,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     List<Notification> findByUtilisateurIdOrderByDateEnvoiDesc(Long utilisateurId);
 
+    List<Notification> findAllByOrderByDateEnvoiDesc();
+
     long countByUtilisateurIdAndLuFalse(Long utilisateurId);
 }
