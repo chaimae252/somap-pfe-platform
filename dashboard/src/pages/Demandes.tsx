@@ -42,8 +42,8 @@ type Demande = {
 
 const statusLabels: Record<DemandeStatus, string> = {
     EN_ATTENTE: "En attente",
-    VALIDEE: "Validee",
-    REJETEE: "Rejetee",
+    VALIDEE: "Validée",
+    REJETEE: "Rejetée",
 };
 
 const urgencyLabels: Record<Urgence, string> = {
@@ -192,10 +192,10 @@ export default function Demandes() {
 
     const statCards = [
         { label: "Total demandes", value: demandes.length, helper: "Toutes les demandes", icon: AssignmentOutlinedIcon, color: SOMAP_BLUE },
-        { label: "En attente", value: model.pending, helper: "A traiter", icon: HourglassTopOutlinedIcon, color: SOMAP_GOLD },
-        { label: "Validees", value: model.validated, helper: "Acceptees", icon: CheckCircleOutlineOutlinedIcon, color: SOMAP_GREEN },
-        { label: "Rejetees", value: model.rejected, helper: "Non retenues", icon: ErrorOutlineOutlinedIcon, color: SOMAP_RED },
-        { label: "Urgentes", value: model.urgent, helper: "Priorite haute", icon: PriorityHighOutlinedIcon, color: SOMAP_RED },
+        { label: "En attente", value: model.pending, helper: "À traiter", icon: HourglassTopOutlinedIcon, color: SOMAP_GOLD },
+        { label: "Validées", value: model.validated, helper: "Acceptées", icon: CheckCircleOutlineOutlinedIcon, color: SOMAP_GREEN },
+        { label: "Rejetées", value: model.rejected, helper: "Non retenues", icon: ErrorOutlineOutlinedIcon, color: SOMAP_RED },
+        { label: "Urgentes", value: model.urgent, helper: "Priorité haute", icon: PriorityHighOutlinedIcon, color: SOMAP_RED },
     ];
 
     return (
@@ -205,7 +205,7 @@ export default function Demandes() {
                     <div>
                         <span style={styles.eyebrow}>SOMAP & SERVICE</span>
                         <h1 style={styles.title}>Demandes</h1>
-                        <p style={styles.subtitle}>Pilotage des demandes clients, priorites et decisions administrateur.</p>
+                        <p style={styles.subtitle}>Pilotage des demandes clients, priorités et décisions administrateur.</p>
                     </div>
 
                     <div style={styles.headerBadge}>
@@ -287,7 +287,7 @@ export default function Demandes() {
                                     ? "Chargement des demandes..."
                                     : filtered.length === demandes.length
                                       ? `${formatNumber(demandes.length)} demandes au total`
-                                      : `${formatNumber(filtered.length)} resultat${filtered.length !== 1 ? "s" : ""} sur ${formatNumber(demandes.length)}`}
+                                      : `${formatNumber(filtered.length)} résultat${filtered.length !== 1 ? "s" : ""} sur ${formatNumber(demandes.length)}`}
                             </p>
                         </div>
                         <span style={styles.countBadge}>{formatNumber(filtered.length)} visibles</span>
@@ -297,7 +297,7 @@ export default function Demandes() {
                         <span>Demande</span>
                         <span>Client</span>
                         <span>Service</span>
-                        <span>Priorite</span>
+                        <span>Priorité</span>
                         <span>Statut</span>
                         <span>Actions</span>
                     </div>
@@ -343,10 +343,10 @@ export default function Demandes() {
 
                                     <div style={styles.actionCell}>
                                         <button style={styles.detailsButton} onClick={() => setSelectedDemande(demande)}>
-                                            Details
+                                            Détails
                                         </button>
                                         {demande.statut !== "EN_ATTENTE" && (
-                                            <span style={styles.doneText}>Traitee</span>
+                                            <span style={styles.doneText}>Traitée</span>
                                         )}
                                     </div>
                                 </div>
@@ -354,7 +354,7 @@ export default function Demandes() {
                         })
                     ) : (
                         <div style={styles.emptyState}>
-                            <p>Aucune demande ne correspond a votre recherche.</p>
+                            <p>Aucune demande ne correspond à votre recherche.</p>
                             <button
                                 style={styles.resetButton}
                                 onClick={() => {
@@ -363,7 +363,7 @@ export default function Demandes() {
                                     setUrgencyFilter("TOUS");
                                 }}
                             >
-                                Reinitialiser les filtres
+                                Réinitialiser les filtres
                             </button>
                         </div>
                     )}
@@ -374,7 +374,7 @@ export default function Demandes() {
                         <section style={styles.modalCard} onClick={(event) => event.stopPropagation()}>
                             <div style={styles.modalHeader}>
                                 <div>
-                                    <span style={styles.modalEyebrow}>Detail demande</span>
+                                    <span style={styles.modalEyebrow}>Détail demande</span>
                                     <h2 style={styles.modalTitle}>{selectedDemande.objet || "Demande sans objet"}</h2>
                                     <p style={styles.modalSubtitle}>
                                         {selectedDemande.clientNom || `Client #${selectedDemande.clientId ?? "-"}`} · {selectedDemande.serviceTitre || `Service #${selectedDemande.serviceId ?? "-"}`}
@@ -393,7 +393,7 @@ export default function Demandes() {
                                     <strong>{selectedDemande.serviceTitre || `Service #${selectedDemande.serviceId ?? "-"}`}</strong>
                                 </div>
                                 <div>
-                                    <span style={styles.modalLabel}>Priorite</span>
+                                    <span style={styles.modalLabel}>Priorité</span>
                                     <strong>{selectedDemande.urgence ? urgencyLabels[selectedDemande.urgence] : "Normal"}</strong>
                                 </div>
                                 <div>
@@ -410,7 +410,7 @@ export default function Demandes() {
 
                             <div style={styles.modalBody}>
                                 <div style={styles.descriptionPanel}>
-                                    <span style={styles.modalLabel}>Description complete</span>
+                                    <span style={styles.modalLabel}>Description complète</span>
                                     <p style={styles.fullDescription}>{selectedDemande.description || "Aucune description."}</p>
                                     <span style={styles.dateText}>{formatDate(selectedDemande.dateCreation)}</span>
                                 </div>
@@ -456,7 +456,7 @@ export default function Demandes() {
                                         </button>
                                     </>
                                 ) : (
-                                    <span style={styles.doneText}>Demande traitee</span>
+                                    <span style={styles.doneText}>Demande traitée</span>
                                 )}
                             </div>
                         </section>

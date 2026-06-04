@@ -208,21 +208,21 @@ export default function Dashboard() {
         {
             label: "Conversion",
             value: `${dashboardModel.conversionRate}%`,
-            helper: `${formatNumber(dashboardModel.validatedDemandes)} demandes validees`,
+            helper: `${formatNumber(dashboardModel.validatedDemandes)} demandes validées`,
             color: SOMAP_GREEN,
             icon: CheckCircleOutlineOutlinedIcon,
         },
         {
             label: "En attente",
             value: `${dashboardModel.pendingRate}%`,
-            helper: `${formatNumber(dashboardModel.pendingDemandes)} demandes a traiter`,
+            helper: `${formatNumber(dashboardModel.pendingDemandes)} demandes à traiter`,
             color: SOMAP_GOLD,
             icon: HourglassTopOutlinedIcon,
         },
         {
             label: "Rejets",
             value: `${dashboardModel.rejectionRate}%`,
-            helper: `${formatNumber(dashboardModel.rejectedDemandes)} demandes rejetees`,
+            helper: `${formatNumber(dashboardModel.rejectedDemandes)} demandes rejetées`,
             color: SOMAP_RED,
             icon: ErrorOutlineOutlinedIcon,
         },
@@ -239,26 +239,26 @@ export default function Dashboard() {
                             Supervision en temps reel des clients, demandes, projets et services.
                         </p>
                         <div style={styles.heroMeta}>
-                            <span>{formatNumber(dashboardModel.workloadTotal)} elements suivis</span>
+                            <span>{formatNumber(dashboardModel.workloadTotal)} éléments suivis</span>
                             <span>{dashboardModel.peakMonth ? `${dashboardModel.peakMonth.month} est le mois le plus actif` : "Analyse mensuelle"}</span>
                         </div>
                     </div>
 
                     <div style={styles.heroPanel}>
-                        <span style={styles.heroPanelLabel}>Score d'activite</span>
+                        <span style={styles.heroPanelLabel}>Score d'activité</span>
                         <strong style={styles.heroScore}>{loading ? "-" : dashboardModel.healthScore}</strong>
                         <div style={styles.heroProgress}>
                             <span style={{ ...styles.heroProgressFill, width: `${dashboardModel.healthScore}%` }} />
                         </div>
                         <p style={styles.heroPanelText}>
-                            {error ? "Backend indisponible" : loading ? "Chargement des donnees..." : "Donnees synchronisees"}
+                            {error ? "Backend indisponible" : loading ? "Chargement des données..." : "Données synchronisées"}
                         </p>
                     </div>
                 </section>
 
                 {error && (
                     <section style={styles.errorBox}>
-                        <strong>Le backend ne repond pas.</strong>
+                        <strong>Le backend ne répond pas.</strong>
                         <span>{error}</span>
                     </section>
                 )}
@@ -288,7 +288,7 @@ export default function Dashboard() {
                             <div style={styles.panelHeader}>
                                 <div>
                                     <span style={styles.panelKicker}>Analyse</span>
-                                    <h2 style={styles.panelTitle}>Activite mensuelle</h2>
+                                    <h2 style={styles.panelTitle}>Activité mensuelle</h2>
                                     <p style={styles.panelSubtitle}>Comparaison des demandes et projets par mois</p>
                                 </div>
                                 <div style={styles.headerIcon}>
@@ -351,12 +351,12 @@ export default function Dashboard() {
                                         );
                                     })
                                 ) : (
-                                    <div style={styles.emptyState}>Aucune donnee mensuelle disponible.</div>
+                                    <div style={styles.emptyState}>Aucune donnée mensuelle disponible.</div>
                                 )}
                             </div>
 
                             <div style={styles.legend}>
-                                <strong>{dashboardModel.peakMonth ? `${dashboardModel.peakMonth.month}: pic d'activite` : "Pic non disponible"}</strong>
+                                <strong>{dashboardModel.peakMonth ? `${dashboardModel.peakMonth.month}: pic d'activité` : "Pic non disponible"}</strong>
                             </div>
                         </div>
 
@@ -365,7 +365,7 @@ export default function Dashboard() {
                                 <div>
                                     <span style={styles.panelKicker}>Statuts</span>
                                     <h2 style={styles.panelTitle}>Demandes par statut</h2>
-                                    <p style={styles.panelSubtitle}>Repartition calculee depuis la base de donnees</p>
+                                    <p style={styles.panelSubtitle}>Répartition calculée depuis la base de données</p>
                                 </div>
                             </div>
 
@@ -426,7 +426,7 @@ export default function Dashboard() {
                                     <span>{loading ? "-" : `${dashboardModel.conversionRate}%`}</span>
                                 </div>
                                 <div>
-                                    <strong style={styles.donutTitle}>Demandes validees</strong>
+                                    <strong style={styles.donutTitle}>Demandes validées</strong>
                                     <p style={styles.donutText}>
                                         {formatNumber(dashboardModel.validatedDemandes)} sur {formatNumber(stats.demandes)} demandes
                                     </p>

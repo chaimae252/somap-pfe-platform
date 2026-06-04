@@ -206,7 +206,7 @@ export default function Clients() {
                         <span style={styles.searchIconEl}>⌕</span>
                         <input
                             style={styles.searchInput}
-                            placeholder="Rechercher par nom, email, telephone, adresse, demande ou projet..."
+                            placeholder="Rechercher par nom, email, téléphone, adresse, demande ou projet..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
