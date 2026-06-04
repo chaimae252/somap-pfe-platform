@@ -22,4 +22,7 @@ public class ProjetDTO {
     private String demandeObjet;
     private String demandeStatut;
     private String serviceTitre;
+    
+    private Long adminId;
+    private String adminNom;
 }

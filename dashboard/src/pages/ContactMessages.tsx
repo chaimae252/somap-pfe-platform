@@ -26,6 +26,8 @@ type ContactMessageItem = {
     createdAt?: string;
     status: "PENDING" | "READ" | "REPLIED";
     adminReply?: string;
+    adminId?: number;
+    adminNom?: string;
 };
 
 type FilterType = "ALL" | "PENDING" | "READ" | "REPLIED";
@@ -335,10 +337,15 @@ export default function ContactMessages() {
                                             {/* Admin Reply History */}
                                             {m.adminReply && (
                                                 <div style={styles.replyHistoryBox}>
-                                                    <div style={styles.replyHeader}>
-                                                        <ReplyOutlinedIcon sx={{ fontSize: 14, color: SOMAP_GREEN }} />
-                                                        <strong>Réponse de l'administration :</strong>
-                                                    </div>
+                                                     <div style={styles.replyHeader}>
+                                                         <ReplyOutlinedIcon sx={{ fontSize: 14, color: SOMAP_GREEN }} />
+                                                         <strong>Réponse de l'administration :</strong>
+                                                         {m.adminNom && (
+                                                             <span style={{ fontSize: 11, color: MUTED, fontWeight: 700, marginLeft: 6 }}>
+                                                                 (par {m.adminNom})
+                                                             </span>
+                                                         )}
+                                                     </div>
                                                     <p style={styles.replyContent}>{m.adminReply}</p>
                                                 </div>
                                             )}

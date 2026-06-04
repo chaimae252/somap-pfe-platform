@@ -34,6 +34,10 @@ public class ContactMessageMapper {
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setStatus(entity.getStatus().name());   // resolves now
         dto.setAdminReply(entity.getAdminReply());
+        if (entity.getAdmin() != null) {
+            dto.setAdminId(entity.getAdmin().getId());
+            dto.setAdminNom(entity.getAdmin().getNom());
+        }
         return dto;
     }
 }

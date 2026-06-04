@@ -8,6 +8,7 @@ import com.somap.backend.enums.ContactMessageStatus;
 import com.somap.backend.mapper.ContactMessageMapper;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.ContactMessageRepository;
+import com.somap.backend.repository.AdminRepository;
 import com.somap.backend.service.EmailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class ContactController {
     private final ClientRepository clientRepository;
     private final ContactMessageMapper contactMessageMapper;
     private final EmailService emailService;
+    private final AdminRepository adminRepository;
 
     @PostMapping
     public ResponseEntity<?> submitContactMessage(@Valid @RequestBody ContactMessageRequestDTO request) {
@@ -66,6 +68,11 @@ public class ContactController {
                 .orElseThrow(() -> new RuntimeException("Message introuvable"));
         if (msg.getStatus() == ContactMessageStatus.PENDING) {
             msg.setStatus(ContactMessageStatus.READ);
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+                String email = auth.getName();
+                adminRepository.findByEmail(email).ifPresent(msg::setAdmin);
+            }
             contactMessageRepository.save(msg);
         }
         return ResponseEntity.ok().body("Message marqué comme lu");
@@ -87,6 +94,11 @@ public class ContactController {
 
         msg.setStatus(ContactMessageStatus.REPLIED);
         msg.setAdminReply(reply);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            adminRepository.findByEmail(email).ifPresent(msg::setAdmin);
+        }
         contactMessageRepository.save(msg);
 
         return ResponseEntity.ok().body("Réponse envoyée avec succès");

@@ -14,4 +14,6 @@ public class ContactMessageResponseDTO {
     private LocalDateTime createdAt;
     private String status;
     private String adminReply;
+    private Long adminId;
+    private String adminNom;
 }

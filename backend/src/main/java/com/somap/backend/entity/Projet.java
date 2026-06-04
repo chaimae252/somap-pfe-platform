@@ -35,4 +35,8 @@ public class Projet {
     @OneToOne
     @JoinColumn(name = "demande_id")
     private Demande demande;
+
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
 }

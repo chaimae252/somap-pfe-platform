@@ -11,11 +11,14 @@ import com.somap.backend.exception.ResourceNotFoundException;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.DemandeRepository;
 import com.somap.backend.repository.ProjetRepository;
+import com.somap.backend.repository.AdminRepository;
 import com.somap.backend.service.NotificationService;
 import com.somap.backend.service.ProjetService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +32,7 @@ public class ProjetServiceImpl implements ProjetService {
     private final ClientRepository clientRepository;
     private final DemandeRepository demandeRepository;
     private final NotificationService notificationService;
+    private final AdminRepository adminRepository;
 
 
     @Override
@@ -55,6 +59,12 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setDemande(demande);
         demande.setProjet(projet);
         
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            adminRepository.findByEmail(email).ifPresent(projet::setAdmin);
+        }
+
         projetRepository.syncProjetIdSequence();
         Projet savedProjet = projetRepository.save(projet);
 
@@ -122,6 +132,12 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setClient(client);
         projet.setDemande(demande);
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            adminRepository.findByEmail(email).ifPresent(projet::setAdmin);
+        }
+
         Projet updatedProjet = projetRepository.save(projet);
 
         try {
@@ -173,6 +189,7 @@ public class ProjetServiceImpl implements ProjetService {
             projet.setDateDebut(LocalDateTime.now());
             projet.setClient(demande.getClient());
             projet.setDemande(demande);
+            projet.setAdmin(demande.getAdmin());
             demande.setProjet(projet);
 
             projetRepository.syncProjetIdSequence();
@@ -222,6 +239,11 @@ public class ProjetServiceImpl implements ProjetService {
             if (projet.getDemande().getService() != null) {
                 dto.setServiceTitre(projet.getDemande().getService().getTitre());
             }
+        }
+
+        if (projet.getAdmin() != null) {
+            dto.setAdminId(projet.getAdmin().getId());
+            dto.setAdminNom(projet.getAdmin().getNom());
         }
 
         return dto;

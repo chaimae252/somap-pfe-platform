@@ -34,6 +34,8 @@ type Projet = {
     demandeObjet?: string;
     demandeStatut?: string;
     serviceTitre?: string;
+    adminId?: number;
+    adminNom?: string;
 };
 
 type Client = { id: number; nom: string; email?: string };
@@ -449,9 +451,16 @@ export default function Projets() {
                                     </div>
                                     <span style={styles.primaryText}>{projet.clientNom || `Client #${projet.clientId ?? "-"}`}</span>
                                     <span style={styles.secondaryText}>{projet.demandeObjet || `Demande #${projet.demandeId ?? "-"}`}</span>
-                                    <span style={{ ...styles.statusBadge, color: tone.color, background: tone.background, borderColor: tone.border }}>
-                                        {statusLabels[projet.statut]}
-                                    </span>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                                        <span style={{ ...styles.statusBadge, color: tone.color, background: tone.background, borderColor: tone.border }}>
+                                            {statusLabels[projet.statut]}
+                                        </span>
+                                        {projet.adminNom && (
+                                            <span style={{ fontSize: 10, color: MUTED, fontWeight: 700, paddingLeft: 4 }}>
+                                                par: {projet.adminNom}
+                                            </span>
+                                        )}
+                                    </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                         <span style={styles.primaryText}>{formatDate(projet.dateDebut)}</span>
                                         <span style={styles.dateFinLabel}>Fin: {formatDate(projet.dateFin)}</span>
@@ -496,7 +505,7 @@ export default function Projets() {
                             <button style={styles.closeButton} onClick={() => setSelectedProjet(null)}>×</button>
                         </div>
 
-                        <div style={styles.modalMeta}>
+                        <div style={{ ...styles.modalMeta, gridTemplateColumns: selectedProjet.adminNom ? "repeat(5, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))" }}>
                             <div>
                                 <span style={styles.modalLabel}>Client</span>
                                 <strong>{selectedProjet.clientNom || `Client #${selectedProjet.clientId ?? "-"}`}</strong>
@@ -513,6 +522,12 @@ export default function Projets() {
                                 <span style={styles.modalLabel}>Date de fin prévue</span>
                                 <strong>{formatDate(selectedProjet.dateFin)}</strong>
                             </div>
+                            {selectedProjet.adminNom && (
+                                <div>
+                                    <span style={styles.modalLabel}>Assigné / Créé par</span>
+                                    <strong>{selectedProjet.adminNom}</strong>
+                                </div>
+                            )}
                         </div>
 
                         <div style={styles.modalBody}>

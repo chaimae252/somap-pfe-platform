@@ -43,4 +43,8 @@ public class ContactMessage {
 
     @Column(name = "reponse_admin", length = 500)
     private String adminReply;
+
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
 }

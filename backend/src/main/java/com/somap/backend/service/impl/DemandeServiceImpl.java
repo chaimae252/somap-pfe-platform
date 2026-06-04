@@ -277,6 +277,7 @@ return mapToDTO(updated);
         projet.setDateDebut(LocalDateTime.now());
         projet.setClient(demande.getClient());
         projet.setDemande(demande);
+        projet.setAdmin(demande.getAdmin());
         demande.setProjet(projet);
 
         projetRepository.syncProjetIdSequence();
