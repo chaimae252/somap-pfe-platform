@@ -23,7 +23,13 @@ public class ServiceMapper {
             dto.setImages(
                     service.getImages()
                             .stream()
-                            .filter(img -> img.getDemande() == null && img.getCommentaire() == null)
+                            .filter(img -> {
+                                String url = img.getImageUrl();
+                                if (url != null && url.startsWith("/images/")) {
+                                    return true;
+                                }
+                                return img.getDemande() == null && img.getCommentaire() == null;
+                            })
                             .map(ServiceMapper::imageToDTO)
                             .collect(Collectors.toList())
             );
@@ -33,6 +39,8 @@ public class ServiceMapper {
             dto.setAdminId(service.getAdmin().getId());
             dto.setAdminNom(service.getAdmin().getNom());
         }
+
+        dto.setCommentCount(service.getCommentaires() != null ? service.getCommentaires().size() : 0);
 
         return dto;
     }

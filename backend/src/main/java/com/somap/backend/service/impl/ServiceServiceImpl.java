@@ -13,9 +13,11 @@ import java.util.stream.Collectors;
 import com.somap.backend.repository.AdminRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
+@Transactional
 public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository serviceRepository;

@@ -14,4 +14,5 @@ public class ServiceDTO {
     
     private Long adminId;
     private String adminNom;
+    private Integer commentCount;
 }

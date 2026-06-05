@@ -428,7 +428,11 @@ const styles: Record<string, React.CSSProperties> = {
         margin: 0,
         fontSize: 32,
         lineHeight: 1.1,
-        color: TEXT,
+        background: "linear-gradient(135deg, #1271b8 0%, #ad2324 100%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        display: "inline-block",
+        fontWeight: 800,
     },
     subtitle: {
         marginTop: 6,
