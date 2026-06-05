@@ -33,7 +33,7 @@ export default function Navbar() {
         pendingDemandes: 0,
         unreadNotifications: 0,
     });
-    const adminName = localStorage.getItem("userName")?.trim() || "Admin";
+    const [adminName, setAdminName] = useState(localStorage.getItem("userName")?.trim() || "Admin");
     const adminInitials = adminName
         .split(" ")
         .map((part) => part[0])
@@ -42,6 +42,12 @@ export default function Navbar() {
         .toUpperCase();
 
     useEffect(() => {
+        const refreshAdminName = () => {
+            setAdminName(localStorage.getItem("userName")?.trim() || "Admin");
+        };
+
+        window.addEventListener("somap-admin-profile-updated", refreshAdminName);
+
         const loadBadges = async () => {
             const adminId = localStorage.getItem("userId");
 
@@ -61,6 +67,10 @@ export default function Navbar() {
         };
 
         void loadBadges();
+
+        return () => {
+            window.removeEventListener("somap-admin-profile-updated", refreshAdminName);
+        };
     }, [pathname]);
 
     const handleLogout = () => {
@@ -68,6 +78,7 @@ export default function Navbar() {
         localStorage.removeItem("userRole");
         localStorage.removeItem("userName");
         localStorage.removeItem("userId");
+        localStorage.removeItem("userEmail");
         sessionStorage.clear();
 
         navigate("/login");

@@ -3,7 +3,9 @@ package com.somap.backend.repository;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.enums.DemandeStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -23,4 +25,8 @@ public interface DemandeRepository extends JpaRepository<Demande, Long> {
     // Status distribution of demandes (all clients)
     @Query(value = "SELECT statut, COUNT(*) FROM demande GROUP BY statut", nativeQuery = true)
     List<Object[]> countDemandesByStatus();
+
+    @Modifying
+    @Query("UPDATE Demande d SET d.admin = null WHERE d.admin.id = :adminId")
+    void detachAdmin(@Param("adminId") Long adminId);
 }

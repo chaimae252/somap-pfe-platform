@@ -1,6 +1,8 @@
 package com.somap.backend.controller;
 
 import com.somap.backend.dto.AdminDTO;
+import com.somap.backend.dto.AdminUpdateDTO;
+import com.somap.backend.dto.AuthResponseDTO;
 import com.somap.backend.service.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +32,17 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 adminService.getAdminById(id)
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<AuthResponseDTO> updateAdmin(
+            @PathVariable Long id,
+            @RequestBody AdminUpdateDTO dto
+    ) {
+
+        return ResponseEntity.ok(
+                adminService.updateAdmin(id, dto)
         );
     }
 

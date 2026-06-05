@@ -40,12 +40,13 @@ export default function Login() {
         motDePasse: password,
       });
 
-      const { token, role, nom, id } = response.data;
+      const { token, role, nom, id, email: accountEmail } = response.data;
 
       localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userName", nom);
       localStorage.setItem("userId", id.toString());
+      if (accountEmail) localStorage.setItem("userEmail", accountEmail);
 
       if (role === "ADMIN") {
         navigate("/dashboard");
