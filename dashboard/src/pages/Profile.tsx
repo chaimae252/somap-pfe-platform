@@ -11,6 +11,7 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import LockResetOutlinedIcon from "@mui/icons-material/LockResetOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
@@ -165,10 +166,16 @@ export default function Profile() {
         nom: storedProfile.nom || "",
         email: storedProfile.email || "",
     });
+    const [passwordForm, setPasswordForm] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
     const [stats, setStats] = useState<DashboardStats>(emptyStats);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [changingPassword, setChangingPassword] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [editing, setEditing] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -286,6 +293,44 @@ export default function Profile() {
             setError(getApiError(err, "Impossible de supprimer le compte."));
         } finally {
             setDeleting(false);
+        }
+    };
+
+    const handleChangePassword = async () => {
+        if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+            setError("Tous les champs du mot de passe sont obligatoires.");
+            return;
+        }
+
+        if (passwordForm.newPassword.length < 4) {
+            setError("Le nouveau mot de passe doit contenir au moins 4 caractères.");
+            return;
+        }
+
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            setError("La confirmation ne correspond pas au nouveau mot de passe.");
+            return;
+        }
+
+        setChangingPassword(true);
+        setError("");
+        setSuccess("");
+
+        try {
+            await api.put("/auth/change-password", {
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword,
+            });
+            setPasswordForm({
+                currentPassword: "",
+                newPassword: "",
+                confirmPassword: "",
+            });
+            setSuccess("Mot de passe modifié avec succès.");
+        } catch (err) {
+            setError(getApiError(err, "Impossible de modifier le mot de passe."));
+        } finally {
+            setChangingPassword(false);
         }
     };
 
@@ -483,6 +528,75 @@ export default function Profile() {
                                 >
                                     <SaveOutlinedIcon sx={{ fontSize: 18 }} />
                                     {saving ? "Enregistrement..." : "Enregistrer"}
+                                </button>
+                            </div>
+                        </section>
+
+                        <section style={styles.panel}>
+                            <div style={styles.panelHeader}>
+                                <div>
+                                    <span style={styles.panelKicker}>Sécurité</span>
+                                    <h2 style={styles.panelTitle}>Modifier le mot de passe</h2>
+                                    <p style={styles.panelSubtitle}>
+                                        Confirmez votre mot de passe actuel avant d'en définir un nouveau.
+                                    </p>
+                                </div>
+                                <LockResetOutlinedIcon sx={{ fontSize: 28, color: SOMAP_GREEN }} />
+                            </div>
+
+                            <div style={{ ...styles.passwordGrid, ...(isNarrow ? styles.gridNarrow : {}) }}>
+                                <label style={styles.field}>
+                                    <span style={styles.fieldLabel}>Mot de passe actuel</span>
+                                    <input
+                                        style={styles.input}
+                                        type="password"
+                                        value={passwordForm.currentPassword}
+                                        onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                                        placeholder="Mot de passe actuel"
+                                        disabled={changingPassword}
+                                    />
+                                </label>
+
+                                <label style={styles.field}>
+                                    <span style={styles.fieldLabel}>Nouveau mot de passe</span>
+                                    <input
+                                        style={styles.input}
+                                        type="password"
+                                        value={passwordForm.newPassword}
+                                        onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
+                                        placeholder="Nouveau mot de passe"
+                                        disabled={changingPassword}
+                                    />
+                                </label>
+
+                                <label style={styles.field}>
+                                    <span style={styles.fieldLabel}>Confirmation</span>
+                                    <input
+                                        style={styles.input}
+                                        type="password"
+                                        value={passwordForm.confirmPassword}
+                                        onChange={(event) => setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                                        placeholder="Confirmer le mot de passe"
+                                        disabled={changingPassword}
+                                    />
+                                </label>
+                            </div>
+
+                            <div style={styles.formFooter}>
+                                <p style={styles.formHint}>
+                                    Après modification, utilisez ce nouveau mot de passe lors de votre prochaine connexion.
+                                </p>
+                                <button
+                                    type="button"
+                                    style={{
+                                        ...styles.saveButton,
+                                        ...(changingPassword ? styles.disabledButton : {}),
+                                    }}
+                                    disabled={changingPassword}
+                                    onClick={() => void handleChangePassword()}
+                                >
+                                    <LockResetOutlinedIcon sx={{ fontSize: 18 }} />
+                                    {changingPassword ? "Modification..." : "Modifier le mot de passe"}
                                 </button>
                             </div>
                         </section>
@@ -828,6 +942,11 @@ const styles: Record<string, CSSProperties> = {
     formGrid: {
         display: "grid",
         gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: 12,
+    },
+    passwordGrid: {
+        display: "grid",
+        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
         gap: 12,
     },
     field: {

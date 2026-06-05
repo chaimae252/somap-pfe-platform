@@ -21,7 +21,7 @@ const navItems = [
     { label: "Notifications", icon: NotificationsNoneOutlinedIcon, path: "/notifications", group: "Principal", badgeKey: "unreadNotifications" },
     { label: "Projets", icon: WorkOutlineOutlinedIcon, path: "/projets", group: "Gestion" },
     { label: "Services", icon: BuildOutlinedIcon, path: "/services", group: "Gestion" },
-    { label: "Déconnexion", icon: LogoutOutlinedIcon, path: "/login", group: "Compte" },
+    { label: "Déconnexion", icon: LogoutOutlinedIcon, path: "/login", group: "Compte", isLogout: true },
 ];
 
 const groups = ["Principal", "Gestion", "Compte"];
@@ -74,6 +74,12 @@ export default function Navbar() {
     }, [pathname]);
 
     const handleLogout = () => {
+        const shouldLogout = window.confirm("Voulez-vous vraiment vous déconnecter ?");
+
+        if (!shouldLogout) {
+            return;
+        }
+
         localStorage.removeItem("token");
         localStorage.removeItem("userRole");
         localStorage.removeItem("userName");
@@ -81,6 +87,7 @@ export default function Navbar() {
         localStorage.removeItem("userEmail");
         sessionStorage.clear();
 
+        window.alert("Vous avez été déconnecté avec succès.");
         navigate("/login");
     };
 
@@ -110,7 +117,7 @@ export default function Navbar() {
                                     <button
                                         key={item.label}
                                         onClick={() =>
-                                            item.label === "Déconnexion"
+                                            item.isLogout
                                                 ? handleLogout()
                                                 : navigate(item.path)
                                         }
