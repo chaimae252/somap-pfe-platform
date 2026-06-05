@@ -23,9 +23,15 @@ public class ServiceMapper {
             dto.setImages(
                     service.getImages()
                             .stream()
+                            .filter(img -> img.getDemande() == null && img.getCommentaire() == null)
                             .map(ServiceMapper::imageToDTO)
                             .collect(Collectors.toList())
             );
+        }
+
+        if (service.getAdmin() != null) {
+            dto.setAdminId(service.getAdmin().getId());
+            dto.setAdminNom(service.getAdmin().getNom());
         }
 
         return dto;

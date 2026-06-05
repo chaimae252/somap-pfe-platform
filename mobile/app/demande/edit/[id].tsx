@@ -155,22 +155,6 @@ export default function EditDemandeScreen() {
             return "https://via.placeholder.com/400";
         }
 
-        const imagesFolder = images.find(img =>
-            img?.imageUrl?.includes("/images/")
-        );
-
-        if (imagesFolder?.imageUrl) {
-            return normalize(imagesFolder.imageUrl) ?? "https://via.placeholder.com/400";
-        }
-
-        const uploads = images.find(img =>
-            img?.imageUrl?.includes("/uploads/")
-        );
-
-        if (uploads?.imageUrl) {
-            return normalize(uploads.imageUrl) ?? "https://via.placeholder.com/400";
-        }
-
         const anyValid = images.find(img => img?.imageUrl);
 
         return normalize(anyValid?.imageUrl) ?? "https://via.placeholder.com/400";

@@ -11,4 +11,7 @@ public class ServiceDTO {
     private String titre;
     private String description;
     private List<ImageDTO> images;
+    
+    private Long adminId;
+    private String adminNom;
 }

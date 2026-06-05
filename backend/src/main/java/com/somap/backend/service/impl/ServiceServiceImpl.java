@@ -10,17 +10,28 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import com.somap.backend.repository.AdminRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
 public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository serviceRepository;
+    private final AdminRepository adminRepository;
 
     @Override
     public ServiceDTO createService(ServiceDTO serviceDTO) {
 
         Service service = ServiceMapper.toEntity(serviceDTO);
+        
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            adminRepository.findByEmail(email).ifPresent(service::setAdmin);
+        }
+
         Service saved = serviceRepository.save(service);
 
         return ServiceMapper.toDTO(saved);
@@ -52,6 +63,12 @@ public class ServiceServiceImpl implements ServiceService {
 
         existing.setTitre(serviceDTO.getTitre());
         existing.setDescription(serviceDTO.getDescription());
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            adminRepository.findByEmail(email).ifPresent(existing::setAdmin);
+        }
 
         Service updated = serviceRepository.save(existing);
 

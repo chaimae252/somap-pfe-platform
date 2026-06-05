@@ -60,7 +60,8 @@ public class ImageController {
     public ResponseEntity<ImageDTO> uploadFile(
        @RequestParam("file") MultipartFile file,
        @RequestParam(value = "demandeId", required = false) Long demandeId,
-       @RequestParam(value = "commentaireId", required = false) Long commentaireId) throws IOException {
+       @RequestParam(value = "commentaireId", required = false) Long commentaireId,
+       @RequestParam(value = "serviceId", required = false) Long serviceId) throws IOException {
 
     String fileUrl = cloudinaryService.uploadFile(file);
 
@@ -68,6 +69,7 @@ public class ImageController {
     dto.setImageUrl(fileUrl);
     dto.setDemandeId(demandeId);
     dto.setCommentaireId(commentaireId);
+    dto.setServiceId(serviceId);
 
     return ResponseEntity.ok(imageService.uploadImage(dto));
 }

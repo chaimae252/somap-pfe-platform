@@ -83,10 +83,7 @@ export default function ServiceDetails() {
     useAutoRefresh(fetchService, [fetchService]);
 
     /* ---------------- IMAGES (MOVED UP) ---------------- */
-    const serviceImages = service?.images?.filter(
-        (img: any) =>
-            img.imageUrl?.includes("/images/")
-    );
+    const serviceImages = service?.images;
 
     const images = getSafeImages(serviceImages || []);
 

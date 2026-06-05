@@ -49,21 +49,8 @@ const getSafeServiceImage = (images?: { imageUrl: string | null }[]) => {
         return "https://via.placeholder.com/400";
     }
 
-    // 1. PRIORITY: official /images/ folder (your real service images)
-    const official = images.find(img =>
-        img?.imageUrl?.includes("/images/")
-    );
-
-    if (official) return normalize(official.imageUrl);
-
-    // 2. fallback: uploads (not ideal but better than nothing)
-    const upload = images.find(img =>
-        img?.imageUrl?.includes("/uploads/")
-    );
-
-    if (upload) return normalize(upload.imageUrl);
-
-    return "https://via.placeholder.com/400";
+    const anyValid = images.find(img => img?.imageUrl);
+    return normalize(anyValid?.imageUrl) ?? "https://via.placeholder.com/400";
 };
 
 export default function ServicesScreen() {

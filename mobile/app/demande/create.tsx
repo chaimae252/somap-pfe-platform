@@ -318,25 +318,6 @@ export default function CreateDemandeScreen() {
             return "https://via.placeholder.com/400";
         }
 
-        // 1. PRIORITY: real service images (/images/)
-        const imagesFolder = images.find(img =>
-            img?.imageUrl?.includes("/images/")
-        );
-
-        if (imagesFolder?.imageUrl) {
-            return normalize(imagesFolder.imageUrl) ?? "https://via.placeholder.com/400";
-        }
-
-        // 2. fallback: uploads (less important)
-        const uploads = images.find(img =>
-            img?.imageUrl?.includes("/uploads/")
-        );
-
-        if (uploads?.imageUrl) {
-            return normalize(uploads.imageUrl) ?? "https://via.placeholder.com/400";
-        }
-
-        // 3. last fallback: anything valid
         const anyValid = images.find(img => img?.imageUrl);
 
         return normalize(anyValid?.imageUrl) ?? "https://via.placeholder.com/400";

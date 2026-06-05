@@ -27,4 +27,8 @@ public class Service {
 
     @OneToMany(mappedBy = "service", cascade = CascadeType.ALL)
     private List<Commentaire> commentaires;
+
+    @ManyToOne
+    @JoinColumn(name = "admin_id")
+    private Admin admin;
 }
