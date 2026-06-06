@@ -9,6 +9,7 @@ import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DoneAllOutlinedIcon from "@mui/icons-material/DoneAllOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import Layout from "../components/Layout";
 import api from "../api/api";
 import { useNavigate } from "react-router-dom";
@@ -147,6 +148,8 @@ export default function Notifications() {
             navigate(`/demandes?id=${n.targetId}`);
         } else if (n.targetType === "PROJET" && n.targetId) {
             navigate(`/projets?id=${n.targetId}`);
+        } else if (n.targetType === "SERVICE" && n.targetId) {
+            navigate(`/services?id=${n.targetId}`);
         }
     };
 
@@ -164,6 +167,7 @@ export default function Notifications() {
                 (filter === "NON_LUES" && !n.lu) ||
                 (filter === "DEMANDE" && n.type === "DEMANDE") ||
                 (filter === "PROJET" && n.type === "PROJET") ||
+                (filter === "COMMENTAIRE" && n.type === "COMMENTAIRE") ||
                 (filter === "SYSTEME" && n.type === "SYSTEME");
 
             return matchSearch && matchFilter;
@@ -176,6 +180,8 @@ export default function Notifications() {
                 return <AssignmentOutlinedIcon sx={{ fontSize: 20 }} />;
             case "PROJET":
                 return <WorkOutlineOutlinedIcon sx={{ fontSize: 20 }} />;
+            case "COMMENTAIRE":
+                return <ForumOutlinedIcon sx={{ fontSize: 20 }} />;
             default:
                 return <NotificationsNoneOutlinedIcon sx={{ fontSize: 20 }} />;
         }
@@ -190,8 +196,10 @@ export default function Notifications() {
                 return { color: SOMAP_GOLD, background: "rgba(246,183,24,0.12)" };
             case "PROJET":
                 return { color: SOMAP_BLUE, background: "rgba(18,113,184,0.12)" };
-            default:
+            case "COMMENTAIRE":
                 return { color: SOMAP_GREEN, background: "rgba(126,201,51,0.14)" };
+            default:
+                return { color: "#546e7a", background: "#eceff1" };
         }
     };
 

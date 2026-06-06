@@ -57,6 +57,26 @@ public class CommentaireServiceImpl implements CommentaireService {
         Commentaire saved = commentaireRepository.save(commentaire);
         System.out.println("[COMMENT DEBUG] Saved comment id=" + saved.getId());
 
+        // Notify admins about the new comment
+        try {
+            int commentCount = commentaireRepository.findByServiceId(service.getId()).size();
+            String title = "Nouveau commentaire";
+            String msg = String.format("Nouveau commentaire sur le service '%s'. Nombre total de commentaires pour ce service: %d.", 
+                    service.getTitre(), commentCount);
+            
+            notificationService.notifyAdmins(
+                    title,
+                    msg,
+                    NotificationType.COMMENTAIRE,
+                    "SERVICE",
+                    service.getId()
+            );
+            System.out.println("[COMMENT DEBUG] Admin notification triggered for service: " + service.getTitre());
+        } catch (Exception e) {
+            System.out.println("[COMMENT DEBUG] Admin notification failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         if (parent != null) {
             if (parent.getClient() == null) {
                 System.out.println("[COMMENT DEBUG] Parent owner client is null!");

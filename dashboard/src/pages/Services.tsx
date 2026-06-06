@@ -11,6 +11,7 @@ import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import Layout from "../components/Layout";
 import api, { API_ORIGIN } from "../api/api";
+import { useSearchParams } from "react-router-dom";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_RED = "#ad2324";
@@ -241,9 +242,21 @@ export default function Services() {
         }
     };
 
+    const [searchParams] = useSearchParams();
+
     useEffect(() => {
         void loadServices();
     }, []);
+
+    useEffect(() => {
+        const idParam = searchParams.get("id");
+        if (idParam && services.length > 0) {
+            const found = services.find((s) => String(s.id) === idParam);
+            if (found) {
+                handleViewDetails(found.id);
+            }
+        }
+    }, [searchParams, services]);
 
     const filtered = useMemo(() => {
         const q = search.toLowerCase();
