@@ -150,6 +150,17 @@ export default function Notifications() {
             navigate(`/projets?id=${n.targetId}`);
         } else if (n.targetType === "SERVICE" && n.targetId) {
             navigate(`/services?id=${n.targetId}`);
+        } else if (n.targetType === "COMMENTAIRE" && n.targetId) {
+            api.get<{ serviceId: number }>(`/commentaires/${n.targetId}`)
+                .then((res) => {
+                    const sId = res.data?.serviceId;
+                    if (sId) {
+                        navigate(`/services?id=${sId}&commentId=${n.targetId}`);
+                    }
+                })
+                .catch((err) => {
+                    console.error("Failed to fetch comment service", err);
+                });
         }
     };
 

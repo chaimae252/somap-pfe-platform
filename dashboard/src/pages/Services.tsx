@@ -80,28 +80,76 @@ function formatDate(dateStr?: string | null) {
     }
 }
 
+const sortCommentsRecursively = (items: CommentItem[]): CommentItem[] => {
+    const sorted = [...items].sort((a, b) => {
+        const timeA = a.dateCommentaire ? new Date(a.dateCommentaire.trim().replace(/\s+/, "T")).getTime() : 0;
+        const timeB = b.dateCommentaire ? new Date(b.dateCommentaire.trim().replace(/\s+/, "T")).getTime() : 0;
+        return timeA - timeB; // Chronological: oldest first
+    });
+
+    return sorted.map((item) => {
+        if (item.replies && item.replies.length > 0) {
+            return {
+                ...item,
+                replies: sortCommentsRecursively(item.replies),
+            };
+        }
+        return item;
+    });
+};
+
 function CommentNode({
     comment,
     depth,
     onDeleteClick,
+    highlightedCommentId,
 }: {
     comment: CommentItem;
     depth: number;
     onDeleteClick: (comment: CommentItem) => void;
+    highlightedCommentId: number | null;
 }) {
+    const isNew = comment.id === highlightedCommentId;
     return (
         <div
             style={{
                 ...styles.commentNode,
                 marginLeft: depth > 0 ? Math.min(depth * 20, 80) : 0,
-                borderLeft: depth > 0 ? "2px solid rgba(18, 113, 184, 0.25)" : `3px solid ${SOMAP_BLUE}`,
+                borderLeft: isNew
+                    ? "3px solid #7ec933"
+                    : depth > 0
+                        ? "2px solid rgba(18, 113, 184, 0.25)"
+                        : `3px solid ${SOMAP_BLUE}`,
                 paddingLeft: 12,
                 marginTop: depth > 0 ? 8 : 0,
-                backgroundColor: depth === 0 ? "rgba(18, 113, 184, 0.02)" : "#fff",
+                backgroundColor: isNew
+                    ? "rgba(126, 201, 51, 0.05)"
+                    : depth === 0
+                        ? "rgba(18, 113, 184, 0.02)"
+                        : "#fff",
+                border: isNew ? "1px solid rgba(126, 201, 51, 0.25)" : "none",
+                borderRadius: isNew ? 12 : 0,
+                padding: isNew ? "12px 14px" : "12px 12px 12px 12px",
             }}
         >
             <div style={styles.commentHeader}>
                 <span style={styles.commentAuthor}>{comment.clientNom || "Client Anonyme"}</span>
+                {isNew && (
+                    <span style={{
+                        background: "#7ec933",
+                        color: "#fff",
+                        fontSize: 9,
+                        fontWeight: 900,
+                        padding: "2px 6px",
+                        borderRadius: 4,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.5,
+                        marginLeft: 8,
+                        display: "inline-block"
+                    }}>
+                        Nouveau
+                    </span>
+                )}
                 <span style={styles.commentDate}>{formatDate(comment.dateCommentaire)}</span>
                 <button
                     type="button"
@@ -133,6 +181,7 @@ function CommentNode({
                         comment={reply}
                         depth={depth + 1}
                         onDeleteClick={onDeleteClick}
+                        highlightedCommentId={highlightedCommentId}
                     />
                 ))}
         </div>
@@ -170,7 +219,7 @@ export default function Services() {
         setCommentsError("");
         try {
             const response = await api.get<CommentItem[]>(`/commentaires/service/${serviceId}`);
-            setComments(response.data ?? []);
+            setComments(sortCommentsRecursively(response.data ?? []));
         } catch (err) {
             setComments([]);
             setCommentsError("Impossible de charger les commentaires de ce service.");
@@ -243,6 +292,7 @@ export default function Services() {
     };
 
     const [searchParams] = useSearchParams();
+    const highlightedCommentId = searchParams.get("commentId") ? Number(searchParams.get("commentId")) : null;
 
     useEffect(() => {
         void loadServices();
@@ -527,6 +577,7 @@ export default function Services() {
                                                 comment={comment}
                                                 depth={0}
                                                 onDeleteClick={handleDeleteCommentClick}
+                                                highlightedCommentId={highlightedCommentId}
                                             />
                                         ))}
                                     </div>

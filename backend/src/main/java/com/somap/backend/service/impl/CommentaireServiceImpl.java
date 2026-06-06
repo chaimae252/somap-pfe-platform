@@ -59,19 +59,17 @@ public class CommentaireServiceImpl implements CommentaireService {
 
         // Notify admins about the new comment
         try {
-            int commentCount = commentaireRepository.findByServiceId(service.getId()).size();
             String title = "Nouveau commentaire";
-            String msg = String.format("Nouveau commentaire sur le service '%s'. Nombre total de commentaires pour ce service: %d.", 
-                    service.getTitre(), commentCount);
+            String msg = String.format("Nouveau commentaire sur le service '%s'.", service.getTitre());
             
             notificationService.notifyAdmins(
                     title,
                     msg,
                     NotificationType.COMMENTAIRE,
-                    "SERVICE",
-                    service.getId()
+                    "COMMENTAIRE",
+                    saved.getId()
             );
-            System.out.println("[COMMENT DEBUG] Admin notification triggered for service: " + service.getTitre());
+            System.out.println("[COMMENT DEBUG] Admin notification triggered for comment: " + saved.getId() + " on service: " + service.getTitre());
         } catch (Exception e) {
             System.out.println("[COMMENT DEBUG] Admin notification failed: " + e.getMessage());
             e.printStackTrace();
