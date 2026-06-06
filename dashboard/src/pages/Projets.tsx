@@ -726,7 +726,7 @@ const styles: Record<string, CSSProperties> = {
     page: { display: "flex", flexDirection: "column", gap: 18, paddingBottom: 28, fontFamily: "'Segoe UI', system-ui, sans-serif" },
     header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, marginBottom: 4 },
     eyebrow: { display: "block", color: SOMAP_BLUE, fontSize: 11, fontWeight: 800, letterSpacing: 1.1, marginBottom: 6 },
-    title: { margin: 0, fontSize: 32, lineHeight: 1.1, background: "linear-gradient(135deg, #1271b8 0%, #ad2324 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "inline-block", fontWeight: 800 },
+    title: { margin: 0, fontSize: 32, lineHeight: 1.1, background: "linear-gradient(135deg, #1271b8 0%, #7ec933 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "inline-block", fontWeight: 800 },
     subtitle: { marginTop: 6, color: MUTED, fontSize: 13 },
     headerButton: { height: 42, borderRadius: 12, background: SOMAP_BLUE, color: "#fff", padding: "0 16px", display: "inline-flex", alignItems: "center", gap: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer", transition: "opacity 0.15s ease", fontFamily: "'Segoe UI', system-ui, sans-serif" },
     errorBox: { display: "flex", alignItems: "center", gap: 8, background: "rgba(173,35,36,0.08)", border: "1px solid rgba(173,35,36,0.18)", color: "#8f1f20", borderRadius: 14, padding: "12px 14px", fontSize: 13, fontWeight: 700 },

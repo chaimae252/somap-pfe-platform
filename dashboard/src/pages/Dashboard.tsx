@@ -524,7 +524,7 @@ const styles: Record<string, CSSProperties> = {
     },
     title: {
         margin: 0,
-        background: "linear-gradient(135deg, #1271b8 0%, #ad2324 100%)",
+        background: "linear-gradient(135deg, #1271b8 0%, #7ec933 100%)",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
         display: "inline-block",

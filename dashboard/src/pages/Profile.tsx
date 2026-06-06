@@ -16,7 +16,8 @@ import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNone
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import WarningAmberOutlinedIcon from "@mui/icons-material/WarningAmberOutlined";
-import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import Layout from "../components/Layout";
 import api from "../api/api";
 
@@ -181,6 +182,9 @@ export default function Profile() {
     const [deleteConfirm, setDeleteConfirm] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const role = localStorage.getItem("userRole");
     const hasToken = Boolean(localStorage.getItem("token"));
@@ -361,11 +365,6 @@ export default function Profile() {
         [profile.email, profile.nom, role]
     );
 
-    const metrics = [
-        { label: "Clients", value: stats.clients, icon: GroupsOutlinedIcon, color: SOMAP_GREEN },
-        { label: "Projets", value: stats.projets, icon: WorkOutlineOutlinedIcon, color: SOMAP_BLUE },
-        { label: "Notifications non lues", value: unreadNotifications, icon: NotificationsNoneOutlinedIcon, color: SOMAP_GOLD },
-    ];
 
     return (
         <Layout>
@@ -545,41 +544,83 @@ export default function Profile() {
                             </div>
 
                             <div style={{ ...styles.passwordGrid, ...(isNarrow ? styles.gridNarrow : {}) }}>
-                                <label style={styles.field}>
+                                <div style={styles.field}>
                                     <span style={styles.fieldLabel}>Mot de passe actuel</span>
-                                    <input
-                                        style={styles.input}
-                                        type="password"
-                                        value={passwordForm.currentPassword}
-                                        onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
-                                        placeholder="Mot de passe actuel"
-                                        disabled={changingPassword}
-                                    />
-                                </label>
+                                    <div style={styles.passwordWrap}>
+                                        <input
+                                            style={{ ...styles.input, ...styles.passwordInput }}
+                                            type={showCurrentPassword ? "text" : "password"}
+                                            value={passwordForm.currentPassword}
+                                            onChange={(event) => setPasswordForm((current) => ({ ...current, currentPassword: event.target.value }))}
+                                            placeholder="Mot de passe actuel"
+                                            disabled={changingPassword}
+                                        />
+                                        <button
+                                            type="button"
+                                            aria-label={showCurrentPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                            onClick={() => setShowCurrentPassword((value) => !value)}
+                                            style={styles.eyeButton}
+                                        >
+                                            {showCurrentPassword ? (
+                                                <VisibilityOffOutlinedIcon sx={{ fontSize: 19 }} />
+                                            ) : (
+                                                <VisibilityOutlinedIcon sx={{ fontSize: 19 }} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <label style={styles.field}>
+                                <div style={styles.field}>
                                     <span style={styles.fieldLabel}>Nouveau mot de passe</span>
-                                    <input
-                                        style={styles.input}
-                                        type="password"
-                                        value={passwordForm.newPassword}
-                                        onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
-                                        placeholder="Nouveau mot de passe"
-                                        disabled={changingPassword}
-                                    />
-                                </label>
+                                    <div style={styles.passwordWrap}>
+                                        <input
+                                            style={{ ...styles.input, ...styles.passwordInput }}
+                                            type={showNewPassword ? "text" : "password"}
+                                            value={passwordForm.newPassword}
+                                            onChange={(event) => setPasswordForm((current) => ({ ...current, newPassword: event.target.value }))}
+                                            placeholder="Nouveau mot de passe"
+                                            disabled={changingPassword}
+                                        />
+                                        <button
+                                            type="button"
+                                            aria-label={showNewPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                            onClick={() => setShowNewPassword((value) => !value)}
+                                            style={styles.eyeButton}
+                                        >
+                                            {showNewPassword ? (
+                                                <VisibilityOffOutlinedIcon sx={{ fontSize: 19 }} />
+                                            ) : (
+                                                <VisibilityOutlinedIcon sx={{ fontSize: 19 }} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <label style={styles.field}>
+                                <div style={styles.field}>
                                     <span style={styles.fieldLabel}>Confirmation</span>
-                                    <input
-                                        style={styles.input}
-                                        type="password"
-                                        value={passwordForm.confirmPassword}
-                                        onChange={(event) => setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))}
-                                        placeholder="Confirmer le mot de passe"
-                                        disabled={changingPassword}
-                                    />
-                                </label>
+                                    <div style={styles.passwordWrap}>
+                                        <input
+                                            style={{ ...styles.input, ...styles.passwordInput }}
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            value={passwordForm.confirmPassword}
+                                            onChange={(event) => setPasswordForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                                            placeholder="Confirmer le mot de passe"
+                                            disabled={changingPassword}
+                                        />
+                                        <button
+                                            type="button"
+                                            aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                                            onClick={() => setShowConfirmPassword((value) => !value)}
+                                            style={styles.eyeButton}
+                                        >
+                                            {showConfirmPassword ? (
+                                                <VisibilityOffOutlinedIcon sx={{ fontSize: 19 }} />
+                                            ) : (
+                                                <VisibilityOutlinedIcon sx={{ fontSize: 19 }} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
 
                             <div style={styles.formFooter}>
@@ -601,33 +642,7 @@ export default function Profile() {
                             </div>
                         </section>
 
-                        <section style={styles.panel}>
-                            <div style={styles.panelHeader}>
-                                <div>
-                                    <span style={styles.panelKicker}>Activité</span>
-                                    <h2 style={styles.panelTitle}>Résumé opérationnel</h2>
-                                    <p style={styles.panelSubtitle}>Vue rapide des zones que vous pilotez.</p>
-                                </div>
-                            </div>
 
-                            <div style={{ ...styles.metricsGrid, ...(isNarrow ? styles.gridNarrow : isCompact ? styles.gridCompact : {}) }}>
-                                {metrics.map((metric) => {
-                                    const Icon = metric.icon;
-
-                                    return (
-                                        <article key={metric.label} style={styles.metricCard}>
-                                            <div style={{ ...styles.metricIcon, color: metric.color, background: `${metric.color}15` }}>
-                                                <Icon sx={{ fontSize: 22 }} />
-                                            </div>
-                                            <div>
-                                                <span style={styles.metricLabel}>{metric.label}</span>
-                                                <strong style={styles.metricValue}>{loading ? "-" : formatNumber(metric.value)}</strong>
-                                            </div>
-                                        </article>
-                                    );
-                                })}
-                            </div>
-                        </section>
                     </div>
 
                     <aside style={styles.sideStack}>
@@ -771,7 +786,7 @@ const styles: Record<string, CSSProperties> = {
     },
     title: {
         margin: 0,
-        background: "linear-gradient(135deg, #1271b8 0%, #ad2324 100%)",
+        background: "linear-gradient(135deg, #1271b8 0%, #7ec933 100%)",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
         display: "inline-block",
@@ -1257,5 +1272,29 @@ const styles: Record<string, CSSProperties> = {
     disabledDangerButton: {
         opacity: 0.52,
         cursor: "not-allowed",
+    },
+    passwordWrap: {
+        position: "relative",
+        width: "100%",
+        display: "flex",
+        alignItems: "center",
+    },
+    passwordInput: {
+        paddingRight: 40,
+    },
+    eyeButton: {
+        position: "absolute",
+        right: 12,
+        top: "50%",
+        transform: "translateY(-50%)",
+        border: "none",
+        background: "transparent",
+        color: MUTED,
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0,
+        zIndex: 2,
     },
 };
