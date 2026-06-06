@@ -108,9 +108,10 @@ export default function Dashboard() {
 
     useEffect(() => {
         setAdminName(getStoredAdminName());
+        let isMounted = true;
 
-        const loadDashboard = async () => {
-            setLoading(true);
+        const loadDashboard = async (isInitial = true) => {
+            if (isInitial) setLoading(true);
             setError("");
 
             try {
@@ -120,20 +121,34 @@ export default function Dashboard() {
                     api.get<StatusStat[]>("/dashboard/status"),
                 ]);
 
+                if (!isMounted) return;
+
                 setStats(statsResponse.data ?? emptyStats);
                 setMonthly(monthlyResponse.data ?? []);
                 setStatuses(statusResponse.data ?? []);
             } catch (err) {
-                setStats(emptyStats);
-                setMonthly([]);
-                setStatuses([]);
-                setError(getErrorMessage(err));
+                if (!isMounted) return;
+                if (isInitial) {
+                    setStats(emptyStats);
+                    setMonthly([]);
+                    setStatuses([]);
+                    setError(getErrorMessage(err));
+                }
             } finally {
-                setLoading(false);
+                if (isMounted && isInitial) setLoading(false);
             }
         };
 
-        void loadDashboard();
+        void loadDashboard(true);
+
+        const interval = setInterval(() => {
+            void loadDashboard(false);
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     const dashboardModel = useMemo(() => {

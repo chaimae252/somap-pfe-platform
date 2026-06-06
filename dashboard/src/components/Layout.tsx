@@ -88,6 +88,9 @@ export default function Layout({ children }: LayoutProps) {
             };
         }
 
+        let isMounted = true;
+        let activeInterval: any = null;
+
         const fetchNotifications = async () => {
             try {
                 const url = `/notifications/client/${adminId}`;
@@ -100,6 +103,8 @@ export default function Layout({ children }: LayoutProps) {
 
         const initializeAndPoll = async () => {
             const list = await fetchNotifications();
+            if (!isMounted) return;
+
             const maxId = list.length > 0 ? Math.max(...list.map((n) => n.id)) : 0;
 
             const storedLastId = sessionStorage.getItem("lastSeenNotifId");
@@ -110,8 +115,10 @@ export default function Layout({ children }: LayoutProps) {
                 sessionStorage.setItem("lastSeenNotifId", maxId.toString());
             }
 
-            const interval = setInterval(async () => {
+            activeInterval = setInterval(async () => {
                 const currentList = await fetchNotifications();
+                if (!isMounted) return;
+
                 if (currentList.length > 0) {
                     const newMaxId = Math.max(...currentList.map((n) => n.id));
                     const baseline = lastNotificationIdRef.current ?? 0;
@@ -128,16 +135,12 @@ export default function Layout({ children }: LayoutProps) {
                     }
                 }
             }, 4000);
-
-            return interval;
         };
 
-        let activeInterval: any = null;
-        initializeAndPoll().then((interval) => {
-            activeInterval = interval;
-        });
+        void initializeAndPoll();
 
         return () => {
+            isMounted = false;
             document.head.removeChild(styleTag);
             if (activeInterval) clearInterval(activeInterval);
             if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current);
