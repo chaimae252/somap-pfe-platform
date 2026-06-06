@@ -2,15 +2,19 @@ package com.somap.backend.service.impl;
 
 import com.somap.backend.dto.CommentaireDTO;
 import com.somap.backend.dto.ImageDTO;
+import com.somap.backend.entity.Admin;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Commentaire;
 import com.somap.backend.entity.Image;
 import com.somap.backend.enums.NotificationType;
+import com.somap.backend.repository.AdminRepository;
 import com.somap.backend.repository.ClientRepository;
 import com.somap.backend.repository.CommentaireRepository;
 import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.service.CommentaireService;
 import com.somap.backend.service.NotificationService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -25,6 +29,7 @@ public class CommentaireServiceImpl implements CommentaireService {
     private final ClientRepository clientRepository;
     private final ServiceRepository serviceRepository;
     private final NotificationService notificationService;
+    private final AdminRepository adminRepository;
 
     @Override
     public CommentaireDTO createCommentaire(CommentaireDTO dto) {
@@ -144,6 +149,61 @@ public class CommentaireServiceImpl implements CommentaireService {
     public void deleteCommentaire(Long id) {
         Commentaire commentaire = commentaireRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Commentaire introuvable"));
+
+        // 1. Resolve current admin name
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Admin currentAdmin = null;
+        String adminName = "Un administrateur";
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            currentAdmin = adminRepository.findByEmail(email).orElse(null);
+            if (currentAdmin != null) {
+                adminName = currentAdmin.getNom();
+            }
+        }
+
+        // 2. Notify the client who wrote the comment
+        if (commentaire.getClient() != null) {
+            String serviceTitre = commentaire.getService() != null ? commentaire.getService().getTitre() : "un service";
+            try {
+                notificationService.notifyUser(
+                        commentaire.getClient().getId(),
+                        "Commentaire retiré",
+                        "Votre commentaire sur le service '" + serviceTitre + "' a été supprimé car il ne respecte pas nos conditions d'utilisation (contenu offensant, spam ou non conforme).",
+                        NotificationType.COMMENTAIRE
+                );
+            } catch (Exception e) {
+                System.out.println("[DELETE COMMENT] Client notification failed: " + e.getMessage());
+            }
+        }
+
+        // 3. Notify other admins
+        String clientName = commentaire.getClient() != null ? commentaire.getClient().getNom() : "Client anonyme";
+        String serviceName = commentaire.getService() != null ? commentaire.getService().getTitre() : "un service";
+        String commentContent = commentaire.getContenu();
+        if (commentContent != null && commentContent.length() > 30) {
+            commentContent = commentContent.substring(0, 27) + "...";
+        }
+        
+        String notifTitle = "Commentaire supprimé";
+        String notifMsg = String.format("L'administrateur %s a supprimé le commentaire de %s sur le service '%s' (Contenu: '%s').",
+                adminName, clientName, serviceName, commentContent);
+
+        try {
+            List<Admin> admins = adminRepository.findAll();
+            for (Admin admin : admins) {
+                if (currentAdmin == null || !admin.getId().equals(currentAdmin.getId())) {
+                    notificationService.notifyUser(
+                            admin.getId(),
+                            notifTitle,
+                            notifMsg,
+                            NotificationType.COMMENTAIRE
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[DELETE COMMENT] Other admins notification failed: " + e.getMessage());
+        }
 
         commentaireRepository.delete(commentaire);
     }

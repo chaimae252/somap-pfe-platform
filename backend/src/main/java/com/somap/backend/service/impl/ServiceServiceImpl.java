@@ -2,9 +2,12 @@ package com.somap.backend.service.impl;
 
 import com.somap.backend.dto.ServiceDTO;
 import com.somap.backend.entity.Service;
+import com.somap.backend.entity.Admin;
+import com.somap.backend.enums.NotificationType;
 import com.somap.backend.mapper.ServiceMapper;
 import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.service.ServiceService;
+import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 
 
@@ -22,6 +25,7 @@ public class ServiceServiceImpl implements ServiceService {
 
     private final ServiceRepository serviceRepository;
     private final AdminRepository adminRepository;
+    private final NotificationService notificationService;
 
     @Override
     public ServiceDTO createService(ServiceDTO serviceDTO) {
@@ -82,6 +86,39 @@ public class ServiceServiceImpl implements ServiceService {
 
         Service service = serviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service not found with id: " + id));
+
+        // 1. Resolve current admin name
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Admin currentAdmin = null;
+        String adminName = "Un administrateur";
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            currentAdmin = adminRepository.findByEmail(email).orElse(null);
+            if (currentAdmin != null) {
+                adminName = currentAdmin.getNom();
+            }
+        }
+
+        // 2. Notify other admins
+        String serviceTitre = service.getTitre() != null ? service.getTitre() : "sans titre";
+        String notifTitle = "Service supprimé";
+        String notifMsg = String.format("L'administrateur %s a supprimé le service '%s'.", adminName, serviceTitre);
+
+        try {
+            List<Admin> admins = adminRepository.findAll();
+            for (Admin admin : admins) {
+                if (currentAdmin == null || !admin.getId().equals(currentAdmin.getId())) {
+                    notificationService.notifyUser(
+                            admin.getId(),
+                            notifTitle,
+                            notifMsg,
+                            NotificationType.SYSTEME
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[DELETE SERVICE] Other admins notification failed: " + e.getMessage());
+        }
 
         serviceRepository.delete(service);
     }

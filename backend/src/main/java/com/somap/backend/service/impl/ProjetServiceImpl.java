@@ -4,6 +4,7 @@ import com.somap.backend.dto.ProjetDTO;
 import com.somap.backend.entity.Client;
 import com.somap.backend.entity.Demande;
 import com.somap.backend.entity.Projet;
+import com.somap.backend.entity.Admin;
 import com.somap.backend.enums.DemandeStatus;
 import com.somap.backend.enums.NotificationType;
 import com.somap.backend.enums.ProjetStatus;
@@ -167,6 +168,39 @@ public class ProjetServiceImpl implements ProjetService {
         Projet projet = projetRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Projet introuvable"));
+
+        // 1. Resolve current admin name
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Admin currentAdmin = null;
+        String adminName = "Un administrateur";
+        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+            String email = auth.getName();
+            currentAdmin = adminRepository.findByEmail(email).orElse(null);
+            if (currentAdmin != null) {
+                adminName = currentAdmin.getNom();
+            }
+        }
+
+        // 2. Notify other admins
+        String projetTitre = projet.getTitre() != null ? projet.getTitre() : "sans titre";
+        String notifTitle = "Projet supprimé";
+        String notifMsg = String.format("L'administrateur %s a supprimé le projet '%s'.", adminName, projetTitre);
+
+        try {
+            List<Admin> admins = adminRepository.findAll();
+            for (Admin admin : admins) {
+                if (currentAdmin == null || !admin.getId().equals(currentAdmin.getId())) {
+                    notificationService.notifyUser(
+                            admin.getId(),
+                            notifTitle,
+                            notifMsg,
+                            NotificationType.PROJET
+                    );
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("[DELETE PROJET] Other admins notification failed: " + e.getMessage());
+        }
 
         Demande demande = projet.getDemande();
         if (demande != null) {

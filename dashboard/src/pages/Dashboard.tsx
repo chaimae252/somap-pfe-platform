@@ -468,17 +468,50 @@ export default function Dashboard() {
                                     <span style={{ ...styles.workloadFill, width: `${dashboardModel.projectShare}%`, background: SOMAP_GREEN }} />
                                 </div>
                                 <div style={styles.workloadRows}>
-                                    <div>
-                                        <span style={styles.workloadLabel}>Demandes</span>
-                                        <strong>{formatNumber(stats.demandes)}</strong>
+                                    <div style={{
+                                        background: "rgba(18, 113, 184, 0.04)",
+                                        border: "1px solid rgba(18, 113, 184, 0.12)",
+                                        borderRadius: 12,
+                                        padding: "10px 12px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 4
+                                    }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: SOMAP_BLUE, display: "inline-block" }} />
+                                            <span style={{ ...styles.workloadLabel, color: SOMAP_BLUE, marginBottom: 0, fontSize: 11 }}>Demandes</span>
+                                        </div>
+                                        <strong style={{ fontSize: 18, color: SOMAP_BLUE }}>{formatNumber(stats.demandes)}</strong>
                                     </div>
-                                    <div>
-                                        <span style={styles.workloadLabel}>Projets</span>
-                                        <strong>{formatNumber(stats.projets)}</strong>
+                                    <div style={{
+                                        background: "rgba(126, 201, 51, 0.04)",
+                                        border: "1px solid rgba(126, 201, 51, 0.12)",
+                                        borderRadius: 12,
+                                        padding: "10px 12px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 4
+                                    }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: SOMAP_GREEN, display: "inline-block" }} />
+                                            <span style={{ ...styles.workloadLabel, color: SOMAP_GREEN, marginBottom: 0, fontSize: 11 }}>Projets</span>
+                                        </div>
+                                        <strong style={{ fontSize: 18, color: SOMAP_GREEN }}>{formatNumber(stats.projets)}</strong>
                                     </div>
-                                    <div>
-                                        <span style={styles.workloadLabel}>Total</span>
-                                        <strong>{formatNumber(dashboardModel.workloadTotal)}</strong>
+                                    <div style={{
+                                        background: "rgba(107, 127, 149, 0.04)",
+                                        border: "1px solid rgba(107, 127, 149, 0.12)",
+                                        borderRadius: 12,
+                                        padding: "10px 12px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 4
+                                    }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#a0aec0", display: "inline-block" }} />
+                                            <span style={{ ...styles.workloadLabel, color: MUTED, marginBottom: 0, fontSize: 11 }}>Total</span>
+                                        </div>
+                                        <strong style={{ fontSize: 18, color: TEXT }}>{formatNumber(dashboardModel.workloadTotal)}</strong>
                                     </div>
                                 </div>
                             </div>
