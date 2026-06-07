@@ -3,8 +3,50 @@ import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { SyncProvider } from "@/contexts/SyncContext";
+import { useEffect } from "react";
+import * as Notifications from "expo-notifications";
+import { router } from "expo-router";
 
 export default function RootLayout() {
+    useEffect(() => {
+        // Handle foreground notifications
+        const foregroundSubscription = Notifications.addNotificationReceivedListener((notification) => {
+            console.log("🔔 Foreground push received:", notification);
+        });
+
+        // Handle push notification taps (both background and closed states)
+        const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+            const data = response.notification.request.content.data;
+            console.log("🔔 Push notification tapped with data:", data);
+
+            if (data?.targetType && data?.targetId) {
+                const targetId = data.targetId;
+                switch (data.targetType) {
+                    case "SERVICE":
+                        router.push({
+                            pathname: "/service/[id]",
+                            params: { id: targetId },
+                        });
+                        break;
+                    case "PROJET":
+                        router.push("/(tabs)/projets");
+                        break;
+                    case "DEMANDE":
+                        router.push("/(tabs)/demandes");
+                        break;
+                    default:
+                        router.push("/(tabs)/home");
+                        break;
+                }
+            }
+        });
+
+        return () => {
+            foregroundSubscription.remove();
+            responseSubscription.remove();
+        };
+    }, []);
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaProvider>

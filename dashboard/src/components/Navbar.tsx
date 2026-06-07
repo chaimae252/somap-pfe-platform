@@ -80,8 +80,17 @@ export default function Navbar() {
         setShowLogoutModal(true);
     };
 
-    const confirmLogout = () => {
+    const confirmLogout = async () => {
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+            try {
+                await api.post("/auth/logout", { userId: Number(userId) });
+            } catch {
+                // Ignore
+            }
+        }
         localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
         localStorage.removeItem("userRole");
         localStorage.removeItem("userName");
         localStorage.removeItem("userId");

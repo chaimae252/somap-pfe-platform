@@ -1,7 +1,7 @@
 import {login} from "@/services/authService";
 import {useAuthStore} from "@/store/authStore";
 import {validateEmail, validateLoginPassword} from "@/utils/validators";
-import {saveToken, saveUser} from "@/utils/storage";
+import {saveToken, saveUser, saveRefreshToken} from "@/utils/storage";
 
 import React, {useState} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,14 +27,13 @@ import axios from "axios";
 import { ALLOW_SCREEN_RECORDING_DEMO } from "@/constants/demo";
 
 export default function LoginScreen() {
-
     const {setAuth} = useAuthStore();
     const router = useRouter();
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [remember, setRemember] = useState(false);
-    const [showPassword, setShowPassword] = useState(false); // 👈 NEW: toggle state
+    const [showPassword, setShowPassword] = useState(false);
 
     const [focusedInput, setFocusedInput] = useState("");
 
@@ -46,7 +45,7 @@ export default function LoginScreen() {
     const [pressed, setPressed] = useState(false);
 
     const [message, setMessage] = useState({
-        type: "", // "success" | "error"
+        type: "",
         text: "",
     });
 
@@ -56,8 +55,6 @@ export default function LoginScreen() {
     const markTouched = (field: keyof typeof touched) => {
         setTouched((prev) => ({...prev, [field]: true}));
     };
-
-    /* ================= LOGIN ================= */
 
     const handleLogin = async () => {
         const emailValid = validateEmail(email);
@@ -76,9 +73,10 @@ export default function LoginScreen() {
 
             console.log("LOGIN RESPONSE =", response);
 
-            const {token, id, nom, role} = response;
+            const {token, refreshToken, id, nom, role} = response;
 
             await saveToken(token);
+            await saveRefreshToken(refreshToken);
             axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
             const fullClient = await getClientById(id);
@@ -92,7 +90,6 @@ export default function LoginScreen() {
                 adresse: fullClient?.adresse || "",
             };
 
-            await saveToken(token);
             await AsyncStorage.setItem("userId", id.toString());
             await saveUser(user);
             setAuth(token, user);
@@ -107,22 +104,17 @@ export default function LoginScreen() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.keyboardView}
                 keyboardVerticalOffset={20}
             >
-
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-
                     <ScrollView
                         contentContainerStyle={{flexGrow: 1}}
                         keyboardShouldPersistTaps="handled"
                     >
-
                         <View style={styles.container}>
-
                             {message.text !== "" && (
                                 <View
                                     style={[

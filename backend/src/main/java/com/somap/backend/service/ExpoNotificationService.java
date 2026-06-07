@@ -14,6 +14,10 @@ public class ExpoNotificationService {
     private final RestTemplate restTemplate = new RestTemplate();
 
     public void sendPushNotification(String expoPushToken, String title, String body) {
+        sendPushNotification(expoPushToken, title, body, null);
+    }
+
+    public void sendPushNotification(String expoPushToken, String title, String body, Map<String, Object> data) {
         if (expoPushToken == null || !expoPushToken.startsWith("ExponentPushToken")) {
             return;
         }
@@ -30,6 +34,9 @@ public class ExpoNotificationService {
             payload.put("body", body);
             payload.put("sound", "default");
             payload.put("badge", 1);
+            if (data != null && !data.isEmpty()) {
+                payload.put("data", data);
+            }
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
             restTemplate.postForObject(url, request, String.class);

@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.somap.backend.dto.AdminRegisterDTO;
+import com.somap.backend.dto.TokenRefreshRequestDTO;
+import com.somap.backend.dto.TokenRefreshResponseDTO;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -105,5 +107,22 @@ public ResponseEntity<?> forgotPasswordLoggedIn(
 ) {
     authService.forgotPasswordLoggedIn(authorization);
     return ResponseEntity.ok("Un nouveau mot de passe a été envoyé à votre adresse email");
+}
+
+@PostMapping("/refresh")
+public ResponseEntity<TokenRefreshResponseDTO> refresh(
+        @RequestBody TokenRefreshRequestDTO request
+) {
+    return ResponseEntity.ok(
+            authService.refreshToken(request)
+    );
+}
+
+@PostMapping("/logout")
+public ResponseEntity<?> logout(
+        @RequestBody java.util.Map<String, Long> payload
+) {
+    authService.logout(payload.get("userId"));
+    return ResponseEntity.ok("Déconnecté avec succès");
 }
 }

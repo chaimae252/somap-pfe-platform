@@ -12,6 +12,18 @@ export const removeToken = async () => {
     await AsyncStorage.removeItem("token");
 };
 
+export const saveRefreshToken = async (token: string) => {
+    await AsyncStorage.setItem("refreshToken", token);
+};
+
+export const getRefreshToken = async () => {
+    return await AsyncStorage.getItem("refreshToken");
+};
+
+export const removeRefreshToken = async () => {
+    await AsyncStorage.removeItem("refreshToken");
+};
+
 export const saveUser = async (user: any) => {
     await AsyncStorage.setItem(
         "user",

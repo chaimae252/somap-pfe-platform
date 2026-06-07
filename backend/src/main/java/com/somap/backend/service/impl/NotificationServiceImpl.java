@@ -70,10 +70,18 @@ public class NotificationServiceImpl implements NotificationService {
             clientRepository.findById(user.getId()).ifPresent(client -> {
                 if (client.getPushToken() != null && !client.getPushToken().trim().isEmpty()) {
                     System.out.println("[EXPO PUSH] Dispatching push to client: " + client.getId());
+                    java.util.Map<String, Object> data = new java.util.HashMap<>();
+                    if (saved.getTargetType() != null) {
+                        data.put("targetType", saved.getTargetType().toString());
+                    }
+                    if (saved.getTargetId() != null) {
+                        data.put("targetId", saved.getTargetId().toString());
+                    }
                     expoNotificationService.sendPushNotification(
                             client.getPushToken(),
                             saved.getTitre(),
-                            saved.getMessage()
+                            saved.getMessage(),
+                            data
                     );
                 }
             });

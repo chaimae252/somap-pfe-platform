@@ -8,6 +8,7 @@ import {
 import {
   saveToken,
   saveUser,
+  saveRefreshToken,
 } from "@/utils/storage";
 
 import React, { useState } from "react";
@@ -118,8 +119,14 @@ export default function RegisterScreen() {
         adresse: adresse,
       };
 
+      const refreshToken = data?.refreshToken;
+
       if (token) {
         await saveToken(token);
+      }
+
+      if (refreshToken) {
+        await saveRefreshToken(refreshToken);
       }
 
       await saveUser(user);

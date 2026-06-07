@@ -43,17 +43,17 @@ export async function registerForPushNotificationsAsync(userId: number) {
             return null;
         }
 
-        if (isExpoGo) {
-            console.log("🏃 Running in Expo Go: Skipped EAS remote token registration, but notification permissions are active for local alerts.");
+        // Retrieve dynamic projectId configured via EAS
+        const projectId =
+            Constants?.expoConfig?.extra?.eas?.projectId ??
+            Constants?.easConfig?.projectId;
+
+        if (!projectId) {
+            console.warn("⚠️ No Expo projectId found. Skipping remote token registration. Configure EAS to enable push notifications.");
             return null;
         }
 
         try {
-            // Retrieve dynamic projectId configured via EAS
-            const projectId =
-                Constants?.expoConfig?.extra?.eas?.projectId ??
-                Constants?.easConfig?.projectId;
-
             token = (
                 await Notifications.getExpoPushTokenAsync({
                     projectId,

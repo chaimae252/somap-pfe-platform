@@ -23,4 +23,7 @@ public interface AuthService {
     void resetPassword(String email, String newPassword);
     void changePassword(String token, String currentPassword, String newPassword);
     void forgotPasswordLoggedIn(String token);
+
+    com.somap.backend.dto.TokenRefreshResponseDTO refreshToken(com.somap.backend.dto.TokenRefreshRequestDTO request);
+    void logout(Long userId);
 }

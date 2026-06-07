@@ -25,6 +25,12 @@
       "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.somapapp"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9f339b86-15fd-4b51-9cec-4ae506151108"
+      }
+    },
+    "owner": "chaimae12"
   }
 }

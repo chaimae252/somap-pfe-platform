@@ -16,6 +16,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import Colors from "../constants/colors";
 
 import {router, SplashScreen} from "expo-router";
+import { getToken, getUser } from "../utils/storage";
+import { useAuthStore } from "../store/authStore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -99,7 +101,18 @@ export default function SplashScreenn() {
                     useNativeDriver: false,
                 }),
             ]),
-        ]).start(() => {
+        ]).start(async () => {
+            try {
+                const token = await getToken();
+                const user = await getUser();
+                if (token && user) {
+                    useAuthStore.getState().setAuth(token, user);
+                    router.replace("/(tabs)/home");
+                    return;
+                }
+            } catch (e) {
+                console.log("Error restoring session:", e);
+            }
             setTimeout(() => {
                 router.replace("/onboarding");
             }, 400);

@@ -18,6 +18,7 @@ import api from '../../services/api';
 import { ALLOW_SCREEN_RECORDING_DEMO } from '../../constants/demo';
 import * as Haptics from 'expo-haptics';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { logoutUser } from '../../utils/storage';
 
 const { colors, fonts, spacing, radius, shadows } = Theme;
 const { width } = Dimensions.get('window');
@@ -360,7 +361,13 @@ export default function ProfileScreen() {
       
       setDeleteModalVisible(false);
       setTimeout(async () => {
-        await logout();
+        try {
+          await api.post('/auth/logout', { userId: user!.id });
+        } catch (e) {
+          console.log('Error calling logout during delete:', e);
+        }
+        await logoutUser();
+        logout();
         router.replace('/(auth)/login');
       }, 1000);
     } catch (error: any) {
@@ -805,7 +812,15 @@ export default function ProfileScreen() {
                     try {
                       setLogoutModalVisible(false);
                       await new Promise(resolve => setTimeout(resolve, 100));
-                      await logout();
+                      if (user?.id) {
+                        try {
+                          await api.post('/auth/logout', { userId: user.id });
+                        } catch (e) {
+                          console.log('Error invalidating refresh token on server:', e);
+                        }
+                      }
+                      await logoutUser();
+                      logout();
                       router.replace('/(auth)/login');
                     } catch (error) {
                       router.replace('/(auth)/login');

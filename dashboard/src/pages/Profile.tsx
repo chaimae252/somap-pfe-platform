@@ -138,6 +138,7 @@ function getApiError(error: unknown, fallback: string) {
 
 function clearAdminSession() {
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
     localStorage.removeItem("userId");

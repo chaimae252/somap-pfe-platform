@@ -40,9 +40,10 @@ export default function Login() {
         motDePasse: password,
       });
 
-      const { token, role, nom, id, email: accountEmail } = response.data;
+      const { token, refreshToken, role, nom, id, email: accountEmail } = response.data;
 
       localStorage.setItem("token", token);
+      localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("userRole", role);
       localStorage.setItem("userName", nom);
       localStorage.setItem("userId", id.toString());

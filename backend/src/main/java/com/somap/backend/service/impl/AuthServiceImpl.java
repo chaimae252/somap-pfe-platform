@@ -22,6 +22,11 @@ import com.somap.backend.service.EmailService;
 import com.somap.backend.dto.AdminRegisterDTO;
 import com.somap.backend.entity.Admin;
 import com.somap.backend.repository.AdminRepository;
+import com.somap.backend.service.RefreshTokenService;
+import com.somap.backend.entity.RefreshToken;
+import com.somap.backend.dto.TokenRefreshRequestDTO;
+import com.somap.backend.dto.TokenRefreshResponseDTO;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -35,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     @Transactional
@@ -51,9 +57,11 @@ public class AuthServiceImpl implements AuthService {
         clientRepository.save(client);
 
         String token = jwtService.generateToken(client);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(client.getId());
 
         AuthResponseDTO response = new AuthResponseDTO();
         response.setToken(token);
+        response.setRefreshToken(refreshToken.getToken());
         response.setId(client.getId());
         response.setNom(client.getNom());
         response.setEmail(client.getEmail());
@@ -62,39 +70,41 @@ public class AuthServiceImpl implements AuthService {
         return response;
     }
     @Override
-@Transactional
-public AuthResponseDTO registerAdmin(AdminRegisterDTO dto) {
+    @Transactional
+    public AuthResponseDTO registerAdmin(AdminRegisterDTO dto) {
 
-    // Check if email already exists
-    if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
-        throw new RuntimeException("Email déjà utilisé");
+        // Check if email already exists
+        if (utilisateurRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new RuntimeException("Email déjà utilisé");
+        }
+
+        Admin admin = new Admin();
+
+        admin.setNom(dto.getNom());
+        admin.setEmail(dto.getEmail());
+
+        admin.setMotDePasse(
+                passwordEncoder.encode(dto.getMotDePasse())
+        );
+
+        admin.setRole(Role.ADMIN);
+
+        adminRepository.save(admin);
+
+        String token = jwtService.generateToken(admin);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(admin.getId());
+
+        AuthResponseDTO response = new AuthResponseDTO();
+
+        response.setToken(token);
+        response.setRefreshToken(refreshToken.getToken());
+        response.setId(admin.getId());
+        response.setNom(admin.getNom());
+        response.setEmail(admin.getEmail());
+        response.setRole("ADMIN");
+
+        return response;
     }
-
-    Admin admin = new Admin();
-
-    admin.setNom(dto.getNom());
-    admin.setEmail(dto.getEmail());
-
-    admin.setMotDePasse(
-            passwordEncoder.encode(dto.getMotDePasse())
-    );
-
-    admin.setRole(Role.ADMIN);
-
-    adminRepository.save(admin);
-
-    String token = jwtService.generateToken(admin);
-
-    AuthResponseDTO response = new AuthResponseDTO();
-
-    response.setToken(token);
-    response.setId(admin.getId());
-    response.setNom(admin.getNom());
-    response.setEmail(admin.getEmail());
-    response.setRole("ADMIN");
-
-    return response;
-}
     @Override
     public LoginResponseDTO login(LoginRequestDTO dto) {
 
@@ -109,9 +119,11 @@ public AuthResponseDTO registerAdmin(AdminRegisterDTO dto) {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         String token = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         return new LoginResponseDTO(
                 token,
+                refreshToken.getToken(),
                 user.getId(),
                 user.getNom(),
                 user.getEmail(),
@@ -232,4 +244,26 @@ private String generateRandomPassword() {
     }
     return sb.toString();
 }
+    
+    @Override
+    @Transactional
+    public TokenRefreshResponseDTO refreshToken(TokenRefreshRequestDTO request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtService.generateToken(user);
+                    RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
+                    return new TokenRefreshResponseDTO(token, newRefreshToken.getToken());
+                })
+                .orElseThrow(() -> new RuntimeException("Le token de rafraîchissement n'est pas dans la base de données !"));
+    }
+
+    @Override
+    @Transactional
+    public void logout(Long userId) {
+        refreshTokenService.deleteByUserId(userId);
+    }
 }
