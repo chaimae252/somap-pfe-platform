@@ -88,7 +88,7 @@ export default function Navbar() {
         localStorage.removeItem("userEmail");
         sessionStorage.clear();
         setShowLogoutModal(false);
-        navigate("/login");
+        navigate("/");
     };
 
     return (

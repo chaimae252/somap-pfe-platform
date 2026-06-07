@@ -307,7 +307,7 @@ export default function Profile() {
         try {
             await api.delete(`/admins/${profile.id}`);
             clearAdminSession();
-            navigate("/login");
+            navigate("/");
         } catch (err) {
             setError(getApiError(err, "Impossible de supprimer le compte."));
         } finally {

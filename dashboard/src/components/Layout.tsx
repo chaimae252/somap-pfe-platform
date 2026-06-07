@@ -58,6 +58,20 @@ export default function Layout({ children }: LayoutProps) {
     const toastTimeoutRef = useRef<number | null>(null);
     const fadeTimeoutRef = useRef<number | null>(null);
 
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    const isAuthenticated = !!token && !!userId;
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate("/");
+        }
+    }, [isAuthenticated, navigate]);
+
+    if (!isAuthenticated) {
+        return null;
+    }
+
     const triggerToast = (notif: NotificationItem) => {
         if (toastTimeoutRef.current) window.clearTimeout(toastTimeoutRef.current);
         if (fadeTimeoutRef.current) window.clearTimeout(fadeTimeoutRef.current);
