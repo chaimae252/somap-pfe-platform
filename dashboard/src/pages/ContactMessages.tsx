@@ -75,7 +75,29 @@ export default function ContactMessages() {
     };
 
     useEffect(() => {
+        let isMounted = true;
+
+        const pollData = async () => {
+            try {
+                const response = await api.get<ContactMessageItem[]>("/contact/admin/messages");
+                if (isMounted) {
+                    setMessages(response.data ?? []);
+                }
+            } catch {
+                // Ignore background errors
+            }
+        };
+
         void loadMessages();
+
+        const interval = setInterval(() => {
+            void pollData();
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     const pendingCount = useMemo(

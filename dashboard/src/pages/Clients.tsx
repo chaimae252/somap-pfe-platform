@@ -93,7 +93,33 @@ export default function Clients() {
     };
 
     useEffect(() => {
+        let isMounted = true;
+
+        const pollData = async () => {
+            try {
+                const [clientsResponse, statsResponse] = await Promise.all([
+                    api.get<Client[]>("/clients"),
+                    api.get<ClientStats>("/clients/stats"),
+                ]);
+                if (isMounted) {
+                    setClients(clientsResponse.data ?? []);
+                    setStats(statsResponse.data ?? emptyStats);
+                }
+            } catch {
+                // Ignore background errors
+            }
+        };
+
         void loadClientsPage();
+
+        const interval = setInterval(() => {
+            void pollData();
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     const handleDeleteClient = async () => {

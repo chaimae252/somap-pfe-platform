@@ -299,6 +299,37 @@ export default function Services() {
     }, []);
 
     useEffect(() => {
+        let isMounted = true;
+
+        const pollData = async () => {
+            try {
+                const response = await api.get<ServiceItem[]>("/services");
+                if (isMounted) {
+                    setServices(response.data ?? []);
+                }
+
+                if (activeDetailsId !== null) {
+                    const commentsResponse = await api.get<CommentItem[]>(`/commentaires/service/${activeDetailsId}`);
+                    if (isMounted) {
+                        setComments(sortCommentsRecursively(commentsResponse.data ?? []));
+                    }
+                }
+            } catch {
+                // Ignore background errors
+            }
+        };
+
+        const interval = setInterval(() => {
+            void pollData();
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [activeDetailsId]);
+
+    useEffect(() => {
         const idParam = searchParams.get("id");
         if (idParam && services.length > 0) {
             const found = services.find((s) => String(s.id) === idParam);

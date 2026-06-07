@@ -97,7 +97,48 @@ export default function Notifications() {
     };
 
     useEffect(() => {
+        let isMounted = true;
+
+        const pollData = async () => {
+            const adminId = localStorage.getItem("userId");
+            try {
+                // Load pending contact messages count
+                try {
+                    const countResponse = await api.get<number>("/contact/admin/pending-count");
+                    if (isMounted) {
+                        setPendingMessagesCount(countResponse.data ?? 0);
+                    }
+                } catch {
+                    // Ignore
+                }
+
+                // Load notifications specifically for this user
+                const url = adminId ? `/notifications/client/${adminId}` : "/notifications";
+                const response = await api.get<NotificationItem[]>(url);
+                
+                if (isMounted) {
+                    const sorted = (response.data ?? []).sort((a, b) => {
+                        const dateA = a.dateEnvoi ? new Date(a.dateEnvoi).getTime() : 0;
+                        const dateB = b.dateEnvoi ? new Date(b.dateEnvoi).getTime() : 0;
+                        return dateB - dateA;
+                    });
+                    setNotifications(sorted);
+                }
+            } catch {
+                // Ignore background errors
+            }
+        };
+
         void loadNotifications();
+
+        const interval = setInterval(() => {
+            void pollData();
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     const unreadCount = useMemo(
