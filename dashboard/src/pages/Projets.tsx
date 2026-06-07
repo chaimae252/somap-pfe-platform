@@ -170,8 +170,35 @@ export default function Projets() {
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => void loadData(), 0);
-        return () => clearTimeout(timer);
+        let isMounted = true;
+
+        const pollData = async () => {
+            try {
+                const [projetsResponse, clientsResponse, demandesResponse] = await Promise.all([
+                    api.get<Projet[]>("/projets"),
+                    api.get<Client[]>("/clients"),
+                    api.get<Demande[]>("/demandes"),
+                ]);
+                if (isMounted) {
+                    setProjets(projetsResponse.data ?? []);
+                    setClients(clientsResponse.data ?? []);
+                    setDemandes(demandesResponse.data ?? []);
+                }
+            } catch {
+                // Ignore background errors
+            }
+        };
+
+        void loadData();
+
+        const interval = setInterval(() => {
+            void pollData();
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     const projetStats = useMemo(() => {

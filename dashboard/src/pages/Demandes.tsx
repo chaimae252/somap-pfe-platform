@@ -130,7 +130,29 @@ export default function Demandes() {
     };
 
     useEffect(() => {
+        let isMounted = true;
+
+        const pollData = async () => {
+            try {
+                const response = await api.get<Demande[]>("/demandes");
+                if (isMounted) {
+                    setDemandes(response.data ?? []);
+                }
+            } catch {
+                // Ignore background errors
+            }
+        };
+
         void loadDemandes();
+
+        const interval = setInterval(() => {
+            void pollData();
+        }, 10000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     useEffect(() => {
