@@ -13,6 +13,8 @@ import api from "../api/api";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
+const TEXT = "#1a2e4a";
+const MUTED = "#6b7f95";
 
 const navItems = [
     { label: "Dashboard", icon: DashboardOutlinedIcon, path: "/dashboard", group: "Principal" },
@@ -34,6 +36,7 @@ export default function Navbar() {
         unreadNotifications: 0,
     });
     const [adminName, setAdminName] = useState(localStorage.getItem("userName")?.trim() || "Admin");
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const adminInitials = adminName
         .split(" ")
         .map((part) => part[0])
@@ -74,85 +77,109 @@ export default function Navbar() {
     }, [pathname]);
 
     const handleLogout = () => {
-        const shouldLogout = window.confirm("Voulez-vous vraiment vous déconnecter ?");
+        setShowLogoutModal(true);
+    };
 
-        if (!shouldLogout) {
-            return;
-        }
-
+    const confirmLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("userRole");
         localStorage.removeItem("userName");
         localStorage.removeItem("userId");
         localStorage.removeItem("userEmail");
         sessionStorage.clear();
-
-        window.alert("Vous avez été déconnecté avec succès.");
+        setShowLogoutModal(false);
         navigate("/login");
     };
 
     return (
-        <aside style={styles.sidebar}>
-            <div style={styles.logoRow}>
-                <img src={logo} alt="SOMAP & SERVICE" style={styles.logo} />
-            </div>
-
-            <nav style={styles.nav}>
-                {groups.map((group) => (
-                    <div key={group} style={styles.section}>
-                        <span style={styles.sectionLabel}>{group}</span>
-                        {navItems
-                            .filter((item) => item.group === group)
-                            .map((item) => {
-                                const active = pathname === item.path;
-                                const Icon = item.icon;
-                                const badge =
-                                    item.badgeKey === "pendingDemandes"
-                                        ? badges.pendingDemandes
-                                        : item.badgeKey === "unreadNotifications"
-                                          ? badges.unreadNotifications
-                                          : 0;
-
-                                return (
-                                    <button
-                                        key={item.label}
-                                        onClick={() =>
-                                            item.isLogout
-                                                ? handleLogout()
-                                                : navigate(item.path)
-                                        }
-                                        style={{
-                                            ...styles.navItem,
-                                            ...(active ? styles.navItemActive : {}),
-                                        }}
-                                    >
-                                        <span style={styles.navIcon}>
-                                            <Icon sx={{ fontSize: 19 }} />
-                                        </span>
-                                        <span style={styles.navLabel}>{item.label}</span>
-                                        {badge > 0 ? (
-                                            <span style={styles.badge}>{badge}</span>
-                                        ) : active ? (
-                                            <span style={styles.activeDot} />
-                                        ) : null}
-                                    </button>
-                                );
-                            })}
-                    </div>
-                ))}
-            </nav>
-
-            <div style={styles.footer}>
-                <div style={styles.userRow} onClick={() => navigate("/profile")}>
-                    <div style={styles.avatar}>{adminInitials || "AD"}</div>
-                    <div style={styles.userInfo}>
-                        <span style={styles.userName}>{adminName}</span>
-                        <span style={styles.userRole}>Administrateur</span>
-                    </div>
-                    <span style={styles.chevron}>›</span>
+        <>
+            <aside style={styles.sidebar}>
+                <div style={styles.logoRow}>
+                    <img src={logo} alt="SOMAP & SERVICE" style={styles.logo} />
                 </div>
-            </div>
-        </aside>
+
+                <nav style={styles.nav}>
+                    {groups.map((group) => (
+                        <div key={group} style={styles.section}>
+                            <span style={styles.sectionLabel}>{group}</span>
+                            {navItems
+                                .filter((item) => item.group === group)
+                                .map((item) => {
+                                    const active = pathname === item.path;
+                                    const Icon = item.icon;
+                                    const badge =
+                                        item.badgeKey === "pendingDemandes"
+                                            ? badges.pendingDemandes
+                                            : item.badgeKey === "unreadNotifications"
+                                              ? badges.unreadNotifications
+                                              : 0;
+
+                                    return (
+                                        <button
+                                            key={item.label}
+                                            onClick={() =>
+                                                item.isLogout
+                                                    ? handleLogout()
+                                                    : navigate(item.path)
+                                            }
+                                            style={{
+                                                ...styles.navItem,
+                                                ...(active ? styles.navItemActive : {}),
+                                            }}
+                                        >
+                                            <span style={styles.navIcon}>
+                                                <Icon sx={{ fontSize: 19 }} />
+                                            </span>
+                                            <span style={styles.navLabel}>{item.label}</span>
+                                            {badge > 0 ? (
+                                                <span style={styles.badge}>{badge}</span>
+                                            ) : active ? (
+                                                <span style={styles.activeDot} />
+                                            ) : null}
+                                        </button>
+                                    );
+                                })}
+                        </div>
+                    ))}
+                </nav>
+
+                <div style={styles.footer}>
+                    <div style={styles.userRow} onClick={() => navigate("/profile")}>
+                        <div style={styles.avatar}>{adminInitials || "AD"}</div>
+                        <div style={styles.userInfo}>
+                            <span style={styles.userName}>{adminName}</span>
+                            <span style={styles.userRole}>Administrateur</span>
+                        </div>
+                        <span style={styles.chevron}>›</span>
+                    </div>
+                </div>
+            </aside>
+
+            {showLogoutModal && (
+                <div style={styles.modalOverlay} onClick={() => setShowLogoutModal(false)}>
+                    <section style={styles.confirmCard} onClick={(event) => event.stopPropagation()}>
+                        <h2 style={styles.confirmTitle}>Se déconnecter ?</h2>
+                        <p style={styles.confirmText}>
+                            Voulez-vous vraiment vous déconnecter de la plateforme SOMAP ?
+                        </p>
+                        <div style={styles.confirmActions}>
+                            <button
+                                style={styles.cancelButton}
+                                onClick={() => setShowLogoutModal(false)}
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                style={styles.confirmLogoutButton}
+                                onClick={confirmLogout}
+                            >
+                                Se déconnecter
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
+        </>
     );
 }
 
@@ -279,4 +306,54 @@ const styles: Record<string, CSSProperties> = {
     userName: { fontSize: 12, fontWeight: 600, color: "#1a2e4a" },
     userRole: { fontSize: 10, color: "#9aabb8" },
     chevron: { color: "#b0bec8", fontSize: 18, lineHeight: 1 },
+    modalOverlay: {
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "rgba(10,24,44,0.42)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+    },
+    confirmCard: {
+        width: "min(420px, 100%)",
+        background: "#fff",
+        border: "1px solid #dfe9f3",
+        borderRadius: 16,
+        padding: 20,
+        boxShadow: "0 24px 70px rgba(13,45,94,0.22)",
+    },
+    confirmTitle: { margin: 0, color: TEXT, fontSize: 18, fontWeight: 700 },
+    confirmText: { margin: "10px 0 0", color: MUTED, fontSize: 13.5, lineHeight: 1.5 },
+    confirmActions: {
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 18,
+    },
+    cancelButton: {
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: MUTED,
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    confirmLogoutButton: {
+        border: "none",
+        background: "#ad2324",
+        color: "#fff",
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
 };
