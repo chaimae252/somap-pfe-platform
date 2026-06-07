@@ -196,4 +196,40 @@ public void changePassword(String token, String currentPassword, String newPassw
     user.setMotDePasse(passwordEncoder.encode(newPassword));
     utilisateurRepository.save(user);
 }
+
+@Override
+@Transactional
+public void forgotPasswordLoggedIn(String token) {
+    if (token != null && token.startsWith("Bearer ")) {
+        token = token.substring(7);
+    }
+    
+    String email = jwtService.extractUsername(token);
+    Utilisateur user = utilisateurRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    
+    String newPassword = generateRandomPassword();
+    System.out.println("[DEBUG] Temporary password generated for " + email + ": " + newPassword);
+    user.setMotDePasse(passwordEncoder.encode(newPassword));
+    utilisateurRepository.save(user);
+
+    String subject = "SOMAP - Nouveau mot de passe proposé";
+    String body = "Bonjour " + user.getNom() + ",\n\n" +
+                  "Vous avez demandé la réinitialisation de votre mot de passe depuis votre espace profil.\n" +
+                  "Voici votre nouveau mot de passe généré aléatoirement : " + newPassword + "\n\n" +
+                  "Pour votre sécurité, nous vous invitons à copier ce mot de passe, à l'utiliser comme mot de passe actuel dans le formulaire pour ensuite le modifier avec le mot de passe de votre choix.\n\n" +
+                  "Cordialement,\nL'équipe SOMAP";
+    
+    emailService.sendEmail(email, subject, body);
+}
+
+private String generateRandomPassword() {
+    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    java.security.SecureRandom random = new java.security.SecureRandom();
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 10; i++) {
+        sb.append(chars.charAt(random.nextInt(chars.length())));
+    }
+    return sb.toString();
+}
 }

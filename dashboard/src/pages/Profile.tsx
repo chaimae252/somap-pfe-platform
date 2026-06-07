@@ -177,6 +177,7 @@ export default function Profile() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
+    const [requestingReset, setRequestingReset] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [editing, setEditing] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState("");
@@ -239,6 +240,20 @@ export default function Profile() {
 
         void loadProfile();
     }, []);
+
+    useEffect(() => {
+        if (success) {
+            const timer = setTimeout(() => setSuccess(""), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [success]);
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => setError(""), 6000);
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const handleSaveProfile = async () => {
         if (!profile.id) {
@@ -335,6 +350,20 @@ export default function Profile() {
             setError(getApiError(err, "Impossible de modifier le mot de passe."));
         } finally {
             setChangingPassword(false);
+        }
+    };
+
+    const handleForgotPassword = async () => {
+        setRequestingReset(true);
+        setError("");
+        setSuccess("");
+        try {
+            await api.post("/auth/forgot-password-logged-in");
+            setSuccess("Un nouveau mot de passe a été généré et envoyé à votre adresse email.");
+        } catch (err) {
+            setError(getApiError(err, "Impossible de générer le nouveau mot de passe."));
+        } finally {
+            setRequestingReset(false);
         }
     };
 
@@ -568,6 +597,14 @@ export default function Profile() {
                                             )}
                                         </button>
                                     </div>
+                                    <button
+                                        type="button"
+                                        style={styles.forgotPasswordLink}
+                                        onClick={() => void handleForgotPassword()}
+                                        disabled={requestingReset}
+                                    >
+                                        {requestingReset ? "Envoi..." : "Mot de passe oublié ?"}
+                                    </button>
                                 </div>
 
                                 <div style={styles.field}>
@@ -979,6 +1016,22 @@ const styles: Record<string, CSSProperties> = {
         fontWeight: 800,
         textTransform: "uppercase",
         letterSpacing: 0.5,
+    },
+    forgotPasswordLink: {
+        border: "none",
+        background: "none",
+        color: SOMAP_BLUE,
+        cursor: "pointer",
+        fontSize: 10.5,
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+        padding: 0,
+        fontFamily: "inherit",
+        display: "inline-flex",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        marginTop: 4,
     },
     input: {
         width: "100%",

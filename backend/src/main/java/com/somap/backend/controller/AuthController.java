@@ -99,4 +99,11 @@ public ResponseEntity<?> changePassword(
     authService.changePassword(token, request.getCurrentPassword(), request.getNewPassword());
     return ResponseEntity.ok("Mot de passe modifié avec succès");
 }
+@PostMapping("/forgot-password-logged-in")
+public ResponseEntity<?> forgotPasswordLoggedIn(
+        @RequestHeader("Authorization") String authorization
+) {
+    authService.forgotPasswordLoggedIn(authorization);
+    return ResponseEntity.ok("Un nouveau mot de passe a été envoyé à votre adresse email");
+}
 }
