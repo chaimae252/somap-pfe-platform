@@ -66,7 +66,7 @@ public class DemandeServiceImpl implements DemandeService {
                     saved.getId()
             );
         } catch (Exception e) {
-            System.out.println("Notification demande client error: " + e.getMessage());
+            // ignore
         }
 
         try {
@@ -78,7 +78,7 @@ public class DemandeServiceImpl implements DemandeService {
                     saved.getId()
             );
         } catch (Exception e) {
-            System.out.println("Notification demande admin error: " + e.getMessage());
+            // ignore
         }
 
         return mapToDTO(saved);
@@ -107,7 +107,7 @@ public class DemandeServiceImpl implements DemandeService {
     @Override
     @Transactional
     public DemandeDTO updateDemandeStatus(Long id, String status) {
-        System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus START id=" + id + " rawStatus=" + status);
+
 
         Demande demande = demandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande not found"));
@@ -116,11 +116,7 @@ public class DemandeServiceImpl implements DemandeService {
         DemandeStatus newStatus = DemandeStatus.valueOf(status);
         Long clientId = demande.getClient() != null ? demande.getClient().getId() : null;
 
-        System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus loaded id=" + id
-                + " oldStatus=" + oldStatus
-                + " newStatus=" + newStatus
-                + " clientId=" + clientId
-                + " objet=" + demande.getObjet());
+
 
         demande.setStatut(newStatus);
 
@@ -131,8 +127,7 @@ public class DemandeServiceImpl implements DemandeService {
         }
 
         Demande updated = demandeRepository.save(demande);
-System.out.println("[NOTIF DEBUG] DemandeService.updateDemandeStatus saved id=" + updated.getId()
-        + " savedStatus=" + updated.getStatut());
+
 
 createProjectWhenValidated(
         updated,
@@ -151,19 +146,14 @@ return mapToDTO(updated);
     @Override
     @Transactional
 public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
-    System.out.println("[NOTIF DEBUG] DemandeService.updateDemande START id=" + id
-            + " dtoStatus=" + dto.getStatut());
+
     Demande demande = demandeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Demande not found"));
 
     DemandeStatus oldStatus = demande.getStatut();
     Long clientId = demande.getClient() != null ? demande.getClient().getId() : null;
 
-    System.out.println("[NOTIF DEBUG] DemandeService.updateDemande loaded id=" + id
-            + " oldStatus=" + oldStatus
-            + " dtoStatus=" + dto.getStatut()
-            + " clientId=" + clientId
-            + " objet=" + demande.getObjet());
+
 
     demande.setObjet(dto.getObjet());
     demande.setDescription(dto.getDescription());
@@ -180,8 +170,7 @@ public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
     }
 
     Demande updated = demandeRepository.save(demande);
-System.out.println("[NOTIF DEBUG] DemandeService.updateDemande saved id=" + updated.getId()
-        + " savedStatus=" + updated.getStatut());
+
 
 createProjectWhenValidated(
         updated,
@@ -261,12 +250,12 @@ return mapToDTO(updated);
         }
 
         if (demande.getClient() == null) {
-            System.out.println("[PROJET AUTO] Skip project creation: demande has no client, demandeId=" + demande.getId());
+
             return;
         }
 
         if (projetRepository.existsByDemandeId(demande.getId())) {
-            System.out.println("[PROJET AUTO] Skip project creation: project already exists for demandeId=" + demande.getId());
+
             return;
         }
 
@@ -282,9 +271,7 @@ return mapToDTO(updated);
 
         projetRepository.syncProjetIdSequence();
         Projet savedProjet = projetRepository.saveAndFlush(projet);
-        System.out.println("[PROJET AUTO] Created project id=" + savedProjet.getId()
-                + " for demandeId=" + demande.getId()
-                + " clientId=" + demande.getClient().getId());
+
 
         try {
             notificationService.notifyUser(
@@ -296,7 +283,7 @@ return mapToDTO(updated);
                     savedProjet.getId()
             );
         } catch (Exception e) {
-            System.out.println("Notification auto projet error: " + e.getMessage());
+            // ignore
         }
     }
 
@@ -314,15 +301,9 @@ return mapToDTO(updated);
             DemandeStatus newStatus
     ) {
         Long clientId = demande.getClient() != null ? demande.getClient().getId() : null;
-        System.out.println("[NOTIF DEBUG] notifyClientAboutStatusChange demandeId=" + demande.getId()
-                + " oldStatus=" + oldStatus
-                + " newStatus=" + newStatus
-                + " clientId=" + clientId);
+
 
         if (oldStatus == newStatus || demande.getClient() == null) {
-            System.out.println("[NOTIF DEBUG] notifyClientAboutStatusChange SKIP demandeId=" + demande.getId()
-                    + " sameStatus=" + (oldStatus == newStatus)
-                    + " hasClient=" + (demande.getClient() != null));
             return;
         }
 
@@ -335,13 +316,9 @@ return mapToDTO(updated);
                     "DEMANDE",
                     demande.getId()
             );
-            System.out.println("[NOTIF DEBUG] notifyClientAboutStatusChange CREATED notificationId="
-                    + notification.getId()
-                    + " userId=" + notification.getUtilisateurId()
-                    + " demandeId=" + demande.getId());
+
         } catch (Exception e) {
-            System.out.println("Notification demande status error: " + e.getMessage());
-            e.printStackTrace();
+            // ignore
         }
     }
 }

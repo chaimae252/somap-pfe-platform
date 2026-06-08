@@ -117,7 +117,7 @@ public class ServiceServiceImpl implements ServiceService {
                 }
             }
         } catch (Exception e) {
-            System.out.println("[DELETE SERVICE] Other admins notification failed: " + e.getMessage());
+            // ignore or log using a proper logger if needed
         }
 
         serviceRepository.delete(service);

@@ -221,7 +221,6 @@ public void forgotPasswordLoggedIn(String token) {
         .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
     
     String newPassword = generateRandomPassword();
-    System.out.println("[DEBUG] Temporary password generated for " + email + ": " + newPassword);
     user.setMotDePasse(passwordEncoder.encode(newPassword));
     utilisateurRepository.save(user);
 

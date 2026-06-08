@@ -120,7 +120,7 @@ public class ClientServiceImpl implements ClientService {
                 }
             }
         } catch (Exception e) {
-            System.out.println("[DELETE CLIENT] Other admins notification failed: " + e.getMessage());
+            // ignore
         }
 
         clientRepository.delete(client);

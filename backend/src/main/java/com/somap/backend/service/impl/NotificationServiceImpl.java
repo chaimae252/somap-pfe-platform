@@ -33,19 +33,8 @@ public class NotificationServiceImpl implements NotificationService {
     // =========================
     @Override
     public NotificationDTO createNotification(NotificationDTO dto) {
-        System.out.println("[NOTIF DEBUG] NotificationService.createNotification START userId="
-                + dto.getUtilisateurId()
-                + " type=" + dto.getType()
-                + " title=" + dto.getTitre()
-                + " targetType=" + dto.getTargetType()
-                + " targetId=" + dto.getTargetId());
-
         Utilisateur user = utilisateurRepository.findById(dto.getUtilisateurId())
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
-        System.out.println("[NOTIF DEBUG] NotificationService.createNotification userFound id="
-                + user.getId()
-                + " email=" + user.getEmail()
-                + " role=" + user.getRole());
 
         Notification notification = new Notification();
         notification.setTitre(dto.getTitre());
@@ -60,16 +49,10 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setTargetId(dto.getTargetId());
 
         Notification saved = notificationRepository.save(notification);
-        System.out.println("[NOTIF DEBUG] NotificationService.createNotification SAVED notificationId="
-                + saved.getId()
-                + " userId=" + saved.getUtilisateur().getId()
-                + " type=" + saved.getType()
-                + " date=" + saved.getDateEnvoi());
 
         try {
             clientRepository.findById(user.getId()).ifPresent(client -> {
                 if (client.getPushToken() != null && !client.getPushToken().trim().isEmpty()) {
-                    System.out.println("[EXPO PUSH] Dispatching push to client: " + client.getId());
                     java.util.Map<String, Object> data = new java.util.HashMap<>();
                     if (saved.getTargetType() != null) {
                         data.put("targetType", saved.getTargetType().toString());
@@ -86,7 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
                 }
             });
         } catch (Exception e) {
-            System.err.println("[EXPO PUSH ERROR] Failed to dispatch push notification: " + e.getMessage());
+            // ignore
         }
 
         return mapToDTO(saved);
@@ -106,10 +89,6 @@ public class NotificationServiceImpl implements NotificationService {
             String targetType,
             Long targetId
     ) {
-        System.out.println("[NOTIF DEBUG] NotificationService.notifyUser userId=" + utilisateurId
-                + " type=" + type
-                + " targetType=" + targetType
-                + " targetId=" + targetId);
         NotificationDTO dto = new NotificationDTO();
         dto.setUtilisateurId(utilisateurId);
         dto.setTitre(titre);
@@ -179,18 +158,11 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<NotificationDTO> getNotificationsByClient(Long userId) {
-        System.out.println("[NOTIF DEBUG] NotificationService.getNotificationsByClient START userId=" + userId);
-
-        List<NotificationDTO> notifications = notificationRepository
+        return notificationRepository
                 .findByUtilisateurIdOrderByDateEnvoiDesc(userId)
                 .stream()
                 .map(this::mapToDTO)
                 .toList();
-
-        System.out.println("[NOTIF DEBUG] NotificationService.getNotificationsByClient DONE userId="
-                + userId + " count=" + notifications.size());
-
-        return notifications;
     }
 
     @Override

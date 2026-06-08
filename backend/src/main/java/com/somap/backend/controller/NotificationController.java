@@ -37,11 +37,7 @@ public class NotificationController {
     public List<NotificationDTO> getNotificationsByClient(
             @PathVariable Long id
     ) {
-        System.out.println("[NOTIF DEBUG] NotificationController.getNotificationsByClient id=" + id);
-        List<NotificationDTO> notifications = notificationService.getNotificationsByClient(id);
-        System.out.println("[NOTIF DEBUG] NotificationController.getNotificationsByClient count="
-                + notifications.size() + " id=" + id);
-        return notifications;
+        return notificationService.getNotificationsByClient(id);
     }
 
     @GetMapping("/unread-count/{userId}")

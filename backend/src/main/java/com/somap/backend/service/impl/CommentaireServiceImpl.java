@@ -48,19 +48,15 @@ public class CommentaireServiceImpl implements CommentaireService {
                 dto.getDateCommentaire() != null ? dto.getDateCommentaire() : LocalDateTime.now()
         );
 
-        System.out.println("[COMMENT DEBUG] createCommentaire: dto.parentId=" + dto.getParentId() + ", clientId=" + dto.getClientId());
-
         // ✅ FIX: parent comment handling
         Commentaire parent = null;
         if (dto.getParentId() != null) {
             parent = commentaireRepository.findById(dto.getParentId())
                     .orElseThrow(() -> new RuntimeException("Commentaire parent introuvable"));
-            System.out.println("[COMMENT DEBUG] Found parent comment id=" + parent.getId() + ", parentOwner=" + (parent.getClient() != null ? parent.getClient().getId() : "null"));
             commentaire.setParent(parent);
         }
 
         Commentaire saved = commentaireRepository.save(commentaire);
-        System.out.println("[COMMENT DEBUG] Saved comment id=" + saved.getId());
 
         // Notify admins about the new comment
         try {
@@ -74,19 +70,13 @@ public class CommentaireServiceImpl implements CommentaireService {
                     "COMMENTAIRE",
                     saved.getId()
             );
-            System.out.println("[COMMENT DEBUG] Admin notification triggered for comment: " + saved.getId() + " on service: " + service.getTitre());
         } catch (Exception e) {
-            System.out.println("[COMMENT DEBUG] Admin notification failed: " + e.getMessage());
-            e.printStackTrace();
+            // ignore
         }
 
         if (parent != null) {
-            if (parent.getClient() == null) {
-                System.out.println("[COMMENT DEBUG] Parent owner client is null!");
-            } else {
-                System.out.println("[COMMENT DEBUG] Comparing owner=" + parent.getClient().getId() + " with replier=" + client.getId());
+            if (parent.getClient() != null) {
                 if (!parent.getClient().getId().equals(client.getId())) {
-                    System.out.println("[COMMENT DEBUG] Triggering notification to user=" + parent.getClient().getId());
                     try {
                         notificationService.notifyUser(
                                 parent.getClient().getId(),
@@ -96,13 +86,9 @@ public class CommentaireServiceImpl implements CommentaireService {
                                 "SERVICE",
                                 service.getId()
                         );
-                        System.out.println("[COMMENT DEBUG] Notification triggered successfully!");
                     } catch (Exception e) {
-                        System.out.println("[COMMENT DEBUG] Notification failed: " + e.getMessage());
-                        e.printStackTrace();
+                        // ignore
                     }
-                } else {
-                    System.out.println("[COMMENT DEBUG] Owner and replier are the same, skipping notification.");
                 }
             }
         }
@@ -173,7 +159,7 @@ public class CommentaireServiceImpl implements CommentaireService {
                         NotificationType.COMMENTAIRE
                 );
             } catch (Exception e) {
-                System.out.println("[DELETE COMMENT] Client notification failed: " + e.getMessage());
+                // ignore
             }
         }
 
@@ -202,7 +188,7 @@ public class CommentaireServiceImpl implements CommentaireService {
                 }
             }
         } catch (Exception e) {
-            System.out.println("[DELETE COMMENT] Other admins notification failed: " + e.getMessage());
+            // ignore
         }
 
         commentaireRepository.delete(commentaire);

@@ -56,8 +56,6 @@ public class DemandeController {
             @PathVariable Long id,
             @RequestParam String status
     ) {
-        System.out.println("[NOTIF DEBUG] DemandeController.updateDemandeStatus id=" + id + " status=" + status);
-
         return ResponseEntity.ok(
                 demandeService.updateDemandeStatus(id, status)
         );
@@ -66,10 +64,6 @@ public class DemandeController {
 public ResponseEntity<DemandeDTO> updateDemande(
         @PathVariable Long id,
         @RequestBody DemandeDTO demandeDTO) {
-    System.out.println("[NOTIF DEBUG] DemandeController.updateDemande id=" + id
-            + " dtoStatut=" + demandeDTO.getStatut()
-            + " dtoClientId=" + demandeDTO.getClientId()
-            + " dtoObjet=" + demandeDTO.getObjet());
     return ResponseEntity.ok(demandeService.updateDemande(id, demandeDTO));
 }
     @DeleteMapping("/{id}")

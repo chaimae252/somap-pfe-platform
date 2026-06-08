@@ -40,9 +40,8 @@ public class ExpoNotificationService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
             restTemplate.postForObject(url, request, String.class);
-            System.out.println("[EXPO PUSH] Notification sent successfully to " + expoPushToken);
         } catch (Exception e) {
-            System.err.println("[EXPO PUSH] Error sending push notification: " + e.getMessage());
+            // ignore
         }
     }
 }

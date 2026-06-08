@@ -79,7 +79,7 @@ public class ProjetServiceImpl implements ProjetService {
                     savedProjet.getId()
             );
         } catch (Exception e) {
-            System.out.println("Notification projet create error: " + e.getMessage());
+            // ignore
         }
 
         return mapToDTO(savedProjet);
@@ -155,7 +155,7 @@ public class ProjetServiceImpl implements ProjetService {
                     updatedProjet.getId()
             );
         } catch (Exception e) {
-            System.out.println("Notification projet update error: " + e.getMessage());
+            // ignore
         }
 
         return mapToDTO(updatedProjet);
@@ -199,7 +199,7 @@ public class ProjetServiceImpl implements ProjetService {
                 }
             }
         } catch (Exception e) {
-            System.out.println("[DELETE PROJET] Other admins notification failed: " + e.getMessage());
+            // ignore
         }
 
         Demande demande = projet.getDemande();
@@ -239,7 +239,7 @@ public class ProjetServiceImpl implements ProjetService {
                         savedProjet.getId()
                 );
             } catch (Exception e) {
-                System.out.println("Notification missing projet error: " + e.getMessage());
+                // ignore
             }
         });
     }

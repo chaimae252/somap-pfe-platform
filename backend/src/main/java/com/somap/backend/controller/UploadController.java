@@ -27,10 +27,6 @@ public class UploadController {
             @RequestParam(value = "demandeId", required = false) Long demandeId,
             @RequestParam(value = "commentaireId", required = false) Long commentaireId
     ) throws IOException {
-        System.out.println("UPLOAD COMMENTAIRE: file=" + file.getOriginalFilename()
-                + ", commentaireId=" + commentaireId
-                + ", demandeId=" + demandeId);
-
         String imageUrl = cloudinaryService.uploadFile(file);
 
         ImageDTO dto = new ImageDTO();

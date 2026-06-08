@@ -35,7 +35,6 @@ public class DataSeeder {
 
             // 🛑 prevent duplicate seeding
             if (utilisateurRepo.count() > 0) {
-                System.out.println("Seeder already executed ✔");
                 return;
             }
 
