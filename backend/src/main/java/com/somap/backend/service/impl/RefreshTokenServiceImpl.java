@@ -28,14 +28,12 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         var user = utilisateurRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
         
-        // Clear any existing refresh token for the user
-        refreshTokenRepository.deleteByUser(user);
-
-        RefreshToken refreshToken = RefreshToken.builder()
-                .user(user)
-                .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(refreshExpirationMs))
-                .build();
+        // Find existing token or create a new one to prevent unique constraint collisions
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user)
+                .orElseGet(() -> RefreshToken.builder().user(user).build());
+        
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshExpirationMs));
 
         return refreshTokenRepository.save(refreshToken);
     }
