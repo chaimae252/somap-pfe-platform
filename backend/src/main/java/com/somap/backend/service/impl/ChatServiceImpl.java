@@ -36,9 +36,17 @@ public class ChatServiceImpl implements ChatService {
             StringBuilder contextBuilder = new StringBuilder();
             contextBuilder.append("Vous êtes l'assistant virtuel officiel de l'entreprise SOMAP & SERVICE. ");
             contextBuilder.append("Répondez poliment et de manière professionnelle en français. ");
-            contextBuilder.append("Utilisez uniquement les informations du catalogue ci-dessous pour renseigner le client. ");
-            contextBuilder.append("Si l'utilisateur pose une question en dehors de nos prestations (comme de la cuisine, de la politique, ou du divertissement), ramenez-le poliment vers nos services industriels.\n\n");
-            contextBuilder.append("[CATALOGUE DE NOS SERVICES]\n");
+            contextBuilder.append("Utilisez les informations du catalogue et des fonctionnalités de l'application ci-dessous pour renseigner le client. ");
+            contextBuilder.append("Si l'utilisateur pose une question en dehors de nos prestations ou de l'utilisation de l'application (comme de la cuisine, de la politique, ou du divertissement), ramenez-le poliment vers nos services.\n\n");
+            
+            contextBuilder.append("[FONCTIONNALITÉS DE L'APPLICATION MOBILE]\n");
+            contextBuilder.append("- Créer une demande de devis/travaux : L'utilisateur doit aller sur l'onglet 'Demandes' en bas, puis cliquer sur le bouton de création '+' en haut à droite. Il peut y saisir l'objet, la description, choisir le niveau d'urgence (Faible, Normal, Urgent) et joindre des photos.\n");
+            contextBuilder.append("- Suivre ses projets : L'utilisateur peut suivre l'avancement de ses chantiers en cours ou terminés dans l'onglet 'Projets' en bas.\n");
+            contextBuilder.append("- Consulter les services : L'utilisateur peut parcourir le catalogue de prestations et laisser des commentaires/poser des questions dans l'onglet 'Services' en bas.\n");
+            contextBuilder.append("- Profil utilisateur : L'utilisateur peut modifier ses coordonnées de contact, changer son mot de passe ou se déconnecter dans l'onglet 'Profil' en bas.\n");
+            contextBuilder.append("[FIN DES FONCTIONNALITÉS]\n\n");
+
+            contextBuilder.append("[CATALOGUE DE NOS SERVICES DE TRAVAUX]\n");
 
             serviceRepository.findAll().forEach(service -> {
                 contextBuilder.append("- ").append(service.getTitre()).append(" : ").append(service.getDescription()).append("\n");
@@ -61,18 +69,24 @@ public class ChatServiceImpl implements ChatService {
                 }
             }
 
-            // Add the system context + new message
+            // Add the new user message cleanly
             Map<String, Object> userContentMap = new HashMap<>();
             userContentMap.put("role", "user");
             
             Map<String, String> userPart = new HashMap<>();
-            userPart.put("text", contextBuilder.toString() + "Question du client : " + message);
+            userPart.put("text", message);
             userContentMap.put("parts", Collections.singletonList(userPart));
             contents.add(userContentMap);
 
-            // Build request map
+            // Build request map with systemInstruction
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("contents", contents);
+            
+            Map<String, Object> systemInstruction = new HashMap<>();
+            Map<String, String> systemPart = new HashMap<>();
+            systemPart.put("text", contextBuilder.toString());
+            systemInstruction.put("parts", Collections.singletonList(systemPart));
+            requestBody.put("systemInstruction", systemInstruction);
 
             // 3. Send HTTP request
             HttpHeaders headers = new HttpHeaders();
