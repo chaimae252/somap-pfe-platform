@@ -9,7 +9,6 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ActivityIndicator,
     Animated,
     Dimensions,
@@ -17,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
 import Theme from "@/constants/theme";
+import { sendChatMessage } from "@/services/chatService";
 
 const { colors, fonts } = Theme;
 const { width, height } = Dimensions.get("window");
@@ -114,31 +114,47 @@ export default function GlobalChatBot() {
         // Scroll to bottom
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
-        // Simulate AI Reply
-        setTimeout(() => {
-            const query = textToSend.toLowerCase();
-            let aiText = "Je ne suis pas sûr de comprendre votre demande. Je peux vous renseigner sur nos services de Sablage, Métallisation, Peinture, Polyester, ou sur la création de Demandes et Projets. Essayez d'écrire l'un de ces mots-clés !";
+        // Call live backend API, with fallback to local mock on failure
+        sendChatMessage(
+            textToSend.trim(),
+            messages.map((m) => ({ sender: m.sender, text: m.text }))
+        )
+            .then((response) => {
+                const newAiMessage: Message = {
+                    id: Math.random().toString(),
+                    text: response.message,
+                    sender: "ai",
+                    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                };
+                setMessages((prev) => [...prev, newAiMessage]);
+                setIsTyping(false);
+                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            })
+            .catch((error) => {
+                console.log("Chatbot API error, using local mock responder:", error);
+                
+                const query = textToSend.toLowerCase();
+                let aiText = "Je ne suis pas sûr de comprendre votre demande. Je peux vous renseigner sur nos services de Sablage, Métallisation, Peinture, Polyester, ou sur la création de Demandes et Projets. Essayez d'écrire l'un de ces mots-clés !";
 
-            // Keyword match
-            for (const key in MOCK_ANSWERS) {
-                if (query.includes(key)) {
-                    aiText = MOCK_ANSWERS[key];
-                    break;
+                // Keyword match
+                for (const key in MOCK_ANSWERS) {
+                    if (query.includes(key)) {
+                        aiText = MOCK_ANSWERS[key];
+                        break;
+                    }
                 }
-            }
 
-            const newAiMessage: Message = {
-                id: Math.random().toString(),
-                text: aiText,
-                sender: "ai",
-                time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            };
+                const newAiMessage: Message = {
+                    id: Math.random().toString(),
+                    text: aiText,
+                    sender: "ai",
+                    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                };
 
-            setMessages((prev) => [...prev, newAiMessage]);
-            setIsTyping(false);
-
-            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-        }, 1500);
+                setMessages((prev) => [...prev, newAiMessage]);
+                setIsTyping(false);
+                setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+            });
     };
 
     return (
@@ -163,13 +179,13 @@ export default function GlobalChatBot() {
                 transparent={true}
                 onRequestClose={() => setVisible(false)}
             >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={{ flex: 1 }}
-                >
-                    <View style={styles.modalBackdrop}>
-                        <SafeAreaView style={styles.safeArea}>
-                            <View style={styles.chatContainer}>
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.safeArea}>
+                        <KeyboardAvoidingView
+                            behavior="padding"
+                            style={styles.chatContainer}
+                            keyboardVerticalOffset={0}
+                        >
                             {/* Header */}
                             <View style={styles.header}>
                                 <View style={styles.headerInfo}>
@@ -294,11 +310,10 @@ export default function GlobalChatBot() {
                                     <Ionicons name="send" size={18} color="#ffffff" />
                                 </TouchableOpacity>
                             </View>
-                        </View>
-                    </SafeAreaView>
+                        </KeyboardAvoidingView>
+                    </View>
                 </View>
-            </KeyboardAvoidingView>
-        </Modal>
+            </Modal>
         </>
     );
 }
