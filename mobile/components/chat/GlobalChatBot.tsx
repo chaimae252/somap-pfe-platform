@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "@/store/authStore";
 import Theme from "@/constants/theme";
 import { sendChatMessage } from "@/services/chatService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { colors, fonts } = Theme;
 const { width, height } = Dimensions.get("window");
@@ -49,16 +50,123 @@ const MOCK_ANSWERS: Record<string, string> = {
 export default function GlobalChatBot() {
     const { token, user } = useAuthStore();
     const [visible, setVisible] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            text: "Bonjour ! Je suis l'assistant virtuel SOMAP AI. Comment puis-je vous aider aujourd'hui ? Posez-moi des questions sur le sablage, la métallisation, la peinture ou vos projets.",
-            sender: "ai",
-            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-    ]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState("");
     const [isTyping, setIsTyping] = useState(false);
+
+    const defaultGreeting = (userName?: string): Message => ({
+        id: "1",
+        text: `Bonjour${userName ? " " + userName : ""} ! Je suis l'assistant virtuel SOMAP AI. Comment puis-je vous aider aujourd'hui ? Posez-moi des questions sur le sablage, la métallisation, la peinture ou vos projets.`,
+        sender: "ai",
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    });
+
+    // Load history when user changes
+    useEffect(() => {
+        if (!user?.id) {
+            setMessages([]);
+            return;
+        }
+
+        const loadChatHistory = async () => {
+            try {
+                const historyStr = await AsyncStorage.getItem(`@somap_chat_history_${user.id}`);
+                if (historyStr) {
+                    const parsed = JSON.parse(historyStr);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        setMessages(parsed);
+                        return;
+                    }
+                }
+                setMessages([defaultGreeting(user.nom || user.username)]);
+            } catch (err) {
+                console.log("Failed to load chat history:", err);
+                setMessages([defaultGreeting(user.nom || user.username)]);
+            }
+        };
+
+        loadChatHistory();
+    }, [user?.id]);
+
+    // Save history when messages change
+    useEffect(() => {
+        if (user?.id && messages.length > 0) {
+            AsyncStorage.setItem(`@somap_chat_history_${user.id}`, JSON.stringify(messages))
+                .catch((err) => console.log("Failed to save chat history:", err));
+        }
+    }, [messages, user?.id]);
+
+    // Parse and render basic markdown bold/lists
+    const renderFormattedText = (text: string, isUser: boolean) => {
+        if (!text) return null;
+        
+        const lines = text.split("\n");
+        return lines.map((line, lineIndex) => {
+            let isBullet = false;
+            let cleanLine = line;
+
+            // Check if the line starts with a list bullet
+            const bulletMatch = line.match(/^(\s*[\*\-]\s+)/);
+            if (bulletMatch) {
+                isBullet = true;
+                cleanLine = line.substring(bulletMatch[0].length);
+            }
+
+            // Check if the line is a header (starts with #)
+            let isHeader = false;
+            if (cleanLine.trim().startsWith("#")) {
+                const headerMatch = cleanLine.trim().match(/^#+\s+/);
+                if (headerMatch) {
+                    isHeader = true;
+                    cleanLine = cleanLine.trim().substring(headerMatch[0].length);
+                }
+            }
+
+            // Split the line by ** or *** to find bold text
+            const parts = cleanLine.split(/\*\*+/);
+            const textParts = parts.map((part, partIndex) => {
+                const isBold = partIndex % 2 !== 0;
+                return (
+                    <Text
+                        key={partIndex}
+                        style={[
+                            isBold ? styles.boldText : null,
+                            isHeader ? styles.headerText : null,
+                            isUser ? styles.userMessageText : styles.aiMessageText,
+                        ]}
+                    >
+                        {part}
+                    </Text>
+                );
+            });
+
+            return (
+                <View 
+                    key={lineIndex} 
+                    style={[
+                        styles.lineWrapper, 
+                        isBullet ? styles.bulletLine : null,
+                        lineIndex > 0 && cleanLine.trim() === "" ? styles.paragraphGap : null
+                    ]}
+                >
+                    {isBullet && (
+                        <Text style={[styles.bulletPoint, isUser ? styles.userMessageText : styles.aiMessageText]}>
+                            •{" "}
+                        </Text>
+                    )}
+                    <Text
+                        style={[
+                            styles.lineText,
+                            isHeader ? styles.headerText : null,
+                            isUser ? styles.userMessageText : styles.aiMessageText,
+                        ]}
+                    >
+                        {textParts}
+                    </Text>
+                </View>
+            );
+        });
+    };
 
     // Animations
     const floatAnim = useRef(new Animated.Value(1)).current;
@@ -232,16 +340,7 @@ export default function GlobalChatBot() {
                                                 item.sender === "user" ? styles.userBubble : styles.aiBubble,
                                             ]}
                                         >
-                                            <Text
-                                                style={[
-                                                    styles.messageText,
-                                                    item.sender === "user"
-                                                        ? styles.userMessageText
-                                                        : styles.aiMessageText,
-                                                ]}
-                                            >
-                                                {item.text}
-                                            </Text>
+                                            {renderFormattedText(item.text, item.sender === "user")}
                                             <Text
                                                 style={[
                                                     styles.messageTime,
@@ -465,6 +564,39 @@ const styles = StyleSheet.create({
         fontFamily: fonts.body,
         fontSize: 15,
         lineHeight: 20,
+    },
+    boldText: {
+        fontFamily: fonts.bodySemiBold,
+        fontWeight: "bold",
+    },
+    headerText: {
+        fontFamily: fonts.bodySemiBold,
+        fontWeight: "bold",
+        fontSize: 16,
+        marginTop: 6,
+        marginBottom: 2,
+    },
+    lineWrapper: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        width: "100%",
+    },
+    bulletLine: {
+        paddingLeft: 12,
+    },
+    bulletPoint: {
+        fontFamily: fonts.body,
+        fontSize: 15,
+        lineHeight: 22,
+    },
+    lineText: {
+        flex: 1,
+        fontFamily: fonts.body,
+        fontSize: 15,
+        lineHeight: 22,
+    },
+    paragraphGap: {
+        height: 8,
     },
     userMessageText: {
         color: "#ffffff",
