@@ -39,21 +39,7 @@ type AdminUpdateResponse = AdminProfile & {
     role?: string;
 };
 
-type DashboardStats = {
-    clients: number;
-    demandes: number;
-    projets: number;
-    services: number;
-    notifications?: number;
-};
 
-const emptyStats: DashboardStats = {
-    clients: 0,
-    demandes: 0,
-    projets: 0,
-    services: 0,
-    notifications: 0,
-};
 
 function getStoredProfile(): AdminProfile {
     const rawId = localStorage.getItem("userId");
@@ -78,9 +64,7 @@ function getInitials(name?: string) {
     return initials || "AD";
 }
 
-function formatNumber(value?: number) {
-    return new Intl.NumberFormat("fr-MA").format(value ?? 0);
-}
+
 
 function formatRole(role?: string | null) {
     if (!role) return "Administrateur";
@@ -173,9 +157,6 @@ export default function Profile() {
         newPassword: "",
         confirmPassword: "",
     });
-    const [stats, setStats] = useState<DashboardStats>(emptyStats);
-    const [unreadNotifications, setUnreadNotifications] = useState(0);
-    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
     const [requestingReset, setRequestingReset] = useState(false);
@@ -198,24 +179,13 @@ export default function Profile() {
             const stored = getStoredProfile();
             setProfile(stored);
             setForm({ nom: stored.nom || "", email: stored.email || "" });
-            setLoading(true);
             setError("");
             setSuccess("");
 
             try {
-                const requests: Promise<unknown>[] = [api.get<DashboardStats>("/dashboard/stats")];
-
                 if (stored.id) {
-                    requests.push(api.get<AdminProfile>(`/admins/${stored.id}`));
-                    requests.push(api.get<number>(`/notifications/unread-count/${stored.id}`));
-                }
-
-                const [statsResponse, adminResponse, unreadResponse] = await Promise.all(requests);
-
-                setStats((statsResponse as { data?: DashboardStats }).data ?? emptyStats);
-
-                if (adminResponse && typeof adminResponse === "object" && "data" in adminResponse) {
-                    const admin = (adminResponse as { data?: AdminProfile }).data;
+                    const adminResponse = await api.get<AdminProfile>(`/admins/${stored.id}`);
+                    const admin = adminResponse.data;
                     if (admin) {
                         setProfile({ ...stored, ...admin });
                         setForm({
@@ -226,16 +196,8 @@ export default function Profile() {
                         if (admin.email) localStorage.setItem("userEmail", admin.email);
                     }
                 }
-
-                if (unreadResponse && typeof unreadResponse === "object" && "data" in unreadResponse) {
-                    setUnreadNotifications((unreadResponse as { data?: number }).data ?? 0);
-                }
             } catch {
-                setStats(emptyStats);
-                setUnreadNotifications(0);
                 setError("Impossible de synchroniser toutes les données du profil.");
-            } finally {
-                setLoading(false);
             }
         };
 

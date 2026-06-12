@@ -9,8 +9,10 @@ import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import Layout from "../components/Layout";
 import api, { API_ORIGIN } from "../api/api";
+import { exportProjetsPDF } from "../utils/pdfExport";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -220,6 +222,11 @@ export default function Projets() {
         });
     }, [projets, search, statusFilter]);
 
+    const handleExportPDF = () => {
+        const adminNom = localStorage.getItem("userName")?.trim() || "Admin";
+        exportProjetsPDF(filteredProjets, adminNom);
+    };
+
     const associatedDemande = useMemo(() => {
         if (!selectedProjet || !selectedProjet.demandeId) return null;
         return demandes.find((d) => d.id === selectedProjet.demandeId);
@@ -369,10 +376,16 @@ export default function Projets() {
                         <h1 style={styles.title}>Projets</h1>
                         <p style={styles.subtitle}>Créez, suivez et mettez à jour les projets validés par les demandes clients.</p>
                     </div>
-                    <button style={styles.headerButton} onClick={openCreateModal}>
-                        <AddCircleOutlineOutlinedIcon sx={{ fontSize: 18 }} />
-                        Nouveau projet
-                    </button>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <button style={styles.exportButton} onClick={handleExportPDF}>
+                            <PictureAsPdfOutlinedIcon sx={{ fontSize: 18 }} />
+                            Exporter PDF
+                        </button>
+                        <button style={styles.headerButton} onClick={openCreateModal}>
+                            <AddCircleOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+                            Nouveau projet
+                        </button>
+                    </div>
                 </section>
 
                 {error && (
@@ -752,6 +765,22 @@ export default function Projets() {
 const styles: Record<string, CSSProperties> = {
     page: { display: "flex", flexDirection: "column", gap: 18, paddingBottom: 28, fontFamily: "'Segoe UI', system-ui, sans-serif" },
     header: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, marginBottom: 4 },
+    exportButton: {
+        height: 42,
+        borderRadius: 12,
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: SOMAP_BLUE,
+        padding: "0 16px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        transition: "all 0.15s ease",
+    },
     eyebrow: { display: "block", color: SOMAP_BLUE, fontSize: 11, fontWeight: 800, letterSpacing: 1.1, marginBottom: 6 },
     title: { margin: 0, fontSize: 32, lineHeight: 1.1, background: "linear-gradient(135deg, #1271b8 0%, #7ec933 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "inline-block", fontWeight: 800 },
     subtitle: { marginTop: 6, color: MUTED, fontSize: 13 },

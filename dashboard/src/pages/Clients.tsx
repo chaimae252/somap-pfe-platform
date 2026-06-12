@@ -3,9 +3,11 @@ import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
 import BuildOutlinedIcon from "@mui/icons-material/BuildOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import Navbar from "../components/Navbar";
 import SomapBackground from "../components/SomapBackground";
 import api from "../api/api";
+import { exportClientsPDF } from "../utils/pdfExport";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -154,6 +156,11 @@ export default function Clients() {
         );
     });
 
+    const handleExportPDF = () => {
+        const adminNom = localStorage.getItem("userName")?.trim() || "Admin";
+        exportClientsPDF(filtered, adminNom);
+    };
+
     const statCards = [
         {
             label: "Clients",
@@ -197,6 +204,10 @@ export default function Clients() {
                         <h1 style={styles.title}>Clients</h1>
                         <p style={styles.subtitle}>Suivi des comptes clients, demandes et projets associés.</p>
                     </div>
+                    <button style={styles.exportButton} onClick={handleExportPDF}>
+                        <PictureAsPdfOutlinedIcon sx={{ fontSize: 18 }} />
+                        Exporter PDF
+                    </button>
                 </section>
 
                 {/* Stats */}
@@ -441,6 +452,22 @@ const styles: Record<string, React.CSSProperties> = {
         alignItems: "center",
         gap: 18,
         marginBottom: 22,
+    },
+    exportButton: {
+        height: 42,
+        borderRadius: 12,
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: SOMAP_BLUE,
+        padding: "0 16px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        transition: "all 0.15s ease",
     },
     eyebrow: {
         display: "block",

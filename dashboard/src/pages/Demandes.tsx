@@ -5,9 +5,11 @@ import HourglassTopOutlinedIcon from "@mui/icons-material/HourglassTopOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import PriorityHighOutlinedIcon from "@mui/icons-material/PriorityHighOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import Layout from "../components/Layout";
 import api, { API_ORIGIN } from "../api/api";
 import { useSearchParams } from "react-router-dom";
+import { exportDemandesPDF } from "../utils/pdfExport";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -185,6 +187,11 @@ export default function Demandes() {
         }
     };
 
+    const handleExportPDF = () => {
+        const adminNom = localStorage.getItem("userName")?.trim() || "Admin";
+        exportDemandesPDF(filtered, adminNom);
+    };
+
     const model = useMemo(() => {
         const pending = demandes.filter((demande) => demande.statut === "EN_ATTENTE").length;
         const validated = demandes.filter((demande) => demande.statut === "VALIDEE").length;
@@ -230,9 +237,15 @@ export default function Demandes() {
                         <p style={styles.subtitle}>Pilotage des demandes clients, priorités et décisions administrateur.</p>
                     </div>
 
-                    <div style={styles.headerBadge}>
-                        <HourglassTopOutlinedIcon sx={{ fontSize: 18 }} />
-                        {loading ? "Chargement..." : `${formatNumber(model.pending)} en attente`}
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                        <button style={styles.exportButton} onClick={handleExportPDF}>
+                            <PictureAsPdfOutlinedIcon sx={{ fontSize: 18 }} />
+                            Exporter PDF
+                        </button>
+                        <div style={styles.headerBadge}>
+                            <HourglassTopOutlinedIcon sx={{ fontSize: 18 }} />
+                            {loading ? "Chargement..." : `${formatNumber(model.pending)} en attente`}
+                        </div>
                     </div>
                 </section>
 
@@ -496,6 +509,22 @@ const styles: Record<string, CSSProperties> = {
         gap: 18,
         minWidth: 0,
         paddingBottom: 28,
+    },
+    exportButton: {
+        height: 42,
+        borderRadius: 12,
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: SOMAP_BLUE,
+        padding: "0 16px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        transition: "all 0.15s ease",
     },
     header: {
         display: "flex",

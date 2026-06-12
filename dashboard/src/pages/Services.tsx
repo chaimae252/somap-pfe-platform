@@ -12,6 +12,8 @@ import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import Layout from "../components/Layout";
 import api, { API_ORIGIN } from "../api/api";
 import { useSearchParams } from "react-router-dom";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
+import { exportServicesPDF } from "../utils/pdfExport";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_RED = "#ad2324";
@@ -350,6 +352,11 @@ export default function Services() {
         });
     }, [services, search]);
 
+    const handleExportPDF = () => {
+        const adminNom = localStorage.getItem("userName")?.trim() || "Admin";
+        exportServicesPDF(filtered, adminNom);
+    };
+
     const activeService = useMemo(() => {
         return services.find((s) => s.id === activeDetailsId);
     }, [services, activeDetailsId]);
@@ -643,10 +650,16 @@ export default function Services() {
                                 <p style={styles.subtitle}>Catalogue des expertises et prestations industrielles de la SOMAP.</p>
                             </div>
 
-                            <button style={styles.createButton} onClick={handleCreateOpen}>
-                                <AddCircleOutlineOutlinedIcon sx={{ fontSize: 18 }} />
-                                Nouveau Service
-                            </button>
+                            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                                <button style={styles.exportButton} onClick={handleExportPDF}>
+                                    <PictureAsPdfOutlinedIcon sx={{ fontSize: 18 }} />
+                                    Exporter PDF
+                                </button>
+                                <button style={styles.createButton} onClick={handleCreateOpen}>
+                                    <AddCircleOutlineOutlinedIcon sx={{ fontSize: 18 }} />
+                                    Nouveau Service
+                                </button>
+                            </div>
                         </section>
 
                         {error && (
@@ -997,6 +1010,22 @@ const styles: Record<string, CSSProperties> = {
         minWidth: 0,
         paddingBottom: 28,
         fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    exportButton: {
+        height: 42,
+        borderRadius: 12,
+        border: "1px solid #dfe9f3",
+        background: "#fff",
+        color: SOMAP_BLUE,
+        padding: "0 16px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        transition: "all 0.15s ease",
     },
     header: {
         display: "flex",

@@ -32,7 +32,7 @@ type NotificationItem = {
     targetId?: number;
 };
 
-type FilterType = "TOUT" | "NON_LUES" | "DEMANDE" | "PROJET" | "SYSTEME";
+type FilterType = "TOUT" | "NON_LUES" | "DEMANDE" | "PROJET" | "COMMENTAIRE" | "SYSTEME";
 
 function formatDate(value?: string) {
     if (!value) return "Date non disponible";
@@ -343,13 +343,13 @@ export default function Notifications() {
                     </div>
 
                     <div style={styles.filters}>
-                        {(["TOUT", "NON_LUES", "DEMANDE", "PROJET", "SYSTEME"] as FilterType[]).map((f) => (
+                        {(["TOUT", "NON_LUES", "DEMANDE", "PROJET", "COMMENTAIRE", "SYSTEME"] as FilterType[]).map((f) => (
                             <button
                                 key={f}
                                 style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
                                 onClick={() => setFilter(f)}
                             >
-                                {f === "TOUT" ? "Toutes" : f === "NON_LUES" ? "Non lues" : f === "DEMANDE" ? "Demandes" : f === "PROJET" ? "Projets" : "Système"}
+                                {f === "TOUT" ? "Toutes" : f === "NON_LUES" ? "Non lues" : f === "DEMANDE" ? "Demandes" : f === "PROJET" ? "Projets" : f === "COMMENTAIRE" ? "Commentaires" : "Système"}
                             </button>
                         ))}
                     </div>

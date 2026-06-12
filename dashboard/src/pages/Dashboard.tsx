@@ -9,8 +9,10 @@ import AnalyticsOutlinedIcon from "@mui/icons-material/AnalyticsOutlined";
 import CheckCircleOutlineOutlinedIcon from "@mui/icons-material/CheckCircleOutlineOutlined";
 import ErrorOutlineOutlinedIcon from "@mui/icons-material/ErrorOutlineOutlined";
 import HourglassTopOutlinedIcon from "@mui/icons-material/HourglassTopOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import Layout from "../components/Layout";
 import api from "../api/api";
+import { exportDashboardPDF } from "../utils/pdfExport";
 
 const SOMAP_BLUE = "#1271b8";
 const SOMAP_GREEN = "#7EC933";
@@ -188,6 +190,10 @@ export default function Dashboard() {
         };
     }, [monthly, stats, statuses]);
 
+    const handleExportPDF = () => {
+        exportDashboardPDF(stats, monthly, statuses, adminName);
+    };
+
     const statCards = [
         {
             label: "Clients",
@@ -253,9 +259,15 @@ export default function Dashboard() {
                         <p style={styles.subtitle}>
                             Supervision en temps reel des clients, demandes, projets et services.
                         </p>
-                        <div style={styles.heroMeta}>
-                            <span>{formatNumber(dashboardModel.workloadTotal)} éléments suivis</span>
-                            <span>{dashboardModel.peakMonth ? `${dashboardModel.peakMonth.month} est le mois le plus actif` : "Analyse mensuelle"}</span>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center", marginTop: 14 }}>
+                            <button style={styles.exportButton} onClick={handleExportPDF}>
+                                <PictureAsPdfOutlinedIcon sx={{ fontSize: 18 }} />
+                                Exporter PDF
+                            </button>
+                            <div style={{ ...styles.heroMeta, marginTop: 0 }}>
+                                <span>{formatNumber(dashboardModel.workloadTotal)} éléments suivis</span>
+                                <span>{dashboardModel.peakMonth ? `${dashboardModel.peakMonth.month} est le mois le plus actif` : "Analyse mensuelle"}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -548,6 +560,22 @@ const styles: Record<string, CSSProperties> = {
         gap: 18,
         minWidth: 0,
         paddingBottom: 28,
+    },
+    exportButton: {
+        height: 36,
+        borderRadius: 10,
+        background: SOMAP_BLUE,
+        color: "#fff",
+        padding: "0 14px",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        border: "none",
+        fontWeight: 700,
+        fontSize: 12,
+        cursor: "pointer",
+        transition: "opacity 0.15s ease",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
     hero: {
         marginBottom: 4,
