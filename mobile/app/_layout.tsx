@@ -6,6 +6,7 @@ import { SyncProvider } from "@/contexts/SyncContext";
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
+import GlobalChatBot from "@/components/chat/GlobalChatBot";
 
 export default function RootLayout() {
     useEffect(() => {
@@ -20,7 +21,7 @@ export default function RootLayout() {
             console.log("🔔 Push notification tapped with data:", data);
 
             if (data?.targetType && data?.targetId) {
-                const targetId = data.targetId;
+                const targetId = String(data.targetId);
                 switch (data.targetType) {
                     case "SERVICE":
                         router.push({
@@ -63,6 +64,7 @@ export default function RootLayout() {
                             <Stack.Screen name="onboarding" />
                             <Stack.Screen name="(tabs)" />
                         </Stack>
+                        <GlobalChatBot />
                     </SafeAreaView>
                 </SyncProvider>
             </SafeAreaProvider>
