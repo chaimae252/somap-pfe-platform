@@ -208,7 +208,7 @@ const styles: Record<string, CSSProperties> = {
         overflow: "hidden",
     },
     logoRow: {
-        padding: "14px 16px",
+        padding: "6px 8px",
         borderBottom: "1px solid rgba(0,0,0,0.06)",
         flexShrink: 0,
         display: "flex",
@@ -217,10 +217,11 @@ const styles: Record<string, CSSProperties> = {
     },
     logo: {
         width: "100%",
-        maxWidth: 170,
-        height: 52,
+        maxWidth: "160px",
+        height: "auto",
+        maxHeight: "105px",
         objectFit: "contain",
-        filter: "drop-shadow(0 1px 4px rgba(18,113,184,0.10))",
+        filter: "drop-shadow(0 1px 4px rgba(18,113,184,0.06))",
     },
     nav: { flex: 1, overflowY: "hidden", padding: "8px 0" },
     section: { padding: "10px 10px 4px" },

@@ -15,7 +15,7 @@ export const LogoMark: React.FC<LogoMarkProps> = ({ size = 'md' }) => {
     return (
         <View style={styles.container}>
             <Image
-                source={require('../assets/logo2.png')}
+                source={require('../assets/logo.png')}
                 style={{
                     width: logoWidth,
                     height: logoWidth / 3.75,

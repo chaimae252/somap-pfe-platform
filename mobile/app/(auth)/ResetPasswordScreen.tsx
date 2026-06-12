@@ -98,7 +98,7 @@ const email =
               {/* HEADER */}
               <View style={styles.header}>
                 <Image
-                  source={require("@/assets/images/logomob.png")}
+                  source={require("../../assets/logo.png")}
                   style={styles.logo}
                   resizeMode="contain"
                 />

@@ -19,6 +19,7 @@ import Theme from "@/constants/theme";
 import { sendChatMessage } from "@/services/chatService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
+import { useSegments } from "expo-router";
 
 const { colors, fonts } = Theme;
 const { width, height } = Dimensions.get("window");
@@ -50,6 +51,7 @@ const MOCK_ANSWERS: Record<string, string> = {
 
 export default function GlobalChatBot() {
     const { token, user } = useAuthStore();
+    const segments = useSegments() as string[];
     const [visible, setVisible] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState("");
@@ -253,8 +255,15 @@ export default function GlobalChatBot() {
         return () => pulse.stop();
     }, []);
 
-    // Only render if user is authenticated
-    if (!token) {
+    // Only render if user is authenticated and not on splash/auth/onboarding routes
+    const isAuthOrSplash = 
+        segments.includes("(auth)") || 
+        segments.includes("onboarding") || 
+        segments.includes("splash") || 
+        segments.includes("index") ||
+        segments.length === 0;
+
+    if (!token || isAuthOrSplash) {
         return null;
     }
 
