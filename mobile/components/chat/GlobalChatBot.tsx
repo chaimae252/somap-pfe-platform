@@ -18,6 +18,7 @@ import { useAuthStore } from "@/store/authStore";
 import Theme from "@/constants/theme";
 import { sendChatMessage } from "@/services/chatService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
 
 const { colors, fonts } = Theme;
 const { width, height } = Dimensions.get("window");
@@ -281,11 +282,17 @@ export default function GlobalChatBot() {
             <View style={styles.floatingContainer}>
                 <Animated.View style={{ transform: [{ scale: Animated.multiply(floatAnim, pulseAnim) }] }}>
                     <TouchableOpacity
-                        activeOpacity={0.9}
+                        activeOpacity={0.85}
                         onPress={handleOpen}
-                        style={styles.floatingButton}
                     >
-                        <Ionicons name="chatbubble-ellipses" size={28} color="#ffffff" />
+                        <LinearGradient
+                            colors={['#1271b8', '#7EC933']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.floatingButton}
+                        >
+                            <Ionicons name="chatbubble-ellipses" size={28} color="#ffffff" />
+                        </LinearGradient>
                     </TouchableOpacity>
                 </Animated.View>
             </View>
@@ -305,16 +312,21 @@ export default function GlobalChatBot() {
                             keyboardVerticalOffset={0}
                         >
                             {/* Header */}
-                            <View style={styles.header}>
+                            <LinearGradient
+                                colors={['#0d2d5e', '#1271b8']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.header}
+                            >
                                 <View style={styles.headerInfo}>
                                     <View style={styles.avatarContainer}>
-                                        <Ionicons name="hardware-chip" size={22} color={colors.blue} />
+                                        <Ionicons name="hardware-chip" size={22} color="#ffffff" />
                                     </View>
                                     <View>
-                                        <Text style={styles.headerTitle}>SOMAP Assistant AI</Text>
+                                        <Text style={[styles.headerTitle, { color: '#ffffff' }]}>SOMAP Assistant AI</Text>
                                         <View style={styles.statusRow}>
                                             <View style={styles.statusDot} />
-                                            <Text style={styles.statusText}>En ligne</Text>
+                                            <Text style={[styles.statusText, { color: 'rgba(255, 255, 255, 0.85)' }]}>En ligne</Text>
                                         </View>
                                     </View>
                                 </View>
@@ -322,9 +334,9 @@ export default function GlobalChatBot() {
                                     onPress={() => setVisible(false)}
                                     style={styles.closeButton}
                                 >
-                                    <Ionicons name="close-circle" size={32} color={colors.textSecondary} />
+                                    <Ionicons name="close-circle" size={32} color="rgba(255, 255, 255, 0.7)" />
                                 </TouchableOpacity>
-                            </View>
+                            </LinearGradient>
 
                             {/* Chat Thread */}
                             <FlatList
@@ -344,22 +356,26 @@ export default function GlobalChatBot() {
                                                 <Ionicons name="logo-android" size={14} color="#ffffff" />
                                             </View>
                                         )}
-                                        <View
-                                            style={[
-                                                styles.messageBubble,
-                                                item.sender === "user" ? styles.userBubble : styles.aiBubble,
-                                            ]}
-                                        >
-                                            {renderFormattedText(item.text, item.sender === "user")}
-                                            <Text
-                                                style={[
-                                                    styles.messageTime,
-                                                    item.sender === "user" ? styles.userTime : styles.aiTime,
-                                                ]}
+                                        {item.sender === "user" ? (
+                                            <LinearGradient
+                                                colors={['#1271b8', '#1a8fd1']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                                style={[styles.messageBubble, styles.userBubble]}
                                             >
-                                                {item.time}
-                                            </Text>
-                                        </View>
+                                                {renderFormattedText(item.text, true)}
+                                                <Text style={[styles.messageTime, styles.userTime]}>
+                                                    {item.time}
+                                                </Text>
+                                            </LinearGradient>
+                                        ) : (
+                                            <View style={[styles.messageBubble, styles.aiBubble]}>
+                                                {renderFormattedText(item.text, false)}
+                                                <Text style={[styles.messageTime, styles.aiTime]}>
+                                                    {item.time}
+                                                </Text>
+                                            </View>
+                                        )}
                                     </View>
                                 )}
                                 ListFooterComponent={
@@ -636,18 +652,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: colors.bgCard,
+        backgroundColor: "rgba(18, 113, 184, 0.05)",
         marginRight: 8,
         borderWidth: 1,
-        borderColor: colors.borderLight,
-        shadowColor: "#000",
+        borderColor: "rgba(18, 113, 184, 0.15)",
+        shadowColor: colors.blue,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.03,
         shadowRadius: 3,
         elevation: 1,
     },
     promptText: {
-        fontFamily: fonts.bodyMedium,
+        fontFamily: fonts.bodySemiBold,
         fontSize: 13,
         color: colors.blue,
     },
