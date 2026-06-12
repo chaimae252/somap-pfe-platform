@@ -45,6 +45,7 @@ public class ChatServiceImpl implements ChatService {
             contextBuilder.append("- Suivre ses projets : L'utilisateur peut suivre l'avancement de ses chantiers en cours ou terminés dans l'onglet 'Projets' en bas.\n");
             contextBuilder.append("- Consulter les services : L'utilisateur peut parcourir le catalogue de prestations et laisser des commentaires/poser des questions dans l'onglet 'Services' en bas.\n");
             contextBuilder.append("- Profil utilisateur : L'utilisateur peut modifier ses coordonnées de contact, changer son mot de passe ou se déconnecter dans l'onglet 'Profil' en bas.\n");
+            contextBuilder.append("- Accéder aux notifications : L'utilisateur peut cliquer sur l'icône de cloche (bouton de notification) en haut à droite des onglets principaux (Accueil, Demandes, Projets, Services), ou aller dans l'onglet 'Profil' en bas et cliquer sur le bouton 'Notifications'.\n");
             contextBuilder.append("[FIN DES FONCTIONNALITÉS]\n\n");
 
             contextBuilder.append("[CATALOGUE DE NOS SERVICES DE TRAVAUX]\n");
