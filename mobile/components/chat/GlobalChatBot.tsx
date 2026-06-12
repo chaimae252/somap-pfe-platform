@@ -31,11 +31,11 @@ interface Message {
 }
 
 const QUICK_PROMPTS = [
-    "Qu'est-ce que le sablage ?",
-    "C'est quoi la métallisation ?",
-    "Peinture industrielle",
-    "Travaux en polyester",
-    "Comment créer une demande ?",
+    { text: "Qu'est-ce que le sablage ?", icon: "speedometer-outline" },
+    { text: "C'est quoi la métallisation ?", icon: "shield-checkmark-outline" },
+    { text: "Peinture industrielle", icon: "color-fill-outline" },
+    { text: "Travaux en polyester", icon: "layers-outline" },
+    { text: "Comment créer une demande ?", icon: "add-circle-outline" },
 ];
 
 const MOCK_ANSWERS: Record<string, string> = {
@@ -54,6 +54,7 @@ export default function GlobalChatBot() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputText, setInputText] = useState("");
     const [isTyping, setIsTyping] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
 
     const defaultGreeting = (userName?: string): Message => ({
         id: "1",
@@ -96,6 +97,54 @@ export default function GlobalChatBot() {
                 .catch((err) => console.log("Failed to save chat history:", err));
         }
     }, [messages, user?.id]);
+
+    // Tooltip timer
+    useEffect(() => {
+        if (!user?.id) {
+            setShowTooltip(false);
+            return;
+        }
+
+        let timer: NodeJS.Timeout;
+        let autoHideTimer: NodeJS.Timeout;
+
+        const checkTooltip = async () => {
+            try {
+                const shown = await AsyncStorage.getItem(`@somap_chatbot_tooltip_shown_${user.id}`);
+                if (!shown) {
+                    // Show tooltip after 1.5s delay
+                    timer = setTimeout(() => {
+                        setShowTooltip(true);
+                    }, 1500);
+
+                    // Auto-hide after 8 seconds
+                    autoHideTimer = setTimeout(() => {
+                        setShowTooltip(false);
+                    }, 9500);
+                }
+            } catch (err) {
+                console.log("Error checking tooltip state:", err);
+            }
+        };
+
+        checkTooltip();
+
+        return () => {
+            if (timer) clearTimeout(timer);
+            if (autoHideTimer) clearTimeout(autoHideTimer);
+        };
+    }, [user?.id]);
+
+    const handleDismissTooltip = async () => {
+        setShowTooltip(false);
+        if (user?.id) {
+            try {
+                await AsyncStorage.setItem(`@somap_chatbot_tooltip_shown_${user.id}`, "true");
+            } catch (err) {
+                console.log("Error saving tooltip state:", err);
+            }
+        }
+    };
 
     // Parse and render basic markdown bold/lists
     const renderFormattedText = (text: string, isUser: boolean) => {
@@ -210,10 +259,19 @@ export default function GlobalChatBot() {
     }
 
     const handleOpen = () => {
+        handleDismissTooltip();
         Animated.sequence([
             Animated.timing(floatAnim, { toValue: 0.8, duration: 100, useNativeDriver: true }),
             Animated.timing(floatAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
         ]).start(() => setVisible(true));
+    };
+
+    const handleClearHistory = () => {
+        setMessages([defaultGreeting(user?.nom || user?.username)]);
+        if (user?.id) {
+            AsyncStorage.removeItem(`@somap_chat_history_${user.id}`)
+                .catch((err) => console.log("Failed to clear chat history:", err));
+        }
     };
 
     const handleSend = (textToSend: string) => {
@@ -280,6 +338,29 @@ export default function GlobalChatBot() {
         <>
             {/* Global Floating Trigger Button */}
             <View style={styles.floatingContainer}>
+                {/* Onboarding Tooltip Bubble */}
+                {showTooltip && (
+                    <View style={styles.tooltipBubble}>
+                        <TouchableOpacity
+                            activeOpacity={0.9}
+                            onPress={handleOpen}
+                            style={styles.tooltipContent}
+                        >
+                            <Text style={styles.tooltipText}>
+                                Besoin d'aide ? Posez toutes vos questions à l'assistant ! 🤖
+                            </Text>
+                            <TouchableOpacity
+                                onPress={handleDismissTooltip}
+                                style={styles.tooltipCloseButton}
+                            >
+                                <Ionicons name="close" size={16} color="#ffffff" />
+                            </TouchableOpacity>
+                        </TouchableOpacity>
+                        {/* Little triangle arrow pointing down */}
+                        <View style={styles.tooltipArrow} />
+                    </View>
+                )}
+
                 <Animated.View style={{ transform: [{ scale: Animated.multiply(floatAnim, pulseAnim) }] }}>
                     <TouchableOpacity
                         activeOpacity={0.85}
@@ -313,7 +394,7 @@ export default function GlobalChatBot() {
                         >
                             {/* Header */}
                             <LinearGradient
-                                colors={['#0d2d5e', '#1271b8']}
+                                colors={['#0d2d5e', '#8FBD69']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.header}
@@ -330,12 +411,20 @@ export default function GlobalChatBot() {
                                         </View>
                                     </View>
                                 </View>
-                                <TouchableOpacity
-                                    onPress={() => setVisible(false)}
-                                    style={styles.closeButton}
-                                >
-                                    <Ionicons name="close-circle" size={32} color="rgba(255, 255, 255, 0.7)" />
-                                </TouchableOpacity>
+                                <View style={styles.headerRight}>
+                                    <TouchableOpacity
+                                        onPress={handleClearHistory}
+                                        style={styles.headerActionButton}
+                                    >
+                                        <Ionicons name="trash-outline" size={20} color="rgba(255, 255, 255, 0.8)" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => setVisible(false)}
+                                        style={styles.closeButton}
+                                    >
+                                        <Ionicons name="close-circle" size={32} color="rgba(255, 255, 255, 0.8)" />
+                                    </TouchableOpacity>
+                                </View>
                             </LinearGradient>
 
                             {/* Chat Thread */}
@@ -352,13 +441,18 @@ export default function GlobalChatBot() {
                                         ]}
                                     >
                                         {item.sender === "ai" && (
-                                            <View style={styles.messageAvatar}>
-                                                <Ionicons name="logo-android" size={14} color="#ffffff" />
-                                            </View>
+                                            <LinearGradient
+                                                colors={['#1271b8', '#8FBD69']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                                style={styles.messageAvatar}
+                                            >
+                                                <Ionicons name="hardware-chip" size={13} color="#ffffff" />
+                                            </LinearGradient>
                                         )}
                                         {item.sender === "user" ? (
                                             <LinearGradient
-                                                colors={['#1271b8', '#1a8fd1']}
+                                                colors={['#1271b8', '#13ACD5']}
                                                 start={{ x: 0, y: 0 }}
                                                 end={{ x: 1, y: 1 }}
                                                 style={[styles.messageBubble, styles.userBubble]}
@@ -381,12 +475,17 @@ export default function GlobalChatBot() {
                                 ListFooterComponent={
                                     isTyping ? (
                                         <View style={[styles.messageBubbleWrapper, styles.aiWrapper, { marginBottom: 12 }]}>
-                                            <View style={styles.messageAvatar}>
-                                                <Ionicons name="logo-android" size={14} color="#ffffff" />
-                                            </View>
+                                            <LinearGradient
+                                                colors={['#1271b8', '#8FBD69']}
+                                                start={{ x: 0, y: 0 }}
+                                                end={{ x: 1, y: 1 }}
+                                                style={styles.messageAvatar}
+                                            >
+                                                <Ionicons name="hardware-chip" size={13} color="#ffffff" />
+                                            </LinearGradient>
                                             <View style={[styles.messageBubble, styles.aiBubble, styles.typingBubble]}>
                                                 <ActivityIndicator size="small" color={colors.blue} />
-                                                <Text style={[styles.messageText, styles.aiMessageText, { marginLeft: 8, fontStyle: "italic" }]}>
+                                                <Text style={[styles.messageText, styles.aiMessageText, { marginLeft: 8, fontStyle: "italic", color: colors.textSecondary }]}>
                                                     SOMAP écrit...
                                                 </Text>
                                             </View>
@@ -400,15 +499,16 @@ export default function GlobalChatBot() {
                                 <FlatList
                                     horizontal
                                     data={QUICK_PROMPTS}
-                                    keyExtractor={(item) => item}
+                                    keyExtractor={(item) => item.text}
                                     showsHorizontalScrollIndicator={false}
                                     contentContainerStyle={styles.quickPromptsList}
                                     renderItem={({ item }) => (
                                         <TouchableOpacity
                                             style={styles.promptCapsule}
-                                            onPress={() => handleSend(item)}
+                                            onPress={() => handleSend(item.text)}
                                         >
-                                            <Text style={styles.promptText}>{item}</Text>
+                                            <Ionicons name={item.icon as any} size={14} color={colors.greenDark} style={{ marginRight: 6 }} />
+                                            <Text style={styles.promptText}>{item.text}</Text>
                                         </TouchableOpacity>
                                     )}
                                 />
@@ -416,24 +516,30 @@ export default function GlobalChatBot() {
 
                             {/* Footer Input Bar */}
                             <View style={styles.inputBar}>
-                                <TextInput
-                                    style={styles.textInput}
-                                    placeholder="Écrivez un message (ex: sablage)..."
-                                    placeholderTextColor={colors.textHint}
-                                    value={inputText}
-                                    onChangeText={setInputText}
-                                    onSubmitEditing={() => handleSend(inputText)}
-                                />
-                                <TouchableOpacity
-                                    style={[
-                                        styles.sendButton,
-                                        { backgroundColor: inputText.trim() ? colors.blue : colors.textHint },
-                                    ]}
-                                    disabled={!inputText.trim()}
-                                    onPress={() => handleSend(inputText)}
-                                >
-                                    <Ionicons name="send" size={18} color="#ffffff" />
-                                </TouchableOpacity>
+                                <View style={styles.inputContainer}>
+                                    <TextInput
+                                        style={styles.textInput}
+                                        placeholder="Écrivez un message (ex: sablage)..."
+                                        placeholderTextColor={colors.textHint}
+                                        value={inputText}
+                                        onChangeText={setInputText}
+                                        onSubmitEditing={() => handleSend(inputText)}
+                                    />
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        disabled={!inputText.trim()}
+                                        onPress={() => handleSend(inputText)}
+                                    >
+                                        <LinearGradient
+                                            colors={inputText.trim() ? ['#8FBD69', '#6a9e3a'] : ['#e2e8f0', '#e2e8f0']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={styles.sendButton}
+                                        >
+                                            <Ionicons name="send" size={16} color="#ffffff" />
+                                        </LinearGradient>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </KeyboardAvoidingView>
                     </View>
@@ -460,15 +566,14 @@ const styles = StyleSheet.create({
         width: 58,
         height: 58,
         borderRadius: 29,
-        backgroundColor: colors.blue,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1.5,
-        borderColor: "rgba(255, 255, 255, 0.4)",
+        borderColor: "rgba(255, 255, 255, 0.45)",
     },
     modalBackdrop: {
         flex: 1,
-        backgroundColor: "rgba(13, 45, 94, 0.45)", // Tinted navy backdrop
+        backgroundColor: "rgba(13, 27, 56, 0.65)", // Luxurious tinted dark backdrop
         justifyContent: "flex-end",
     },
     safeArea: {
@@ -476,44 +581,56 @@ const styles = StyleSheet.create({
     },
     chatContainer: {
         flex: 1,
-        backgroundColor: colors.bgScreen, // matching app body color
+        backgroundColor: colors.bgScreen,
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        marginTop: 60, // Gives a clean card drawer layout
+        marginTop: 70, // Gives a clean bottom card sheet layout
         overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -10 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
+        shadowColor: "#0d2d5e",
+        shadowOffset: { width: 0, height: -12 },
+        shadowOpacity: 0.18,
+        shadowRadius: 20,
         elevation: 24,
     },
     header: {
-        height: 70,
-        backgroundColor: colors.bgCard,
+        height: 72,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
+        borderBottomWidth: 1.5,
+        borderBottomColor: "rgba(255, 255, 255, 0.1)",
     },
     headerInfo: {
         flexDirection: "row",
         alignItems: "center",
     },
-    avatarContainer: {
-        width: 40,
-        height: 40,
+    headerRight: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    headerActionButton: {
+        padding: 8,
+        marginRight: 6,
         borderRadius: 20,
-        backgroundColor: colors.bgIconWell,
+        backgroundColor: "rgba(255, 255, 255, 0.15)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    avatarContainer: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "rgba(255, 255, 255, 0.2)",
         alignItems: "center",
         justifyContent: "center",
         marginRight: 12,
+        borderWidth: 1,
+        borderColor: "rgba(255, 255, 255, 0.3)",
     },
     headerTitle: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 16,
-        color: colors.textPrimary,
     },
     statusRow: {
         flexDirection: "row",
@@ -521,16 +638,17 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     statusDot: {
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-        backgroundColor: colors.greenStatus,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: "#22C55E",
         marginRight: 6,
+        borderWidth: 1.5,
+        borderColor: "#ffffff",
     },
     statusText: {
         fontFamily: fonts.body,
         fontSize: 12,
-        color: colors.textSecondary,
     },
     closeButton: {
         padding: 4,
@@ -553,34 +671,42 @@ const styles = StyleSheet.create({
         justifyContent: "flex-start",
     },
     messageAvatar: {
-        width: 26,
-        height: 26,
-        borderRadius: 13,
-        backgroundColor: colors.blue,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
         alignItems: "center",
         justifyContent: "center",
         marginRight: 8,
         alignSelf: "flex-end",
+        shadowColor: colors.blue,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     messageBubble: {
-        borderRadius: 18,
+        borderRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 12,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 2,
-        elevation: 1,
+        shadowColor: "#0d2d5e",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 2,
     },
     userBubble: {
-        backgroundColor: colors.blue,
         borderBottomRightRadius: 4,
+        shadowColor: colors.blue,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
     },
     aiBubble: {
-        backgroundColor: colors.bgCard,
+        backgroundColor: "rgba(143, 189, 105, 0.07)",
         borderBottomLeftRadius: 4,
         borderWidth: 1,
-        borderColor: colors.borderLight,
+        borderColor: "rgba(143, 189, 105, 0.2)",
     },
     typingBubble: {
         flexDirection: "row",
@@ -632,72 +758,125 @@ const styles = StyleSheet.create({
     },
     messageTime: {
         fontSize: 10,
-        marginTop: 4,
+        marginTop: 6,
         alignSelf: "flex-end",
     },
     userTime: {
-        color: "rgba(255, 255, 255, 0.7)",
+        color: "rgba(255, 255, 255, 0.75)",
     },
     aiTime: {
         color: colors.textMuted,
     },
     quickPromptsWrapper: {
         backgroundColor: "transparent",
-        paddingVertical: 8,
+        paddingVertical: 12,
     },
     quickPromptsList: {
         paddingHorizontal: 16,
     },
     promptCapsule: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: "rgba(18, 113, 184, 0.05)",
-        marginRight: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 22,
+        backgroundColor: "rgba(143, 189, 105, 0.08)",
+        marginRight: 10,
         borderWidth: 1,
-        borderColor: "rgba(18, 113, 184, 0.15)",
-        shadowColor: colors.blue,
+        borderColor: "rgba(143, 189, 105, 0.22)",
+        shadowColor: colors.green,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 3,
+        shadowOpacity: 0.02,
+        shadowRadius: 4,
         elevation: 1,
     },
     promptText: {
         fontFamily: fonts.bodySemiBold,
         fontSize: 13,
-        color: colors.blue,
+        color: colors.greenDark,
     },
     inputBar: {
         backgroundColor: colors.bgCard,
         paddingHorizontal: 16,
         paddingVertical: 12,
-        flexDirection: "row",
-        alignItems: "center",
         borderTopWidth: 1,
         borderTopColor: colors.borderLight,
-        paddingBottom: Platform.OS === "ios" ? 24 : 12,
+        paddingBottom: Platform.OS === "ios" ? 28 : 16,
+    },
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: colors.bgScreen,
+        borderRadius: 26,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderWidth: 1.5,
+        borderColor: colors.borderLight,
+        shadowColor: colors.blue,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        elevation: 1,
     },
     textInput: {
         flex: 1,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: colors.bgScreen,
-        paddingHorizontal: 16,
+        height: 40,
+        paddingHorizontal: 12,
         fontSize: 15,
         color: colors.textPrimary,
         fontFamily: fonts.body,
-        marginRight: 10,
     },
     sendButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         alignItems: "center",
         justifyContent: "center",
         shadowColor: colors.blue,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOffset: { width: 0, height: 3 },
         shadowOpacity: 0.15,
-        shadowRadius: 5,
+        shadowRadius: 4,
         elevation: 3,
+    },
+    tooltipBubble: {
+        position: "absolute",
+        bottom: 72,
+        right: 0,
+        width: 220,
+        backgroundColor: colors.blue,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        shadowColor: colors.blue,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+        elevation: 6,
+        zIndex: 10000,
+    },
+    tooltipContent: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    tooltipText: {
+        flex: 1,
+        fontFamily: fonts.bodyMedium,
+        fontSize: 12,
+        color: "#ffffff",
+        lineHeight: 16,
+        paddingRight: 6,
+    },
+    tooltipCloseButton: {
+        padding: 2,
+    },
+    tooltipArrow: {
+        position: "absolute",
+        bottom: -5,
+        right: 23, // Centered above the 58px button
+        width: 10,
+        height: 10,
+        backgroundColor: colors.blue,
+        transform: [{ rotate: "45deg" }],
     },
 });
