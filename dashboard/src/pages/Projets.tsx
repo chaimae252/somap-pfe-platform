@@ -503,7 +503,9 @@ export default function Projets() {
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                         <span style={styles.primaryText}>{formatDate(projet.dateDebut)}</span>
-                                        <span style={styles.dateFinLabel}>Fin: {formatDate(projet.dateFin)}</span>
+                                        <span style={styles.dateFinLabel}>
+                                            {projet.dateFin ? `Fin: ${formatDate(projet.dateFin)}` : "En cours"}
+                                        </span>
                                     </div>
                                     <div style={styles.actionCell}>
                                         <button style={styles.detailsButton} onClick={() => setSelectedProjet(projet)} title="Détails">
@@ -559,8 +561,8 @@ export default function Projets() {
                                 <strong>{statusLabels[selectedProjet.statut]}</strong>
                             </div>
                             <div>
-                                <span style={styles.modalLabel}>Date de fin prévue</span>
-                                <strong>{formatDate(selectedProjet.dateFin)}</strong>
+                                <span style={styles.modalLabel}>Date de fin</span>
+                                <strong>{selectedProjet.dateFin ? formatDate(selectedProjet.dateFin) : "En cours"}</strong>
                             </div>
                             {selectedProjet.adminNom && (
                                 <div>
@@ -720,7 +722,12 @@ export default function Projets() {
                                 <textarea rows={4} style={{ ...styles.formControl, height: "auto", padding: "10px 12px", resize: "vertical" }} value={form.description} onChange={(e) => setForm(prev => ({ ...prev, description: e.target.value }))} />
                             </label>
                             <label style={styles.fieldLabel}>Date fin
-                                <input type="date" style={styles.formControl} value={form.dateFin} onChange={(e) => setForm(prev => ({ ...prev, dateFin: e.target.value }))} />
+                                <input 
+                                    type="text" 
+                                    style={{ ...styles.formControl, backgroundColor: "#f0f2f5" }} 
+                                    value={form.statut === "TERMINE" ? "Défini automatiquement (Terminé)" : "Défini lors du passage à Terminé"} 
+                                    disabled 
+                                />
                             </label>
                         </div>
 

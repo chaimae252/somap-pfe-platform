@@ -173,7 +173,7 @@ export default function ProjectDetailScreen() {
                 <p>Progression : ${progress}%</p>
                 <p>Description : ${project.description}</p>
                 <p>Début : ${formatFullDate(project.dateDebut)}</p>
-                <p>Fin prévue : ${formatFullDate(project.dateFin)}</p>
+                <p>Fin : ${project.dateFin ? formatFullDate(project.dateFin) : "En cours"}</p>
                 ${demandeHtml}
             </body>
             </html>
@@ -223,8 +223,10 @@ export default function ProjectDetailScreen() {
     const status = getStatusInfo(project.statut);
     const progress = getProgress(project.statut);
     const duration = (() => {
-        if (!project.dateDebut || !project.dateFin) return "Non définie";
-        const diffDays = Math.ceil((new Date(project.dateFin).getTime() - new Date(project.dateDebut).getTime()) / (1000 * 3600 * 24));
+        if (!project.dateDebut) return "Non définie";
+        const startDate = new Date(project.dateDebut).getTime();
+        const endDate = project.dateFin ? new Date(project.dateFin).getTime() : new Date().getTime();
+        const diffDays = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 3600 * 24)));
         return `${diffDays} jours`;
     })();
 
@@ -299,8 +301,8 @@ export default function ProjectDetailScreen() {
                     </View>
                     <View style={styles.metricCard}>
                         <Ionicons name="flag-outline" size={22} color="#1271B8" />
-                        <Text style={styles.metricLabel}>Fin prévue</Text>
-                        <Text style={styles.metricValue}>{formatDate(project.dateFin)}</Text>
+                        <Text style={styles.metricLabel}>Fin</Text>
+                        <Text style={styles.metricValue}>{project.dateFin ? formatDate(project.dateFin) : "En cours"}</Text>
                     </View>
                     <View style={styles.metricCard}>
                         <Ionicons name="hourglass-outline" size={22} color="#1271B8" />

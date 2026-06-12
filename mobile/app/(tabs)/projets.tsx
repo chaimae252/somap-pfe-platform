@@ -183,7 +183,9 @@ export default function ProjectsScreen() {
     const renderProject = ({ item }: { item: Project }) => {
         const status = getStatusInfo(item.statut);
         const progress = getProgress(item.statut);
-        const dueDate = item.dateFin ? formatDate(item.dateFin) : "Date non définie";
+        const dateLabel = item.statut === "TERMINE"
+            ? `Terminé le : ${item.dateFin ? formatDate(item.dateFin) : "Date non définie"}`
+            : "En cours";
 
         return (
             <TouchableOpacity
@@ -229,7 +231,7 @@ export default function ProjectsScreen() {
 
                     <View style={styles.footer}>
                         <Ionicons name="calendar-outline" size={14} color="#8A94A6" />
-                        <Text style={styles.date}>Échéance : {dueDate}</Text>
+                        <Text style={styles.date}>{dateLabel}</Text>
                     </View>
                 </View>
             </TouchableOpacity>

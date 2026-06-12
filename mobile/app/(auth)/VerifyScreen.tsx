@@ -28,7 +28,6 @@ export default function VerifyScreen() {
 
   const [showStep2, setShowStep2] = useState(false);
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
 
   const [focusedInput, setFocusedInput] = useState("");
 
@@ -59,7 +58,7 @@ const [message, setMessage] = useState({
   }, [timer, showStep2]);
 
   const handleSendCode = async () => {
-  if (!email || !name) return;
+  if (!email) return;
 
   setMessage({
     type: "success",
@@ -201,56 +200,44 @@ const [message, setMessage] = useState({
   </View>
 )}
 
-                {/* INPUT NAME */}
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "name" && styles.inputFocused,
-                  ]}
-                >
-                  <MaterialIcons name="person" size={22} color="#8e9aaf" />
-                  <TextInput
-                    placeholder="Nom"
-                    value={name}
-                    onChangeText={setName}
-                    style={styles.textInput}
-                    onFocus={() => setFocusedInput("name")}
-                    onBlur={() => setFocusedInput("")}
-                  />
-                </View>
-
-                {/* INPUT EMAIL */}
-                <View
-                  style={[
-                    styles.inputContainer,
-                    focusedInput === "email" && styles.inputFocused,
-                  ]}
-                >
-                  <MaterialIcons name="email" size={22} color="#8e9aaf" />
-                  <TextInput
-                    placeholder="Adresse email"
-                    value={email}
-                    onChangeText={setEmail}
-                    style={styles.textInput}
-                    onFocus={() => setFocusedInput("email")}
-                    onBlur={() => setFocusedInput("")}
-                  />
-                </View>
-
-                {/* BUTTON */}
-                <TouchableOpacity
-                  style={[styles.button, (!email || !name) && { opacity: 0.5 }]}
-                  onPress={handleSendCode}
-                  disabled={!email || !name}
-                >
-                  <Text style={styles.buttonText}>Envoyer le code</Text>
-                </TouchableOpacity>
-
-                {/* STEP 2 */}
-                {showStep2 && (
+                {/* STEP 1: Enter email */}
+                {!showStep2 ? (
                   <>
+                    {/* INPUT EMAIL */}
+                    <View
+                      style={[
+                        styles.inputContainer,
+                        focusedInput === "email" && styles.inputFocused,
+                      ]}
+                    >
+                      <MaterialIcons name="email" size={22} color="#8e9aaf" />
+                      <TextInput
+                        placeholder="Adresse email"
+                        value={email}
+                        onChangeText={setEmail}
+                        style={styles.textInput}
+                        onFocus={() => setFocusedInput("email")}
+                        onBlur={() => setFocusedInput("")}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                      />
+                    </View>
+
+                    {/* BUTTON */}
+                    <TouchableOpacity
+                      style={[styles.button, !email && { opacity: 0.5 }]}
+                      onPress={handleSendCode}
+                      disabled={!email}
+                    >
+                      <Text style={styles.buttonText}>Envoyer le code</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    {/* STEP 2: Verify code */}
                     <Text style={styles.subtitle}>
-                      Entrez le code envoyé à {email}
+                      Entrez le code envoyé à {"\n"}
+                      <Text style={{ fontWeight: "700", color: "#1564c0" }}>{email}</Text>
                     </Text>
 
                     <View style={styles.otpContainer}>
@@ -284,6 +271,13 @@ const [message, setMessage] = useState({
                       onPress={handleVerify}
                     >
                       <Text style={styles.buttonText}>Vérifier</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      style={{ marginTop: 15, alignItems: "center" }}
+                      onPress={() => setShowStep2(false)}
+                    >
+                      <Text style={{ color: "#8e9aaf", fontWeight: "600" }}>Modifier l'email</Text>
                     </TouchableOpacity>
                   </>
                 )}

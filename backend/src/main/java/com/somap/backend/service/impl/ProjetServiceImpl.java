@@ -55,7 +55,7 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setDescription(projetDTO.getDescription());
         projet.setStatut(projetDTO.getStatut());
         projet.setDateDebut(LocalDateTime.now());
-        projet.setDateFin(projetDTO.getDateFin());
+        projet.setDateFin(projetDTO.getStatut() == ProjetStatus.TERMINE ? LocalDateTime.now() : null);
         projet.setClient(client);
         projet.setDemande(demande);
         demande.setProjet(projet);
@@ -128,8 +128,21 @@ public class ProjetServiceImpl implements ProjetService {
         projet.setTitre(projetDTO.getTitre());
         projet.setDescription(projetDTO.getDescription());
         projet.setStatut(projetDTO.getStatut());
-        projet.setDateDebut(projetDTO.getDateDebut());
-        projet.setDateFin(projetDTO.getDateFin());
+        
+        // Preserve original start date
+        if (projet.getDateDebut() == null) {
+            projet.setDateDebut(projetDTO.getDateDebut() != null ? projetDTO.getDateDebut() : LocalDateTime.now());
+        }
+        
+        // Automatically handle dateFin based on status transitions
+        if (projetDTO.getStatut() == ProjetStatus.TERMINE) {
+            if (oldStatus != ProjetStatus.TERMINE || projet.getDateFin() == null) {
+                projet.setDateFin(LocalDateTime.now());
+            }
+        } else {
+            projet.setDateFin(null);
+        }
+        
         projet.setClient(client);
         projet.setDemande(demande);
 
