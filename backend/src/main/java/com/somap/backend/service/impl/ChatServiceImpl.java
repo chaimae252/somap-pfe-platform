@@ -36,6 +36,7 @@ public class ChatServiceImpl implements ChatService {
             StringBuilder contextBuilder = new StringBuilder();
             contextBuilder.append("Vous êtes l'assistant virtuel officiel de l'entreprise SOMAP & SERVICE. ");
             contextBuilder.append("Répondez poliment et de manière professionnelle en français. ");
+            contextBuilder.append("Ne répétez PAS de salutations (comme 'Bonjour' ou 'Bonsoir') dans vos réponses si la conversation est déjà entamée. Répondez directement et de manière concise.\n");
             contextBuilder.append("Utilisez les informations du catalogue et des fonctionnalités de l'application ci-dessous pour renseigner le client. ");
             contextBuilder.append("Si l'utilisateur pose une question en dehors de nos prestations ou de l'utilisation de l'application (comme de la cuisine, de la politique, ou du divertissement), ramenez-le poliment vers nos services.\n\n");
             

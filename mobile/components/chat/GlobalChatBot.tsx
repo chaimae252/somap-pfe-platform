@@ -101,7 +101,9 @@ export default function GlobalChatBot() {
         if (!text) return null;
         
         const lines = text.split("\n");
-        return lines.map((line, lineIndex) => {
+        const formattedElements: React.ReactNode[] = [];
+
+        lines.forEach((line, lineIndex) => {
             let isBullet = false;
             let cleanLine = line;
 
@@ -128,7 +130,7 @@ export default function GlobalChatBot() {
                 const isBold = partIndex % 2 !== 0;
                 return (
                     <Text
-                        key={partIndex}
+                        key={`${lineIndex}-${partIndex}`}
                         style={[
                             isBold ? styles.boldText : null,
                             isHeader ? styles.headerText : null,
@@ -140,32 +142,40 @@ export default function GlobalChatBot() {
                 );
             });
 
-            return (
-                <View 
-                    key={lineIndex} 
-                    style={[
-                        styles.lineWrapper, 
-                        isBullet ? styles.bulletLine : null,
-                        lineIndex > 0 && cleanLine.trim() === "" ? styles.paragraphGap : null
-                    ]}
-                >
-                    {isBullet && (
-                        <Text style={[styles.bulletPoint, isUser ? styles.userMessageText : styles.aiMessageText]}>
-                            •{" "}
-                        </Text>
-                    )}
-                    <Text
+            // If it's a bullet, prepend a bullet point
+            if (isBullet) {
+                formattedElements.push(
+                    <Text 
+                        key={`bullet-${lineIndex}`} 
                         style={[
-                            styles.lineText,
-                            isHeader ? styles.headerText : null,
-                            isUser ? styles.userMessageText : styles.aiMessageText,
+                            styles.bulletPoint, 
+                            isUser ? styles.userMessageText : styles.aiMessageText
                         ]}
                     >
-                        {textParts}
+                        {"  • "}
                     </Text>
-                </View>
-            );
+                );
+            }
+
+            // Push the text parts
+            formattedElements.push(...textParts);
+
+            // Add newline after each line except the last one
+            if (lineIndex < lines.length - 1) {
+                formattedElements.push(<Text key={`nl-${lineIndex}`}>{"\n"}</Text>);
+            }
         });
+
+        return (
+            <Text
+                style={[
+                    styles.messageText,
+                    isUser ? styles.userMessageText : styles.aiMessageText,
+                ]}
+            >
+                {formattedElements}
+            </Text>
+        );
     };
 
     // Animations
