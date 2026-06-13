@@ -27,6 +27,12 @@ public class EmailService {
     @Value("${resend.from.email:onboarding@resend.dev}")
     private String resendFromEmail;
 
+    @Value("${brevo.api.key:}")
+    private String brevoApiKey;
+
+    @Value("${brevo.from.email:}")
+    private String brevoFromEmail;
+
     @Value("${spring.mail.username:}")
     private String springMailUsername;
 
@@ -60,10 +66,52 @@ public class EmailService {
         if (subject != null && !subject.contains("SOMAP ET SERVICE")) {
             formattedSubject = "SOMAP ET SERVICE - " + subject;
         }
-        if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
+        if (brevoApiKey != null && !brevoApiKey.trim().isEmpty()) {
+            sendViaBrevo(to, formattedSubject, contentHtml);
+        } else if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
             sendViaResend(to, formattedSubject, contentHtml);
         } else {
             sendViaSMTP(to, formattedSubject, contentHtml);
+        }
+    }
+
+    private void sendViaBrevo(String to, String subject, String contentHtml) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            ObjectMapper mapper = new ObjectMapper();
+            
+            Map<String, String> sender = new HashMap<>();
+            sender.put("name", "SOMAP ET SERVICE");
+            sender.put("email", brevoFromEmail != null && !brevoFromEmail.trim().isEmpty() ? brevoFromEmail : springMailUsername);
+            
+            Map<String, String> recipient = new HashMap<>();
+            recipient.put("email", to);
+            java.util.List<Map<String, String>> toList = java.util.List.of(recipient);
+            
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("sender", sender);
+            payload.put("to", toList);
+            payload.put("subject", subject);
+            payload.put("htmlContent", contentHtml);
+            
+            String jsonPayload = mapper.writeValueAsString(payload);
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("api-key", brevoApiKey)
+                    .header("Content-Type", "application/json")
+                    .header("accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonPayload))
+                    .build();
+                    
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            if (response.statusCode() >= 300) {
+                throw new RuntimeException("Brevo API failed with status code " + response.statusCode() + ": " + response.body());
+            }
+            System.out.println("Email sent successfully via Brevo API: " + response.body());
+        } catch (Exception e) {
+            throw new RuntimeException("Error sending email via Brevo API", e);
         }
     }
 
