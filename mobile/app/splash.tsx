@@ -104,18 +104,18 @@ export default function SplashScreenn() {
             <StatusBar
                 translucent={true}
                 backgroundColor="transparent"
-                barStyle="light-content"
+                barStyle="dark-content"
             />
 
-            {/* Deep Rich Background Image with Navy Gradient Tint */}
+            {/* Deep Rich Background Image with Soft Frosty Light Gradient Tint */}
             <ImageBackground
                 source={require("../assets/images/splash-bg.png")}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
             >
-                {/* High-contrast brand gradient overlay */}
+                {/* High-contrast brand light gradient overlay */}
                 <LinearGradient
-                    colors={["rgba(10, 28, 54, 0.94)", "rgba(13, 45, 94, 0.98)"]}
+                    colors={["rgba(248, 250, 252, 0.92)", "rgba(241, 245, 249, 0.96)"]}
                     style={StyleSheet.absoluteFill}
                 />
             </ImageBackground>
@@ -131,7 +131,7 @@ export default function SplashScreenn() {
                 ]}
             >
                 <LinearGradient
-                    colors={["rgba(126, 201, 51, 0.25)", "rgba(19, 172, 213, 0.0)"]}
+                    colors={["rgba(126, 201, 51, 0.12)", "rgba(126, 201, 51, 0.0)"]}
                     style={styles.orbInner}
                 />
             </Animated.View>
@@ -146,7 +146,7 @@ export default function SplashScreenn() {
                 ]}
             >
                 <LinearGradient
-                    colors={["rgba(18, 113, 184, 0.3)", "rgba(19, 172, 213, 0.0)"]}
+                    colors={["rgba(18, 113, 184, 0.15)", "rgba(18, 113, 184, 0.0)"]}
                     style={styles.orbInner}
                 />
             </Animated.View>
@@ -173,7 +173,7 @@ export default function SplashScreenn() {
                 >
                     {/* Inner gloss gradient shine */}
                     <LinearGradient
-                        colors={["rgba(255, 255, 255, 0.95)", "rgba(240, 244, 250, 0.9)"]}
+                        colors={["rgba(255, 255, 255, 0.98)", "rgba(248, 250, 252, 0.95)"]}
                         style={styles.cardGradient}
                     >
                         <Image
@@ -203,7 +203,7 @@ export default function SplashScreenn() {
                             }}
                         >
                             <LinearGradient
-                                colors={["#13ACD5", "#7EC933"]}
+                                colors={["#1271b8", "#7EC933"]}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
                                 style={styles.progressBar}
@@ -223,7 +223,7 @@ export default function SplashScreenn() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#0a1c36",
+        backgroundColor: "#F8FAFC",
         alignItems: "center",
         justifyContent: "space-between",
         paddingVertical: 55,
@@ -239,14 +239,14 @@ const styles = StyleSheet.create({
         width: width * 0.76,
         borderRadius: 28,
         padding: 4,
-        backgroundColor: "rgba(255, 255, 255, 0.15)",
-        shadowColor: "#000000",
-        shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.25,
-        shadowRadius: 25,
+        backgroundColor: "rgba(255, 255, 255, 0.65)",
+        shadowColor: "#0f172a",
+        shadowOffset: { width: 0, height: 16 },
+        shadowOpacity: 0.08,
+        shadowRadius: 24,
         elevation: 8,
         borderWidth: 1.5,
-        borderColor: "rgba(255, 255, 255, 0.25)",
+        borderColor: "rgba(255, 255, 255, 0.8)",
         overflow: "hidden",
     },
     cardGradient: {
@@ -269,16 +269,16 @@ const styles = StyleSheet.create({
         zIndex: 5,
     },
     loaderContainer: {
-        shadowColor: "#13ACD5",
+        shadowColor: "#1271b8",
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.2,
         shadowRadius: 8,
         elevation: 2,
     },
     barTrack: {
         width: 220,
         height: 5,
-        backgroundColor: "rgba(255, 255, 255, 0.08)",
+        backgroundColor: "rgba(15, 23, 42, 0.06)",
         borderRadius: 3,
         overflow: "hidden",
         marginBottom: 10,
@@ -290,23 +290,23 @@ const styles = StyleSheet.create({
     tagline: {
         fontSize: 10,
         fontWeight: "800",
-        color: "#7EC933",
+        color: "#1271b8",
         letterSpacing: 4,
         textTransform: "uppercase",
         textAlign: "center",
-        textShadowColor: "rgba(126, 201, 51, 0.3)",
+        textShadowColor: "rgba(18, 113, 184, 0.15)",
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 8,
     },
     footer: {
         fontSize: 8,
         fontWeight: "600",
-        color: "#99b1cc",
+        color: "#64748b",
         letterSpacing: 0.6,
         textAlign: "center",
         textTransform: "uppercase",
         maxWidth: "90%",
-        opacity: 0.7,
+        opacity: 0.8,
     },
     glowOrb: {
         position: "absolute",
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         width: 1,
         height: height * 0.4,
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
+        backgroundColor: "rgba(15, 23, 42, 0.02)",
         left: width * 0.15,
         top: 0,
     },
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         width: 1,
         height: height * 0.4,
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
+        backgroundColor: "rgba(15, 23, 42, 0.02)",
         right: width * 0.2,
         bottom: 0,
     },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
         height: 180,
         borderRadius: 90,
         borderWidth: 1,
-        borderColor: "rgba(19, 172, 213, 0.05)",
+        borderColor: "rgba(18, 113, 184, 0.04)",
         top: -60,
         right: -30,
     },
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
         height: 220,
         borderRadius: 110,
         borderWidth: 1,
-        borderColor: "rgba(126, 201, 51, 0.04)",
+        borderColor: "rgba(126, 201, 51, 0.03)",
         bottom: -50,
         left: -40,
     },
