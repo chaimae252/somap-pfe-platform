@@ -90,17 +90,43 @@ public class ChatServiceImpl implements ChatService {
             systemInstruction.put("parts", Collections.singletonList(systemPart));
             requestBody.put("systemInstruction", systemInstruction);
 
-            // 3. Send HTTP request
+            // 3. Send HTTP request with retry logic
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             
             String urlWithKey = apiUrl + "?key=" + apiKey;
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<Map> responseEntity = restTemplate.postForEntity(urlWithKey, entity, Map.class);
+            ResponseEntity<Map> responseEntity = null;
+            Exception lastException = null;
+            
+            for (int attempt = 1; attempt <= 3; attempt++) {
+                try {
+                    responseEntity = restTemplate.postForEntity(urlWithKey, entity, Map.class);
+                    if (responseEntity.getStatusCode() == HttpStatus.OK) {
+                        break;
+                    }
+                } catch (Exception e) {
+                    lastException = e;
+                    if (attempt < 3) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                }
+            }
+            
+            if (responseEntity == null || responseEntity.getStatusCode() != HttpStatus.OK) {
+                if (lastException != null) {
+                    throw lastException;
+                }
+                return "Désolé, je ne parviens pas à traiter votre demande pour le moment.";
+            }
             
             // 4. Parse response
-            if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.getBody() != null) {
+            if (responseEntity.getBody() != null) {
                 Map body = responseEntity.getBody();
                 List candidates = (List) body.get("candidates");
                 if (candidates != null && !candidates.isEmpty()) {
@@ -116,6 +142,12 @@ public class ChatServiceImpl implements ChatService {
                 }
             }
             return "Désolé, je ne parviens pas à traiter votre demande pour le moment.";
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            e.printStackTrace();
+            if (e.getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                return "L'assistant virtuel de SOMAP ET SERVICE est très sollicité actuellement (limite de requêtes atteinte). Veuillez patienter quelques instants avant de renvoyer un message. 🤖";
+            }
+            return "Une erreur est survenue lors de la communication avec le serveur d'intelligence artificielle.";
         } catch (Exception e) {
             e.printStackTrace();
             return "Une erreur est survenue lors de la communication avec le serveur d'intelligence artificielle.";
