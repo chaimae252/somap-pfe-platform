@@ -83,12 +83,15 @@ public class ContactController {
         ContactMessage msg = contactMessageRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Message introuvable"));
         
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm");
+        String formattedDate = msg.getCreatedAt() != null ? msg.getCreatedAt().format(formatter) : "";
+        
         String subject = "Re: " + msg.getSubject();
         String body = "Bonjour " + msg.getName() + ",\n\n"
-                + "Voici la réponse de l'administration SOMAP à votre message du " + msg.getCreatedAt() + " :\n\n"
+                + "Voici la réponse de l'administration SOMAP ET SERVICE à votre message du " + formattedDate + " :\n\n"
                 + reply + "\n\n"
                 + "Cordialement,\n"
-                + "SOMAP & SERVICE";
+                + "SOMAP ET SERVICE";
         
         emailService.sendEmail(msg.getEmail(), subject, body);
 
