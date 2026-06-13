@@ -1,14 +1,18 @@
-import { Stack } from "expo-router";
+import { Stack, router, useSegments } from "expo-router";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { SyncProvider } from "@/contexts/SyncContext";
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
-import { router } from "expo-router";
 import GlobalChatBot from "@/components/chat/GlobalChatBot";
 
 export default function RootLayout() {
+    const segments = useSegments();
+    const isSplash = segments.length > 0 && segments[0] === "splash";
+    const barBgColor = isSplash ? "#F8FAFC" : "#0d2d5e";
+    const barStyle = isSplash ? "dark-content" : "light-content";
+
     useEffect(() => {
         // Handle foreground notifications
         const foregroundSubscription = Notifications.addNotificationReceivedListener((notification) => {
@@ -23,20 +27,16 @@ export default function RootLayout() {
             if (data?.targetType && data?.targetId) {
                 const targetId = String(data.targetId);
                 switch (data.targetType) {
-                    case "SERVICE":
-                        router.push({
-                            pathname: "/service/[id]",
-                            params: { id: targetId },
-                        });
+                    case "DEMANDE":
+                        router.push(`/demande/${targetId}`);
                         break;
                     case "PROJET":
-                        router.push("/(tabs)/projets");
+                        router.push(`/projet/${targetId}`);
                         break;
-                    case "DEMANDE":
-                        router.push("/(tabs)/demandes");
+                    case "COMMENTAIRE":
+                        router.push(`/service/${targetId}`);
                         break;
                     default:
-                        router.push("/(tabs)/home");
                         break;
                 }
             }
@@ -54,10 +54,10 @@ export default function RootLayout() {
                 <SyncProvider>
                     <StatusBar
                         translucent={false}
-                        backgroundColor="#0d2d5e"
-                        barStyle="light-content"
+                        backgroundColor={barBgColor}
+                        barStyle={barStyle}
                     />
-                    <SafeAreaView style={{ flex: 1, backgroundColor: "#0d2d5e" }} edges={["top"]}>
+                    <SafeAreaView style={{ flex: 1, backgroundColor: barBgColor }} edges={["top"]}>
                         <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
                             <Stack.Screen name="index" />
                             <Stack.Screen name="splash" />
