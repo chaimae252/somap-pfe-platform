@@ -102,8 +102,8 @@ export default function SplashScreenn() {
     return (
         <View style={styles.container}>
             <StatusBar
-                translucent={true}
-                backgroundColor="transparent"
+                translucent={false}
+                backgroundColor="#F8FAFC"
                 barStyle="dark-content"
             />
 
@@ -215,6 +215,7 @@ export default function SplashScreenn() {
                 {/* Tags */}
                 <Text style={styles.tagline}>CHIMIE · EAU · INDUSTRIE</Text>
                 <Text style={styles.footer}>SOCIÉTÉ MAROCAINE DES PRODUITS CHIMIQUES ET SERVICES</Text>
+                <Text style={styles.developedBy}>Développé par Chaimae Hakam & Manal Rhazzani</Text>
             </Animated.View>
         </View>
     );
@@ -307,6 +308,15 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
         maxWidth: "90%",
         opacity: 0.8,
+    },
+    developedBy: {
+        fontSize: 9,
+        fontWeight: "700",
+        color: "#1271b8",
+        letterSpacing: 0.4,
+        textAlign: "center",
+        marginTop: 6,
+        opacity: 0.9,
     },
     glowOrb: {
         position: "absolute",
