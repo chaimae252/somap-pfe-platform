@@ -17,16 +17,33 @@ import { useAuthStore } from "../store/authStore";
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreenn() {
-    const logoScale = useRef(new Animated.Value(0.8)).current;
+    const logoScale = useRef(new Animated.Value(0.3)).current;
     const logoOpacity = useRef(new Animated.Value(0)).current;
-    const logoTranslateY = useRef(new Animated.Value(20)).current;
+    const logoRotate = useRef(new Animated.Value(0)).current;
+    const glowScale = useRef(new Animated.Value(0.5)).current;
+    const glowOpacity = useRef(new Animated.Value(0)).current;
+    
     const bottomOpacity = useRef(new Animated.Value(0)).current;
     const barWidth = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         // Start animation sequence
         Animated.sequence([
-            // Animate logo spring scale, fade-in, and translation
+            // Animate background glow first
+            Animated.parallel([
+                Animated.timing(glowOpacity, {
+                    toValue: 0.6,
+                    duration: 600,
+                    useNativeDriver: true,
+                }),
+                Animated.spring(glowScale, {
+                    toValue: 1.2,
+                    tension: 30,
+                    friction: 5,
+                    useNativeDriver: true,
+                }),
+            ]),
+            // Animate logo scale, rotate, and fade-in
             Animated.parallel([
                 Animated.spring(logoScale, {
                     toValue: 1,
@@ -36,16 +53,16 @@ export default function SplashScreenn() {
                 }),
                 Animated.timing(logoOpacity, {
                     toValue: 1,
-                    duration: 900,
+                    duration: 1000,
                     useNativeDriver: true,
                 }),
-                Animated.timing(logoTranslateY, {
-                    toValue: 0,
-                    duration: 900,
+                Animated.timing(logoRotate, {
+                    toValue: 1,
+                    duration: 1000,
                     useNativeDriver: true,
                 }),
             ]),
-            // Animate bottom loading section and progress bar width
+            // Animate bottom loading section
             Animated.parallel([
                 Animated.timing(bottomOpacity, {
                     toValue: 1,
@@ -53,8 +70,8 @@ export default function SplashScreenn() {
                     useNativeDriver: true,
                 }),
                 Animated.timing(barWidth, {
-                    toValue: 200,
-                    duration: 2000,
+                    toValue: 220,
+                    duration: 2200,
                     useNativeDriver: false,
                 }),
             ]),
@@ -77,54 +94,97 @@ export default function SplashScreenn() {
         });
     }, []);
 
+    const rotation = logoRotate.interpolate({
+        inputRange: [0, 1],
+        outputRange: ["-10deg", "0deg"],
+    });
+
     return (
         <View style={styles.container}>
             <StatusBar
                 translucent={true}
                 backgroundColor="transparent"
-                barStyle="dark-content"
+                barStyle="light-content"
             />
 
-            {/* Background Image */}
+            {/* Deep Rich Background Image with Navy Gradient Tint */}
             <ImageBackground
                 source={require("../assets/images/splash-bg.png")}
                 style={StyleSheet.absoluteFill}
                 resizeMode="cover"
             >
-                {/* Brand gradient overlay for depth */}
+                {/* High-contrast brand gradient overlay */}
                 <LinearGradient
-                    colors={["rgba(238, 243, 251, 0.88)", "rgba(255, 255, 255, 0.94)"]}
+                    colors={["rgba(10, 28, 54, 0.94)", "rgba(13, 45, 94, 0.98)"]}
                     style={StyleSheet.absoluteFill}
                 />
             </ImageBackground>
 
-            {/* Elegant watermarked geometric background circles */}
-            <View style={[styles.decorRing, styles.ringTL]} />
-            <View style={[styles.decorRing, styles.ringBR]} />
-            <View style={styles.diamond} />
+            {/* Glowing Orbs behind the logo */}
+            <Animated.View 
+                style={[
+                    styles.glowOrb, 
+                    {
+                        opacity: glowOpacity,
+                        transform: [{ scale: glowScale }],
+                    }
+                ]}
+            >
+                <LinearGradient
+                    colors={["rgba(126, 201, 51, 0.25)", "rgba(19, 172, 213, 0.0)"]}
+                    style={styles.orbInner}
+                />
+            </Animated.View>
+
+            <Animated.View 
+                style={[
+                    styles.glowOrb2, 
+                    {
+                        opacity: glowOpacity,
+                        transform: [{ scale: glowScale }],
+                    }
+                ]}
+            >
+                <LinearGradient
+                    colors={["rgba(18, 113, 184, 0.3)", "rgba(19, 172, 213, 0.0)"]}
+                    style={styles.orbInner}
+                />
+            </Animated.View>
+
+            {/* Abstract Premium Watermark Vectors */}
+            <View style={styles.line1} />
+            <View style={styles.line2} />
+            <View style={styles.circle1} />
+            <View style={styles.circle2} />
 
             {/* Center Content */}
             <View style={styles.centerContent}>
                 <Animated.View
                     style={[
-                        styles.logoContainer,
+                        styles.glassCard,
                         {
                             opacity: logoOpacity,
                             transform: [
                                 { scale: logoScale },
-                                { translateY: logoTranslateY }
+                                { rotate: rotation }
                             ],
                         },
                     ]}
                 >
-                    <Image
-                        source={require("../assets/logo.png")}
-                        style={styles.logo}
-                    />
+                    {/* Inner gloss gradient shine */}
+                    <LinearGradient
+                        colors={["rgba(255, 255, 255, 0.95)", "rgba(240, 244, 250, 0.9)"]}
+                        style={styles.cardGradient}
+                    >
+                        <Image
+                            source={require("../assets/logo.png")}
+                            style={styles.logo}
+                        />
+                    </LinearGradient>
                 </Animated.View>
             </View>
 
-            {/* Bottom Content */}
+            {/* Bottom Section */}
             <Animated.View
                 style={[
                     styles.bottomContent,
@@ -133,24 +193,26 @@ export default function SplashScreenn() {
                     },
                 ]}
             >
-                {/* Thin Modern Progress Bar */}
-                <View style={styles.barTrack}>
-                    <Animated.View
-                        style={{
-                            width: barWidth,
-                            height: "100%",
-                        }}
-                    >
-                        <LinearGradient
-                            colors={["#1271b8", "#7EC933"]}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={styles.progressBar}
-                        />
-                    </Animated.View>
+                {/* Glowing Loader */}
+                <View style={styles.loaderContainer}>
+                    <View style={styles.barTrack}>
+                        <Animated.View
+                            style={{
+                                width: barWidth,
+                                height: "100%",
+                            }}
+                        >
+                            <LinearGradient
+                                colors={["#13ACD5", "#7EC933"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.progressBar}
+                            />
+                        </Animated.View>
+                    </View>
                 </View>
 
-                {/* Taglines */}
+                {/* Tags */}
                 <Text style={styles.tagline}>CHIMIE · EAU · INDUSTRIE</Text>
                 <Text style={styles.footer}>SOCIÉTÉ MAROCAINE DES PRODUITS CHIMIQUES ET SERVICES</Text>
             </Animated.View>
@@ -161,10 +223,10 @@ export default function SplashScreenn() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#0a1c36",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingVertical: 50,
+        paddingVertical: 55,
         paddingHorizontal: 24,
     },
     centerContent: {
@@ -173,18 +235,30 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         width: "100%",
     },
-    logoContainer: {
+    glassCard: {
+        width: width * 0.76,
+        borderRadius: 28,
+        padding: 4,
+        backgroundColor: "rgba(255, 255, 255, 0.15)",
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.25,
+        shadowRadius: 25,
+        elevation: 8,
+        borderWidth: 1.5,
+        borderColor: "rgba(255, 255, 255, 0.25)",
+        overflow: "hidden",
+    },
+    cardGradient: {
+        borderRadius: 24,
+        paddingVertical: 25,
+        paddingHorizontal: 20,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: "#1271b8",
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.1,
-        shadowRadius: 18,
-        elevation: 4,
     },
     logo: {
-        width: width * 0.68,
-        height: (width * 0.68) * 0.45,
+        width: "100%",
+        height: (width * 0.65) * 0.45,
         resizeMode: "contain",
     },
     bottomContent: {
@@ -194,62 +268,102 @@ const styles = StyleSheet.create({
         paddingBottom: 15,
         zIndex: 5,
     },
+    loaderContainer: {
+        shadowColor: "#13ACD5",
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        elevation: 2,
+    },
     barTrack: {
-        width: 200,
-        height: 4,
-        backgroundColor: "rgba(18, 113, 184, 0.12)",
-        borderRadius: 2,
+        width: 220,
+        height: 5,
+        backgroundColor: "rgba(255, 255, 255, 0.08)",
+        borderRadius: 3,
         overflow: "hidden",
         marginBottom: 10,
     },
     progressBar: {
         flex: 1,
-        borderRadius: 2,
+        borderRadius: 3,
     },
     tagline: {
         fontSize: 10,
-        fontWeight: "700",
-        color: "#4e5a70",
-        letterSpacing: 3,
+        fontWeight: "800",
+        color: "#7EC933",
+        letterSpacing: 4,
         textTransform: "uppercase",
         textAlign: "center",
+        textShadowColor: "rgba(126, 201, 51, 0.3)",
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
     },
     footer: {
         fontSize: 8,
-        fontWeight: "500",
-        color: "#8aa2c0",
-        letterSpacing: 0.5,
+        fontWeight: "600",
+        color: "#99b1cc",
+        letterSpacing: 0.6,
         textAlign: "center",
         textTransform: "uppercase",
         maxWidth: "90%",
+        opacity: 0.7,
     },
-    decorRing: {
+    glowOrb: {
         position: "absolute",
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        top: height * 0.22,
+        left: width * 0.1,
+        zIndex: 0,
+    },
+    glowOrb2: {
+        position: "absolute",
+        width: 260,
+        height: 260,
+        borderRadius: 130,
+        top: height * 0.32,
+        right: width * 0.05,
+        zIndex: 0,
+    },
+    orbInner: {
+        flex: 1,
         borderRadius: 999,
-        borderWidth: 1.5,
     },
-    ringTL: {
-        width: 200,
-        height: 200,
-        top: -40,
-        left: -40,
-        borderColor: "rgba(18, 113, 184, 0.06)",
-    },
-    ringBR: {
-        width: 250,
-        height: 250,
-        bottom: -50,
-        right: -50,
-        borderColor: "rgba(126, 201, 51, 0.05)",
-    },
-    diamond: {
+    line1: {
         position: "absolute",
-        width: 60,
-        height: 60,
-        right: -15,
-        top: height * 0.45,
+        width: 1,
+        height: height * 0.4,
+        backgroundColor: "rgba(255, 255, 255, 0.03)",
+        left: width * 0.15,
+        top: 0,
+    },
+    line2: {
+        position: "absolute",
+        width: 1,
+        height: height * 0.4,
+        backgroundColor: "rgba(255, 255, 255, 0.03)",
+        right: width * 0.2,
+        bottom: 0,
+    },
+    circle1: {
+        position: "absolute",
+        width: 180,
+        height: 180,
+        borderRadius: 90,
         borderWidth: 1,
-        borderColor: "rgba(18, 113, 184, 0.04)",
-        transform: [{ rotate: "45deg" }],
+        borderColor: "rgba(19, 172, 213, 0.05)",
+        top: -60,
+        right: -30,
+    },
+    circle2: {
+        position: "absolute",
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        borderWidth: 1,
+        borderColor: "rgba(126, 201, 51, 0.04)",
+        bottom: -50,
+        left: -40,
     },
 });
