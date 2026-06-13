@@ -170,7 +170,7 @@ export default function SplashScreenn() {
                         source={require("../assets/images/icon_main.png")}
                         style={styles.iconMain}
                     />
-                    
+
                 </Animated.View>
 
                 {/* Text block */}
