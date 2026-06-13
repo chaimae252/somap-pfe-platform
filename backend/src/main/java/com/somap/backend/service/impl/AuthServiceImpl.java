@@ -224,12 +224,12 @@ public void forgotPasswordLoggedIn(String token) {
     user.setMotDePasse(passwordEncoder.encode(newPassword));
     utilisateurRepository.save(user);
 
-    String subject = "SOMAP - Nouveau mot de passe proposé";
+    String subject = "SOMAP ET SERVICE - Nouveau mot de passe proposé";
     String body = "Bonjour " + user.getNom() + ",\n\n" +
                   "Vous avez demandé la réinitialisation de votre mot de passe depuis votre espace profil.\n" +
                   "Voici votre nouveau mot de passe généré aléatoirement : " + newPassword + "\n\n" +
                   "Pour votre sécurité, nous vous invitons à copier ce mot de passe, à l'utiliser comme mot de passe actuel dans le formulaire pour ensuite le modifier avec le mot de passe de votre choix.\n\n" +
-                  "Cordialement,\nL'équipe SOMAP";
+                  "Cordialement,\nL'équipe SOMAP ET SERVICE";
     
     emailService.sendEmail(email, subject, body);
 }

@@ -56,10 +56,14 @@ public class EmailService {
     }
 
     private void sendHtmlEmail(String to, String subject, String contentHtml) {
+        String formattedSubject = subject;
+        if (subject != null && !subject.contains("SOMAP ET SERVICE")) {
+            formattedSubject = "SOMAP ET SERVICE - " + subject;
+        }
         if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
-            sendViaResend(to, subject, contentHtml);
+            sendViaResend(to, formattedSubject, contentHtml);
         } else {
-            sendViaSMTP(to, subject, contentHtml);
+            sendViaSMTP(to, formattedSubject, contentHtml);
         }
     }
 
@@ -87,8 +91,13 @@ public class EmailService {
             HttpClient client = HttpClient.newHttpClient();
             ObjectMapper mapper = new ObjectMapper();
             
+            String sender = resendFromEmail;
+            if (sender != null && !sender.contains("<")) {
+                sender = "SOMAP ET SERVICE <" + sender + ">";
+            }
+            
             Map<String, Object> payload = new HashMap<>();
-            payload.put("from", resendFromEmail);
+            payload.put("from", sender);
             payload.put("to", to);
             payload.put("subject", subject);
             payload.put("html", contentHtml);
