@@ -37,16 +37,16 @@ public class EmailService {
         String contentHtml = 
             "<h2>Réinitialisation de mot de passe</h2>" +
             "<p>Bonjour,</p>" +
-            "<p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte SOMAP. Veuillez utiliser le code de vérification ci-dessous pour poursuivre l'opération :</p>" +
+            "<p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte SOMAP ET SERVICE. Veuillez utiliser le code de vérification ci-dessous pour poursuivre l'opération :</p>" +
             "<div class=\"code-container\">" +
             "  <div class=\"code-title\">Code de vérification</div>" +
             "  <div class=\"code-value\">" + code + "</div>" +
             "</div>" +
             "<p>Ce code est valable pendant 5 minutes. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.</p>" +
-            "<p>Cordialement,<br>L'équipe support SOMAP</p>";
+            "<p>Cordialement,<br>L'équipe support SOMAP ET SERVICE</p>";
         
-        String htmlBody = wrapInHtmlTemplate("Code de réinitialisation SOMAP", contentHtml);
-        sendHtmlEmail(to, "SOMAP - Code de réinitialisation", htmlBody);
+        String htmlBody = wrapInHtmlTemplate("Code de réinitialisation SOMAP ET SERVICE", contentHtml);
+        sendHtmlEmail(to, "SOMAP ET SERVICE - Code de réinitialisation", htmlBody);
     }
 
     public void sendEmail(String to, String subject, String body) {
@@ -72,7 +72,7 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(contentHtml, true);
             
-            String from = "SOMAP <" + springMailUsername + ">";
+            String from = "SOMAP ET SERVICE <" + springMailUsername + ">";
             helper.setFrom(from);
             
             mailSender.send(message);
@@ -138,18 +138,17 @@ public class EmailService {
                 "  <div class=\"wrapper\">\n" +
                 "    <div class=\"container\">\n" +
                 "      <div class=\"header\">\n" +
-                "        <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 1px;\">SOMAP</h1>\n" +
+                "        <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 1px;\">SOMAP ET SERVICE</h1>\n" +
                 "      </div>\n" +
                 "      <div class=\"content\">\n" +
                 "        " + contentHtml + "\n" +
                 "      </div>\n" +
                 "      <div class=\"footer\">\n" +
-                "        <p>© 2026 SOMAP. Tous droits réservés.</p>\n" +
+                "        <p>© 2026 SOMAP ET SERVICE. Tous droits réservés.</p>\n" +
                 "      </div>\n" +
                 "    </div>\n" +
                 "  </div>\n" +
                 "</body>\n" +
                 "</html>";
     }
-}
 
