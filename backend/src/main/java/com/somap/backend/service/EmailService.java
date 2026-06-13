@@ -2,10 +2,11 @@ package com.somap.backend.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.mail.internet.MimeMessage;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,43 +24,74 @@ public class EmailService {
     @Value("${resend.api.key:}")
     private String resendApiKey;
 
+    @Value("${resend.from.email:onboarding@resend.dev}")
+    private String resendFromEmail;
+
+    @Value("${spring.mail.username:}")
+    private String springMailUsername;
+
     public void sendResetCode(
             String to,
             String code
     ) {
-        if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
-            sendViaResend(to, "Code de réinitialisation", "Votre code est : " + code);
-        } else {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject("Code de réinitialisation");
-            message.setText("Votre code est : " + code);
-            mailSender.send(message);
-        }
+        String contentHtml = 
+            "<h2>Réinitialisation de mot de passe</h2>" +
+            "<p>Bonjour,</p>" +
+            "<p>Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte SOMAP. Veuillez utiliser le code de vérification ci-dessous pour poursuivre l'opération :</p>" +
+            "<div class=\"code-container\">" +
+            "  <div class=\"code-title\">Code de vérification</div>" +
+            "  <div class=\"code-value\">" + code + "</div>" +
+            "</div>" +
+            "<p>Ce code est valable pendant 5 minutes. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.</p>" +
+            "<p>Cordialement,<br>L'équipe support SOMAP</p>";
+        
+        String htmlBody = wrapInHtmlTemplate("Code de réinitialisation SOMAP", contentHtml);
+        sendHtmlEmail(to, "SOMAP - Code de réinitialisation", htmlBody);
     }
 
     public void sendEmail(String to, String subject, String body) {
+        String contentHtml = "<p>" + body.replace("\n", "<br/>") + "</p>";
+        String htmlBody = wrapInHtmlTemplate(subject, contentHtml);
+        sendHtmlEmail(to, subject, htmlBody);
+    }
+
+    private void sendHtmlEmail(String to, String subject, String contentHtml) {
         if (resendApiKey != null && !resendApiKey.trim().isEmpty()) {
-            sendViaResend(to, subject, body);
+            sendViaResend(to, subject, contentHtml);
         } else {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
-            mailSender.send(message);
+            sendViaSMTP(to, subject, contentHtml);
         }
     }
 
-    private void sendViaResend(String to, String subject, String body) {
+    private void sendViaSMTP(String to, String subject, String contentHtml) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(contentHtml, true);
+            
+            String from = "SOMAP <" + springMailUsername + ">";
+            helper.setFrom(from);
+            
+            mailSender.send(message);
+            System.out.println("Email sent successfully via SMTP: " + subject);
+        } catch (Exception e) {
+            throw new RuntimeException("Error sending HTML email via SMTP", e);
+        }
+    }
+
+    private void sendViaResend(String to, String subject, String contentHtml) {
         try {
             HttpClient client = HttpClient.newHttpClient();
             ObjectMapper mapper = new ObjectMapper();
             
             Map<String, Object> payload = new HashMap<>();
-            payload.put("from", "onboarding@resend.dev");
+            payload.put("from", resendFromEmail);
             payload.put("to", to);
             payload.put("subject", subject);
-            payload.put("html", "<p>" + body + "</p>");
+            payload.put("html", contentHtml);
             
             String jsonPayload = mapper.writeValueAsString(payload);
             
@@ -80,4 +112,44 @@ public class EmailService {
             throw new RuntimeException("Error sending email via Resend API", e);
         }
     }
-}
+
+    private String wrapInHtmlTemplate(String title, String contentHtml) {
+        return "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "  <meta charset=\"utf-8\">\n" +
+                "  <title>" + title + "</title>\n" +
+                "  <style>\n" +
+                "    body { font-family: 'Segoe UI', Helvetica, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 0; }\n" +
+                "    .wrapper { width: 100%; background-color: #f4f6f9; padding: 40px 0; }\n" +
+                "    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }\n" +
+                "    .header { background: linear-gradient(135deg, #1271b8 0%, #0d2d5e 100%); padding: 30px; text-align: center; }\n" +
+                "    .content { padding: 40px 30px; color: #333333; line-height: 1.6; }\n" +
+                "    h2 { color: #1271b8; font-size: 22px; margin-top: 0; font-weight: 700; }\n" +
+                "    p { font-size: 15px; color: #555555; }\n" +
+                "    .code-container { background-color: #f0f7ff; border: 1.5px dashed #1271b8; border-radius: 12px; padding: 20px; text-align: center; margin: 30px 0; }\n" +
+                "    .code-title { font-size: 13px; text-transform: uppercase; letter-spacing: 2px; color: #1271b8; font-weight: bold; margin-bottom: 8px; }\n" +
+                "    .code-value { font-size: 32px; font-weight: 800; color: #0d2d5e; letter-spacing: 6px; margin: 0; }\n" +
+                "    .footer { background-color: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #eef2f6; }\n" +
+                "    .footer p { font-size: 12px; color: #999999; margin: 0; }\n" +
+                "  </style>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "  <div class=\"wrapper\">\n" +
+                "    <div class=\"container\">\n" +
+                "      <div class=\"header\">\n" +
+                "        <h1 style=\"color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: 1px;\">SOMAP</h1>\n" +
+                "      </div>\n" +
+                "      <div class=\"content\">\n" +
+                "        " + contentHtml + "\n" +
+                "      </div>\n" +
+                "      <div class=\"footer\">\n" +
+                "        <p>© 2026 SOMAP. Tous droits réservés.</p>\n" +
+                "      </div>\n" +
+                "    </div>\n" +
+                "  </div>\n" +
+                "</body>\n" +
+                "</html>";
+    }
+}
+

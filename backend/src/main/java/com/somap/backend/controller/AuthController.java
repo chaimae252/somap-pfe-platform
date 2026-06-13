@@ -29,8 +29,9 @@ public class AuthController {
     @GetMapping("/test-email")
     public ResponseEntity<?> testEmail(@RequestParam String email) {
         try {
-            emailService.sendResetCode(email, "9999");
-            return ResponseEntity.ok("Email sent successfully using current SMTP properties.");
+            String randomCode = String.valueOf((int)(Math.random() * 9000) + 1000);
+            emailService.sendResetCode(email, randomCode);
+            return ResponseEntity.ok("Email diagnostic test sent successfully with random code " + randomCode + " using current configuration.");
         } catch (Exception e) {
             java.io.StringWriter sw = new java.io.StringWriter();
             java.io.PrintWriter pw = new java.io.PrintWriter(sw);
