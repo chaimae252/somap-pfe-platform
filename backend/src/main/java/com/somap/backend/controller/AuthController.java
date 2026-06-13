@@ -16,12 +16,30 @@ import org.springframework.web.bind.annotation.*;
 import com.somap.backend.dto.AdminRegisterDTO;
 import com.somap.backend.dto.TokenRefreshRequestDTO;
 import com.somap.backend.dto.TokenRefreshResponseDTO;
+import com.somap.backend.service.EmailService;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailService emailService;
+
+    @GetMapping("/test-email")
+    public ResponseEntity<?> testEmail(@RequestParam String email) {
+        try {
+            emailService.sendResetCode(email, "9999");
+            return ResponseEntity.ok("Email sent successfully using current SMTP properties.");
+        } catch (Exception e) {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+            e.printStackTrace(pw);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to send email. Error: " + e.getMessage() + "\nStacktrace:\n" + sw.toString());
+        }
+    }
+
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(
