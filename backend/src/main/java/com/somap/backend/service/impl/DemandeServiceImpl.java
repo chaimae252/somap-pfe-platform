@@ -159,6 +159,12 @@ public DemandeDTO updateDemande(Long id, DemandeDTO dto) {
     demande.setDescription(dto.getDescription());
     demande.setUrgence(dto.getUrgence());
 
+    if (dto.getServiceId() != null) {
+        Service service = serviceRepository.findById(dto.getServiceId())
+                .orElseThrow(() -> new RuntimeException("Service not found"));
+        demande.setService(service);
+    }
+
     if (dto.getStatut() != null) {
         demande.setStatut(dto.getStatut());
     }
