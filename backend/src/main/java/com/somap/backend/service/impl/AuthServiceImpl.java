@@ -234,6 +234,27 @@ public void forgotPasswordLoggedIn(String token) {
     emailService.sendEmail(email, subject, body);
 }
 
+@Override
+@Transactional
+public void forgotPasswordTemp(String email) {
+    Utilisateur user = utilisateurRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+    
+    String newPassword = generateRandomPassword();
+    user.setMotDePasse(passwordEncoder.encode(newPassword));
+    utilisateurRepository.save(user);
+
+    String subject = "SOMAP ET SERVICE - Récupération de mot de passe";
+    String body = "Bonjour " + user.getNom() + ",\n\n" +
+                  "Vous avez demandé la réinitialisation de votre mot de passe.\n" +
+                  "Voici votre nouveau mot de passe temporaire pour vous connecter : " + newPassword + "\n\n" +
+                  "Pour votre sécurité, nous vous invitons à l'utiliser pour vous connecter, puis à le modifier immédiatement dans votre profil.\n\n" +
+                  "Cordialement,\nL'équipe SOMAP ET SERVICE";
+    
+    emailService.sendEmail(email, subject, body);
+}
+
+
 private String generateRandomPassword() {
     String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     java.security.SecureRandom random = new java.security.SecureRandom();

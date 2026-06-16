@@ -78,6 +78,14 @@ public ResponseEntity<?> forgotPassword(
 
     return ResponseEntity.ok("Code envoyé");
 }
+    @PostMapping("/forgot-password-temp")
+    public ResponseEntity<?> forgotPasswordTemp(
+            @RequestBody ForgotPasswordRequestDTO dto
+    ) {
+        authService.forgotPasswordTemp(dto.getEmail());
+        return ResponseEntity.ok("Un nouveau mot de passe temporaire a été envoyé à votre adresse email");
+    }
+
 @PostMapping("/verify-code")
 public ResponseEntity<?> verifyCode(
         @RequestBody VerifyCodeDTO dto

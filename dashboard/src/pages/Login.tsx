@@ -28,6 +28,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -62,62 +64,135 @@ export default function Login() {
     }
   };
 
+  const handleForgotPasswordSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError("");
+    setSuccessMessage("");
+    setLoading(true);
+
+    try {
+      await api.post("/auth/forgot-password-temp", { email });
+      setSuccessMessage("Un mot de passe temporaire a été envoyé à votre adresse email.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Une erreur est survenue lors de la réinitialisation."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SomapBackground>
       <div style={styles.card}>
         <div style={styles.accentBar} />
-        <h2 style={styles.title}>Connexion Administrateur</h2>
+        <h2 style={styles.title}>
+          {isForgotPassword ? "Mot de passe oublié" : "Connexion Administrateur"}
+        </h2>
 
-        <form ref={formRef} onSubmit={handleSubmit} style={styles.form}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            style={styles.input}
-          />
-
-          <div style={styles.passwordWrap}>
+        {isForgotPassword ? (
+          <form onSubmit={handleForgotPasswordSubmit} style={styles.form}>
+            <p style={styles.infoText}>
+              Saisissez votre adresse e-mail pour recevoir un mot de passe temporaire.
+            </p>
             <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Mot de passe"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               required
-              style={{ ...styles.input, ...styles.passwordInput }}
+              style={styles.input}
             />
-            <button
-              type="button"
-              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              onClick={() => setShowPassword((value) => !value)}
-              style={styles.eyeButton}
-            >
-              {showPassword ? (
-                <VisibilityOffOutlinedIcon sx={{ fontSize: 20 }} />
-              ) : (
-                <VisibilityOutlinedIcon sx={{ fontSize: 20 }} />
-              )}
-            </button>
-          </div>
 
-          {error && <div style={styles.error}>{error}</div>}
+            {error && <div style={styles.error}>{error}</div>}
+            {successMessage && <div style={styles.success}>{successMessage}</div>}
 
-          <div style={styles.buttonBox}>
-            <Button
-              title={loading ? "Connexion..." : "Se connecter"}
-              type="primary"
-              onClick={() => formRef.current?.requestSubmit()}
+            <div style={styles.buttonBox}>
+              <Button
+                title={loading ? "Envoi..." : "Envoyer le mot de passe"}
+                type="primary"
+                onClick={() => {}}
+              />
+            </div>
+
+            <p style={styles.footer}>
+              <button
+                type="button"
+                style={styles.link}
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setError("");
+                  setSuccessMessage("");
+                }}
+              >
+                Retour à la connexion
+              </button>
+            </p>
+          </form>
+        ) : (
+          <form ref={formRef} onSubmit={handleSubmit} style={styles.form}>
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              style={styles.input}
             />
-          </div>
-        </form>
 
-        <p style={styles.footer}>
-          Vous n'avez pas de compte ?{" "}
-          <button type="button" style={styles.link} onClick={() => navigate("/register")}>
-            Créer un administrateur
-          </button>
-        </p>
+            <div style={styles.passwordWrap}>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Mot de passe"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                style={{ ...styles.input, ...styles.passwordInput }}
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                onClick={() => setShowPassword((value) => !value)}
+                style={styles.eyeButton}
+              >
+                {showPassword ? (
+                  <VisibilityOffOutlinedIcon sx={{ fontSize: 20 }} />
+                ) : (
+                  <VisibilityOutlinedIcon sx={{ fontSize: 20 }} />
+                )}
+              </button>
+            </div>
+
+            <div style={styles.forgotPassWrap}>
+              <button
+                type="button"
+                style={styles.forgotLink}
+                onClick={() => {
+                  setIsForgotPassword(true);
+                  setError("");
+                  setSuccessMessage("");
+                }}
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
+
+            {error && <div style={styles.error}>{error}</div>}
+
+            <div style={styles.buttonBox}>
+              <Button
+                title={loading ? "Connexion..." : "Se connecter"}
+                type="primary"
+                onClick={() => formRef.current?.requestSubmit()}
+              />
+            </div>
+
+            <p style={styles.footer}>
+              Vous n'avez pas de compte ?{" "}
+              <button type="button" style={styles.link} onClick={() => navigate("/register")}>
+                Créer un administrateur
+              </button>
+            </p>
+          </form>
+        )}
       </div>
     </SomapBackground>
   );
@@ -177,8 +252,31 @@ const styles: Record<string, CSSProperties> = {
     justifyContent: "center",
     padding: 0,
   },
+  forgotPassWrap: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "-4px",
+  },
+  forgotLink: {
+    border: "none",
+    background: "transparent",
+    color: "#6b7f95",
+    cursor: "pointer",
+    fontSize: "12px",
+    padding: 0,
+    fontFamily: "inherit",
+    textDecoration: "underline",
+  },
+  infoText: {
+    fontSize: "13px",
+    color: "#6b7f95",
+    textAlign: "center",
+    marginBottom: "12px",
+    lineHeight: "1.4",
+  },
   buttonBox: { marginTop: "8px" },
   error: { color: "red", fontSize: "13px", textAlign: "center" },
+  success: { color: "#7EC933", fontSize: "13px", textAlign: "center" },
   footer: { marginTop: "24px", fontSize: "13px", textAlign: "center", color: "#6b7f95" },
   link: {
     border: "none",
@@ -190,3 +288,4 @@ const styles: Record<string, CSSProperties> = {
     fontFamily: "inherit",
   },
 };
+
