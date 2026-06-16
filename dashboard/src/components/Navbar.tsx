@@ -208,13 +208,14 @@ const styles: Record<string, CSSProperties> = {
         overflow: "hidden",
     },
     logoRow: {
-        padding: "6px 8px",
+        padding: "24px 8px 12px",
         borderBottom: "1px solid rgba(0,0,0,0.06)",
         flexShrink: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
     },
+
     logo: {
         width: "100%",
         maxWidth: "160px",
