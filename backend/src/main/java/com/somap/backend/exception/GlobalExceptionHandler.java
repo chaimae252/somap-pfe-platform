@@ -17,4 +17,11 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body(Map.of("message", "Le fichier est trop volumineux."));
     }
+
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleBadCredentials() {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "Email ou mot de passe incorrect."));
+    }
 }
