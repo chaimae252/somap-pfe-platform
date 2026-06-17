@@ -115,6 +115,8 @@ export default function Demandes() {
     const [updatingId, setUpdatingId] = useState<number | null>(null);
     const [selectedDemande, setSelectedDemande] = useState<Demande | null>(null);
     const [searchParams] = useSearchParams();
+    const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+
 
     const loadDemandes = async () => {
         setLoading(true);
@@ -463,6 +465,7 @@ export default function Demandes() {
                                                     src={getImageUrl(image.imageUrl)}
                                                     alt={selectedDemande.objet || "Image demande"}
                                                     style={styles.demandeImage}
+                                                    onClick={() => setActiveImageUrl(getImageUrl(image.imageUrl))}
                                                 />
                                             ))}
                                         </div>
@@ -498,9 +501,19 @@ export default function Demandes() {
                     </div>
                 )}
             </div>
+
+            {activeImageUrl && (
+                <div style={styles.lightboxOverlay} onClick={() => setActiveImageUrl(null)}>
+                    <div style={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+                        <button style={styles.lightboxCloseBtn} onClick={() => setActiveImageUrl(null)}>×</button>
+                        <img src={activeImageUrl} alt="Full screen preview" style={styles.lightboxImage} />
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 }
+
 
 const styles: Record<string, CSSProperties> = {
     page: {
@@ -954,6 +967,8 @@ const styles: Record<string, CSSProperties> = {
         borderRadius: 10,
         border: "1px solid #edf2f7",
         background: "#edf3f8",
+        cursor: "pointer",
+        transition: "transform 0.15s ease",
     },
     noImages: {
         border: "1px dashed #dfe9f3",
@@ -971,5 +986,49 @@ const styles: Record<string, CSSProperties> = {
         alignItems: "center",
         gap: 10,
         flexWrap: "wrap",
+    },
+    lightboxOverlay: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 10000,
+        backgroundColor: "rgba(10, 24, 44, 0.85)",
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        cursor: "zoom-out",
+    },
+    lightboxContent: {
+        position: "relative",
+        maxWidth: "90%",
+        maxHeight: "90%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "default",
+    },
+    lightboxImage: {
+        maxWidth: "100%",
+        maxHeight: "85vh",
+        objectFit: "contain",
+        borderRadius: 12,
+        boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        backgroundColor: "#000",
+    },
+    lightboxCloseBtn: {
+        position: "absolute",
+        top: -40,
+        right: 0,
+        border: "none",
+        background: "transparent",
+        color: "#fff",
+        fontSize: 32,
+        cursor: "pointer",
+        lineHeight: 1,
     },
 };

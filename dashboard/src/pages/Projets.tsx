@@ -148,6 +148,8 @@ export default function Projets() {
     const [form, setForm] = useState<ProjetForm>(emptyForm);
     const [confirmDeleteProjet, setConfirmDeleteProjet] = useState<Projet | null>(null);
     const [deletingProjetId, setDeletingProjetId] = useState<number | null>(null);
+    const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+
 
     const loadData = async () => {
         setLoading(true);
@@ -592,7 +594,9 @@ export default function Projets() {
                                                 src={getImageUrl(image.imageUrl)}
                                                 alt={selectedProjet.titre || "Image demande"}
                                                 style={styles.demandeImage}
+                                                onClick={() => setActiveImageUrl(getImageUrl(image.imageUrl))}
                                             />
+
                                         ))}
                                     </div>
                                 ) : (
@@ -765,9 +769,19 @@ export default function Projets() {
                     </section>
                 </div>
             )}
+
+            {activeImageUrl && (
+                <div style={styles.lightboxOverlay} onClick={() => setActiveImageUrl(null)}>
+                    <div style={styles.lightboxContent} onClick={(e) => e.stopPropagation()}>
+                        <button style={styles.lightboxCloseBtn} onClick={() => setActiveImageUrl(null)}>×</button>
+                        <img src={activeImageUrl} alt="Full screen preview" style={styles.lightboxImage} />
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 }
+
 
 const styles: Record<string, CSSProperties> = {
     page: { display: "flex", flexDirection: "column", gap: 18, paddingBottom: 28, fontFamily: "'Segoe UI', system-ui, sans-serif" },
@@ -852,7 +866,8 @@ const styles: Record<string, CSSProperties> = {
     imagesPanel: { marginTop: 14, border: "1px solid #e5edf5", borderRadius: 14, padding: 16, background: "#fbfdff" },
     imagesHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
     imageGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 12 },
-    demandeImage: { width: "100%", aspectRatio: "1.5", objectFit: "cover", borderRadius: 10, border: "1px solid #edf2f7", boxShadow: "0 2px 6px rgba(0,0,0,0.03)" },
+    demandeImage: { width: "100%", aspectRatio: "1.5", objectFit: "cover", borderRadius: 10, border: "1px solid #edf2f7", boxShadow: "0 2px 6px rgba(0,0,0,0.03)", cursor: "pointer", transition: "transform 0.15s ease" },
+
     noImages: { color: MUTED, fontSize: 12, fontWeight: 600, textAlign: "center", padding: "24px 0" },
     modalEditButton: { border: "1px solid rgba(126,201,51,0.28)", background: "rgba(126,201,51,0.14)", color: "#3f8619", height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
     modalDeleteButton: { border: "1px solid rgba(173,35,36,0.22)", background: "rgba(173,35,36,0.08)", color: SOMAP_RED, height: 36, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" },
@@ -887,4 +902,49 @@ const styles: Record<string, CSSProperties> = {
         cursor: "pointer",
         fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
+    lightboxOverlay: {
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 10000,
+        backgroundColor: "rgba(10, 24, 44, 0.85)",
+        backdropFilter: "blur(8px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        cursor: "zoom-out",
+    },
+    lightboxContent: {
+        position: "relative",
+        maxWidth: "90%",
+        maxHeight: "90%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "default",
+    },
+    lightboxImage: {
+        maxWidth: "100%",
+        maxHeight: "85vh",
+        objectFit: "contain",
+        borderRadius: 12,
+        boxShadow: "0 24px 70px rgba(0,0,0,0.35)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        backgroundColor: "#000",
+    },
+    lightboxCloseBtn: {
+        position: "absolute",
+        top: -40,
+        right: 0,
+        border: "none",
+        background: "transparent",
+        color: "#fff",
+        fontSize: 32,
+        cursor: "pointer",
+        lineHeight: 1,
+    },
 };
+
