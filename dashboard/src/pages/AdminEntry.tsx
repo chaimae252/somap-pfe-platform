@@ -55,12 +55,12 @@ const styles: any = {
         overflow: "hidden",
     },
     accentBar: {
-        width: "calc(100% + 72px)",
+        alignSelf: "stretch",
         height: "4px",
         background: `linear-gradient(90deg, ${SOMAP_GREEN} 0%, ${SOMAP_BLUE} 100%)`,
-        marginBottom: "32px",
-        marginLeft: "-36px",
+        margin: "0 -36px 32px",
     },
+
     logoWrapper: {
         width: "250px", height: "90px",
         display: "flex", alignItems: "center", justifyContent: "center",
