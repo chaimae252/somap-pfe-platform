@@ -1,93 +1,56 @@
-# SOMAP & SERVICE - Industrial Services Platform
+# 🎨 SOMAP & SERVICE 🛠️
 
-## 📱 Mobile + 💻 Web + ⚙️ Backend System
-
-This project is a full-stack application developed as a PFE (Final Year Project) for managing industrial services such as sandblasting, painting, and surface treatment.
+> Un projet de fin d'études (PFE) d'excellence pour digitaliser et sublimer la gestion des traitements de surfaces industriels. ✨
 
 ---
 
-## 🎯 Project Objective
+## 🏗️ L'Écosystème SOMAP
 
-The goal is to digitize and optimize the interaction between clients and SOMAP & SERVICE by providing:
-
-- A mobile application for clients
-- An admin dashboard for management
-- A backend API using Spring Boot
-
----
-
-## 🏗️ Architecture
-
-- Mobile App: React Native (Expo)
-- Admin Dashboard: React (Vite)
-- Backend API: Spring Boot
-- Database: MySQL
+* **⚙️ Backend API** : Spring Boot 3 & Spring Security (Sécurisé par JWT 🔐)
+* **💻 Dashboard Admin** : React & Vite (Interface fluide & épurée 📊)
+* **📱 Application Mobile** : React Native & Expo (Expérience client dynamique 📲)
+* **🗄️ Base de Données** : PostgreSQL (Hébergée sur Railway 🚀)
 
 ---
 
-## 👥 Actors
+## 🌟 Fonctionnalités Clés
 
-- Client (mobile app user)
-- Administrator (dashboard user)
-
----
-
-## ⚙️ Features
-
-### Client App
-- Account creation and login
-- Service browsing
-- Request submission
-- Project tracking
-- Notifications
-
-### Admin Dashboard
-- Manage services
-- Manage clients
-- Handle requests
-- Track projects
-- View statistics
+* **🤖 Assistant IA Gemini** : Chatbot virtuel intelligent intégré pour conseiller les clients en temps réel.
+* **🔔 Notifications Push Expo** : Alertes push instantanées et redirections intelligentes vers les demandes ou projets.
+* **📧 Envoi d'Emails Brevo** : Codes d'accès et mots de passe temporaires envoyés par API HTTPS sécurisée.
+* **🖼️ Cloudinary & Lightbox** : Galerie d'images fluide et visionneuse plein écran interactive (lightbox).
+* **🔄 Session Fluide** : Système intelligent de rotation automatique des jetons de rafraîchissement (tokens).
 
 ---
 
-## 🛠️ Tech Stack
+## 👩‍💻 L'Équipe
 
-- Spring Boot
-- Spring Security + JWT
-- React Native
-- React.js
-- MySQL
-- Axios
+* **🌸 Chaimae Hakam** — Lead Integration System & Backend
+* **🌸 Manal Rhazzani** — Lead UI/UX Mobile & Frontend
 
 ---
 
-## 👨‍💻 Team
+## 🚀 Guide Rapide de Lancement
 
-- Developer 1: CHAIMAE HAKAM
-- Developer 2: MANAL RHAZZANI
+### ⚙️ Backend API
+```bash
+cd backend
+mvn spring-boot:run
+```
 
----
+### 💻 Dashboard Web
+```bash
+cd dashboard
+npm install && npm run dev
+```
 
-## 🚀 How to run (to be completed)
-
-Backend:
-
-- cd backend
-- mvn spring-boot:run
-
-Mobile:
-
-- cd mobile
-- npx expo start
-
-Dashboard:
-
-- cd dashboard
-- npm install
-- npm run dev
+### 📱 Application Mobile
+```bash
+cd mobile
+npm install && npx expo start
+```
 
 ---
 
-## 📌 Status
-
-Project in development 🚧
+## 📌 Statut
+Projet finalisé avec succès ! **Production Ready ✅**
