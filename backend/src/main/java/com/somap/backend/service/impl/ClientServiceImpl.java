@@ -14,7 +14,13 @@ import com.somap.backend.repository.NotificationRepository;
 import com.somap.backend.repository.ProjetRepository;
 import com.somap.backend.repository.ServiceRepository;
 import com.somap.backend.repository.AdminRepository;
+import com.somap.backend.repository.CommentaireRepository;
+import com.somap.backend.repository.RefreshTokenRepository;
+import com.somap.backend.repository.ContactMessageRepository;
+
+import com.somap.backend.entity.Commentaire;
 import com.somap.backend.service.ClientService;
+
 import com.somap.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +41,11 @@ public class ClientServiceImpl implements ClientService {
     private final NotificationRepository notificationRepository;
     private final AdminRepository adminRepository;
     private final NotificationService notificationService;
+    private final CommentaireRepository commentaireRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final ContactMessageRepository contactMessageRepository;
+
+
 
     @Override
     @Transactional(readOnly = true)
@@ -85,6 +96,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    @Transactional
     public void deleteClient(Long id) {
 
         Client client = clientRepository.findById(id)
@@ -123,8 +135,41 @@ public class ClientServiceImpl implements ClientService {
             // ignore
         }
 
+        // 3. Clear Refresh Tokens
+        try {
+            refreshTokenRepository.deleteByUser(client);
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // 4. Clear Notifications
+        try {
+            notificationRepository.deleteByUtilisateurIdBulk(id);
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // 5. Clear Comments (with cascades on nested replies and images)
+        try {
+            List<Commentaire> clientComments = commentaireRepository.findByClientId(id);
+            if (clientComments != null && !clientComments.isEmpty()) {
+                commentaireRepository.deleteAll(clientComments);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // 6. Clear Contact Messages
+        try {
+            contactMessageRepository.deleteByClientIdBulk(id);
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // 7. Delete client (Cascades demands and projects automatically via JPA mappings)
         clientRepository.delete(client);
     }
+
 
     private ClientDTO toDTOWithActivity(Client client) {
         ClientDTO dto = ClientMapper.toDTO(client);

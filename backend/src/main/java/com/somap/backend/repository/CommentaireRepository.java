@@ -9,4 +9,5 @@ public interface CommentaireRepository extends JpaRepository<Commentaire, Long> 
 
     List<Commentaire> findByServiceId(Long serviceId);
     List<Commentaire> findByServiceIdAndParentIsNull(Long serviceId);
+    List<Commentaire> findByClientId(Long clientId);
 }

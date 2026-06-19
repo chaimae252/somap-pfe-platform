@@ -18,4 +18,8 @@ public interface ContactMessageRepository extends JpaRepository<ContactMessage, 
     @Modifying
     @Query("UPDATE ContactMessage m SET m.admin = null WHERE m.admin.id = :adminId")
     void detachAdmin(@Param("adminId") Long adminId);
+
+    @Modifying
+    @Query("DELETE FROM ContactMessage m WHERE m.client.id = :clientId")
+    void deleteByClientIdBulk(@Param("clientId") Long clientId);
 }
