@@ -1,2 +1,2 @@
-// Turn this off before sharing a production build.
-export const ALLOW_SCREEN_RECORDING_DEMO = false;
+export const ALLOW_SCREEN_RECORDING_DEMO = true;
+
