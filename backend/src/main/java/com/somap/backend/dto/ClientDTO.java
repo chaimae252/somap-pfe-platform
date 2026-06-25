@@ -16,5 +16,6 @@ public class ClientDTO {
     private long projetsCount;
     private List<String> demandeTitres;
     private List<String> projetTitres;
+    private boolean active;
 
 }

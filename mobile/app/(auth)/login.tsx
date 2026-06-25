@@ -96,9 +96,10 @@ export default function LoginScreen() {
 
             setMessage({type: "success", text: "Connexion réussie"});
             setTimeout(() => router.replace("/(tabs)/home"), 800);
-        } catch (error) {
+        } catch (error: any) {
             console.log("LOGIN ERROR:", error);
-            setMessage({type: "error", text: "Email ou mot de passe incorrect"});
+            const errorMsg = error.response?.data?.message || "Email ou mot de passe incorrect";
+            setMessage({type: "error", text: errorMsg});
         }
     };
 

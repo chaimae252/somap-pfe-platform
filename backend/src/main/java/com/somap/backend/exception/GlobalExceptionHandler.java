@@ -25,6 +25,13 @@ public class GlobalExceptionHandler {
                 .body(Map.of("message", "Email ou mot de passe incorrect."));
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ResponseEntity<Map<String, String>> handleDisabled() {
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Votre compte a été suspendu. Veuillez contacter l'entreprise pour plus de détails."));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity

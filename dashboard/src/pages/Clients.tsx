@@ -290,7 +290,12 @@ export default function Clients() {
                             <div style={styles.clientCell}>
                                 <div style={styles.avatar}>{initials(client.nom ?? "")}</div>
                                 <div style={{ minWidth: 0 }}>
-                                    <strong style={styles.clientName}>{client.nom || "Client sans nom"}</strong>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                        <strong style={styles.clientName}>{client.nom || "Client sans nom"}</strong>
+                                        <span style={client.active !== false ? styles.badgeActive : styles.badgeSuspended}>
+                                            {client.active !== false ? "Actif" : "Suspendu"}
+                                        </span>
+                                    </div>
                                     <p style={styles.company}>#{client.id}</p>
                                 </div>
                             </div>
@@ -311,8 +316,11 @@ export default function Clients() {
                                 <button style={styles.detailsButton} onClick={() => setSelectedClient(client)}>
                                     Détails
                                 </button>
-                                <button style={styles.blockButton} onClick={() => setConfirmDeleteClient(client)}>
-                                    Bloquer
+                                <button 
+                                    style={client.active !== false ? styles.blockButton : styles.activateButton} 
+                                    onClick={() => setConfirmDeleteClient(client)}
+                                >
+                                    {client.active !== false ? "Suspendre" : "Réactiver"}
                                 </button>
                             </div>
                         </div>
@@ -401,9 +409,13 @@ export default function Clients() {
             {confirmDeleteClient && (
                 <div style={styles.modalOverlay} onClick={() => setConfirmDeleteClient(null)}>
                     <section style={styles.confirmCard} onClick={(event) => event.stopPropagation()}>
-                        <h2 style={styles.confirmTitle}>Bloquer ce client ?</h2>
+                        <h2 style={styles.confirmTitle}>
+                            {confirmDeleteClient.active !== false ? "Suspendre ce client ?" : "Réactiver ce client ?"}
+                        </h2>
                         <p style={styles.confirmText}>
-                            Cette action supprimera {confirmDeleteClient.nom || "ce client"} de la liste des clients.
+                            {confirmDeleteClient.active !== false
+                                ? `Cette action suspendra le compte de ${confirmDeleteClient.nom || "ce client"}. Il ne pourra plus se connecter et recevra un email de notification. Ses demandes, projets et commentaires seront conservés.`
+                                : `Cette action réactivera le compte de ${confirmDeleteClient.nom || "ce client"}. Il pourra à nouveau se connecter et recevra un email de notification.`}
                         </p>
                         <div style={styles.confirmActions}>
                             <button
@@ -414,11 +426,13 @@ export default function Clients() {
                                 Annuler
                             </button>
                             <button
-                                style={styles.confirmDeleteButton}
+                                style={confirmDeleteClient.active !== false ? styles.confirmDeleteButton : styles.confirmActivateButton}
                                 onClick={handleDeleteClient}
                                 disabled={deletingClientId === confirmDeleteClient.id}
                             >
-                                {deletingClientId === confirmDeleteClient.id ? "Suppression..." : "Oui, bloquer"}
+                                {deletingClientId === confirmDeleteClient.id
+                                    ? (confirmDeleteClient.active !== false ? "Suspension..." : "Réactivation...")
+                                    : (confirmDeleteClient.active !== false ? "Oui, suspendre" : "Oui, réactiver")}
                             </button>
                         </div>
                     </section>
@@ -709,6 +723,38 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: "pointer",
         fontFamily: "'Segoe UI', system-ui, sans-serif",
     },
+    activateButton: {
+        border: "1px solid rgba(46, 125, 50, 0.22)",
+        background: "rgba(46, 125, 50, 0.08)",
+        color: "#2e7d32",
+        height: 32,
+        padding: "0 12px",
+        borderRadius: 8,
+        fontSize: 12,
+        fontWeight: 700,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    badgeActive: {
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "2px 6px",
+        borderRadius: 4,
+        background: "rgba(46, 125, 50, 0.1)",
+        color: "#2e7d32",
+        display: "inline-block",
+        lineHeight: "1.2",
+    },
+    badgeSuspended: {
+        fontSize: 10,
+        fontWeight: 700,
+        padding: "2px 6px",
+        borderRadius: 4,
+        background: "rgba(173, 35, 36, 0.1)",
+        color: "#ad2324",
+        display: "inline-block",
+        lineHeight: "1.2",
+    },
     statusBadge: {
         justifySelf: "start",
         borderRadius: 999,
@@ -910,6 +956,18 @@ const styles: Record<string, React.CSSProperties> = {
     confirmDeleteButton: {
         border: "none",
         background: "#ad2324",
+        color: "#fff",
+        height: 36,
+        padding: "0 14px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 800,
+        cursor: "pointer",
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+    },
+    confirmActivateButton: {
+        border: "none",
+        background: "#2e7d32",
         color: "#fff",
         height: 36,
         padding: "0 14px",

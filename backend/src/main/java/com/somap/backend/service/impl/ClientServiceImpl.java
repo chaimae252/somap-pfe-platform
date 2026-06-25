@@ -22,6 +22,7 @@ import com.somap.backend.entity.Commentaire;
 import com.somap.backend.service.ClientService;
 
 import com.somap.backend.service.NotificationService;
+import com.somap.backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,7 @@ public class ClientServiceImpl implements ClientService {
     private final CommentaireRepository commentaireRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final ContactMessageRepository contactMessageRepository;
+    private final EmailService emailService;
 
 
 
@@ -116,8 +118,13 @@ public class ClientServiceImpl implements ClientService {
 
         // 2. Notify other admins
         String clientNom = client.getNom() != null ? client.getNom() : "sans nom";
-        String notifTitle = "Client supprimé";
-        String notifMsg = String.format("L'administrateur %s a supprimé le compte client de %s.", adminName, clientNom);
+        boolean wasActive = client.isActive();
+        String notifTitle = wasActive ? "Client suspendu" : "Client réactivé";
+        String notifMsg = String.format(
+                wasActive ? "L'administrateur %s a suspendu le compte client de %s."
+                          : "L'administrateur %s a réactivé le compte client de %s.",
+                adminName, clientNom
+        );
 
         try {
             List<Admin> admins = adminRepository.findAll();
@@ -142,32 +149,32 @@ public class ClientServiceImpl implements ClientService {
             // ignore
         }
 
-        // 4. Clear Notifications
-        try {
-            notificationRepository.deleteByUtilisateurIdBulk(id);
-        } catch (Exception e) {
-            // ignore
-        }
+        // 4. Toggle active status
+        boolean newActive = !wasActive;
+        client.setActive(newActive);
+        clientRepository.save(client);
 
-        // 5. Clear Comments (with cascades on nested replies and images)
+        // 5. Send appropriate email
         try {
-            List<Commentaire> clientComments = commentaireRepository.findByClientId(id);
-            if (clientComments != null && !clientComments.isEmpty()) {
-                commentaireRepository.deleteAll(clientComments);
+            if (!newActive) {
+                emailService.sendEmail(
+                    client.getEmail(),
+                    "Suspension de votre compte",
+                    "Bonjour,\n\nVotre compte client a été suspendu temporairement en raison de certains problèmes rencontrés. Par conséquent, vous ne pouvez plus vous connecter à votre compte.\n\n" +
+                    "Veuillez contacter directement l'entreprise pour en savoir plus.\n\n" +
+                    "Cordialement,\nL'équipe SOMAP ET SERVICE"
+                );
+            } else {
+                emailService.sendEmail(
+                    client.getEmail(),
+                    "Réactivation de votre compte",
+                    "Bonjour,\n\nVotre compte client a été réactivé avec succès. Vous pouvez désormais vous connecter à nouveau à votre espace client.\n\n" +
+                    "Cordialement,\nL'équipe SOMAP ET SERVICE"
+                );
             }
         } catch (Exception e) {
-            // ignore
+            System.err.println("Failed to send email to " + client.getEmail() + ": " + e.getMessage());
         }
-
-        // 6. Clear Contact Messages
-        try {
-            contactMessageRepository.deleteByClientIdBulk(id);
-        } catch (Exception e) {
-            // ignore
-        }
-
-        // 7. Delete client (Cascades demands and projects automatically via JPA mappings)
-        clientRepository.delete(client);
     }
 
 

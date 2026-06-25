@@ -18,6 +18,7 @@ public class ClientMapper {
         dto.setEmail(client.getEmail());
         dto.setTelephone(client.getTelephone());
         dto.setAdresse(client.getAdresse());
+        dto.setActive(client.isActive());
 
         return dto;
     }
@@ -35,6 +36,7 @@ public class ClientMapper {
         client.setEmail(dto.getEmail());
         client.setTelephone(dto.getTelephone());
         client.setAdresse(dto.getAdresse());
+        client.setActive(dto.isActive());
 
         return client;
     }

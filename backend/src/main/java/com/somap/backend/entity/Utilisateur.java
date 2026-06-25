@@ -30,4 +30,7 @@ public class Utilisateur {
 
     private String resetCode;
     private LocalDateTime resetCodeExpiration;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
 }
